@@ -19,5 +19,30 @@ public abstract class Jugador {
 		System.out.println(this.nombre + "se ha movido a la posicion" + this.posicion);
 	}
 	
+	//Getters y setters
+	public int getPosicion() {
+		return posicion;	
+	}
+	
+	public void setPosicion(int posicion) {
+		this.posicion = posicion;
+	}
+	
+	public String getNombre() {
+		return nombre;
+	}
+	
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+	
+	public String getColor() {
+		return color;
+	}
+	
+	public void setColor(String color) {
+		this.color = color;
+	}
+	
 
 }
