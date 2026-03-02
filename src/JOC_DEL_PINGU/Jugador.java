@@ -23,20 +23,16 @@ public abstract class Jugador {
  }
  
  //Penalización
- public void aplicarPenalizacion(int turnos) {
-     this.turnosPenalizados += turnos;
-     System.out.println(this.nombre + " ha sido penalizado " + turnos + " turnos.");
+ public void aplicarPenalizacion() {
+	 this.turnosPenalizados++;
  }
  
  public boolean estaPenalizado() {
-     return turnosPenalizados > 0;
- }
- 
- public void gestionarTurnoPerdido() {
-     if (this.turnosPenalizados > 0) {
-         this.turnosPenalizados--;
-         System.out.println(this.nombre + " pierde el turno. Le quedan " + this.turnosPenalizados + " turnos de castigo.");
-     }
+	 if (this.turnosPenalizados > 0) {
+		 this.turnosPenalizados--;
+		 return true;
+	 }
+	 return false;
  }
 
  // --- Getters y Setters
