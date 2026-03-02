@@ -19,11 +19,11 @@ private Inventario inv;
 		this.inv = inv;
 	}
 	
-	public void gestionarBatalla() { // Gestiona el inventario del jugador
+	public void gestionarBatalla(Pinguino p) { // Gestiona el inventario del jugador
 		System.out.println("Gestionar inventario de " + p.getNombre());
 	}
 	
-	public void usarItem() { // Muestra el nombre del item utilizado
+	public void usarItem(Item i) { // Muestra el nombre del item utilizado
 		System.out.println("Usando el objeto: " + i.getNombre());
 	}
 	
