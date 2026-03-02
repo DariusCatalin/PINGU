@@ -36,7 +36,7 @@ public class Evento extends Casilla {
 		//PERDER TURNO
 		} else if (i == 18 || i == 19) {
 			System.out.println(j.getNombre() + eventos[4]);
-			j.penalizarTurno();
+			j.aplicarPenalizacion();
 		//PERDER OBJETO
 		} else {
 			System.out.println(j.getNombre() + eventos[5]);
