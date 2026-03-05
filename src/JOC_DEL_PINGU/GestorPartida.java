@@ -37,7 +37,7 @@ public class GestorPartida {
 			}
 		}
 		//REINICIAR LA INTERFAZ DEL JUEGO
-		this.actualizarTablero();
+		actualizarEstadoTablero();
 		
 		System.out.println("Partida creada. Número de Jugadores: " + jugadores.size());
 	}
@@ -58,8 +58,37 @@ public class GestorPartida {
 		int resultado = dadoAUsar.tirar(this.random);
 		System.out.println(j.getNombre() + " avanza " + resultado + " casillas.");
 		this.gestorJugador.jugadorSeMueve(j, resultado, this.partida.getTablero());
+		j.avanzarCasillas(resultado);
 		
 		//HACEMOS EL RETURN DEL RESULTADO
 		return resultado;
+	}
+	
+	public void ejecutarTurnoCompleto() {
+		//OBTENER EL JUGADOR ACTUAL
+		Jugador actual = partida.getJugadorActual();
+		System.out.println("Turno de " + actual.getNombre());
+		
+		//TIRAMOS EL DADO
+		int resultadoDado = tirarDado(actual, null);
+		
+		//BUSCAR LA CASILLA A LA CUÁL HA CAÍDO
+		Casilla casillaActual = this.partida.getTablero().getCasillas().get(actual.getPosicion());
+		
+		//EJECUTAMOS LA CASILLA
+		this.gestorTablero.ejecutarCasilla(this.partida, (Pinguino) actual , casillaActual);
+		
+		//ACTUALIZAMOS LA INTERFAZ
+		actualizarEstadoTablero();
+		
+		//VEMOS SI HAY GANADOR
+		this.gestorTablero.comprobarFinTurno(this.partida);
+		
+		//PASAMOS AL SIGUIENTE TURNO SI NO SE HA ACABADO LA PARTIDA
+		if(!this.partida.isFinalizada()) {
+			siguienteTurno();
+		} else {
+			System.out.println("¡El juego ha terminado! El ganador es " + actual.getNombre());
+		}
 	}
 }
