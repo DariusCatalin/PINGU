@@ -51,8 +51,12 @@ public class Partida {
 	public void setGanador(Jugador ganador) {
 		this.ganador = ganador;
 	}
-	//GET JUGADOR ACTUAL
+	//GETTER Y SETTER JUGADOR ACTUAL
 	public Jugador getJugadorActual() {
 		return this.jugadores.get(this.jugadorActual);
+	}
+	
+	public void setJugadorActual(int jugadorActual) {
+		this.jugadorActual = jugadorActual;
 	}
 }
