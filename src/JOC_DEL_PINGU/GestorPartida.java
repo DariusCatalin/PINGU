@@ -64,16 +64,13 @@ public class GestorPartida {
 		return resultado;
 	}
 	
-	public void ejecutarTurnoCompleto(PantallaPartida vista) {
+	public void ejecutarTurnoCompleto() {
 		//OBTENER EL JUGADOR ACTUAL
 		Jugador actual = partida.getJugadorActual();
 		System.out.println("Turno de " + actual.getNombre());
 		
 		//PROCESAMOS SU TURNO
 		procesarTurnoJugador(actual);
-		
-		//ACTUALIZAMOS LA INTERFAZ
-		actualizarEstadoTablero(vista);
 		
 		//VEMOS SI HAY GANADOR
 		this.gestorTablero.comprobarFinTurno(this.partida);
@@ -95,10 +92,8 @@ public class GestorPartida {
 				
 		//EJECUTAMOS LA CASILLA
 		this.gestorTablero.ejecutarCasilla(this.partida, (Pinguino) j , casillaActual);
-	}
-	
-	public void actualizarEstadoTablero() {
-		//ACTUALIZAMOS LA PANTALLA
-		PantallaPartida.getInstancia().repaint();
+				
+		//ACTUALIZAMOS LA INTERFAZ
+		actualizarEstadoTablero();
 	}
 }
