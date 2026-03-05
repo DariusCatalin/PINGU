@@ -1,5 +1,7 @@
 package JOC_DEL_PINGU;
 import java.util.Random;
+import java.util.ArrayList;
+
 public class GestorPartida {
 	//ATRIBUTOS
 	private Partida partida;
@@ -95,5 +97,17 @@ public class GestorPartida {
 				
 		//ACTUALIZAMOS LA INTERFAZ
 		actualizarEstadoTablero();
+	}
+	
+	public void actualizarEstadoTablero() {
+		//OBTENER TABLERO Y JUGADORES
+		Tablero tablero = this.partida.getTablero();
+		ArrayList<Jugador> jugadores = this.partida.getJugadores();
+		
+		//ACTUALIZAMOS POSICIONES DE LOS JUGADORES
+		for (Jugador j : jugadores) {
+			int posicion = j.getPosicion();
+			System.out.println("Sincronizando: " + j.getNombre() + " está en la casilla " + posicion);
+		}
 	}
 }
