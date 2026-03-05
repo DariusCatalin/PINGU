@@ -110,4 +110,19 @@ public class GestorPartida {
 			System.out.println("Sincronizando: " + j.getNombre() + " está en la casilla " + posicion);
 		}
 	}
+	
+	public void siguienteTurno() {
+		//OBTENER EL NÚMERO DE TURNO DEL JUGADOR QUE ACABA DE JUGAR
+		int numTurnoActual = this.partida.getIndiceJugadorActual();
+		
+		//OBTENEMOS LA CANTIDAD DE JUGADORES QUE HAY EN LA PARTIDA
+		int totalJugadores = this.partida.getJugadores().size();
+		
+		//CALCULAMOS A QUIEN LE TOCARÁ AHORA
+		int siguiente = (numTurnoActual + 1) % totalJugadores;
+		
+		//ACTUALIZAMOS
+		this.partida.setJugadorActual(siguiente);
+		System.out.println("El siguiente en jugar es el jugador número " + siguiente);
+	}
 }
