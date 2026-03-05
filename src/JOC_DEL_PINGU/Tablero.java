@@ -17,12 +17,18 @@ public class Tablero {
 	}
 	
 	public void actualizarTablero() {
-		for(Casilla c : casillas) {
+		System.out.println("Actualizando Tablero ... ");
+		
+		if(casillas.isEmpty()) {
+			System.out.println("El tablero no tiene casillas !!");
+		} else {
 			
-			//Aquí se aplicarán métodos
+			for(Casilla c : casillas) {
+				System.out.println("[Casilla " + c.getPosicion() + "] -> Evento: " + c.getClass().getSimpleName());
+			}
+			
 		}
 		
-		System.out.println("Se ha actualizado el Tablero y sus datos");
 	}
 
 }
