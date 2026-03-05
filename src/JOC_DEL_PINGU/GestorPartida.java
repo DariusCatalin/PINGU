@@ -125,4 +125,15 @@ public class GestorPartida {
 		this.partida.setJugadorActual(siguiente);
 		System.out.println("El siguiente en jugar es el jugador número " + siguiente);
 	}
+	
+	public Partida getPartida() {
+		return this.partida;
+	}
+	
+	public void guardarPartida() {
+		
+	}
+	public void cargarPartida() {
+		
+	}
 }
