@@ -69,17 +69,8 @@ public class GestorPartida {
 		Jugador actual = partida.getJugadorActual();
 		System.out.println("Turno de " + actual.getNombre());
 		
-		//TIRAMOS EL DADO
-		int resultadoDado = tirarDado(actual, null);
-		
-		//BUSCAR LA CASILLA A LA CUÁL HA CAÍDO
-		Casilla casillaActual = this.partida.getTablero().getCasillas().get(actual.getPosicion());
-		
-		//EJECUTAMOS LA CASILLA
-		this.gestorTablero.ejecutarCasilla(this.partida, (Pinguino) actual , casillaActual);
-		
-		//ACTUALIZAMOS LA INTERFAZ
-		actualizarEstadoTablero();
+		//PROCESAMOS SU TURNO
+		procesarTurnoJugador(actual);
 		
 		//VEMOS SI HAY GANADOR
 		this.gestorTablero.comprobarFinTurno(this.partida);
@@ -90,5 +81,19 @@ public class GestorPartida {
 		} else {
 			System.out.println("¡El juego ha terminado! El ganador es " + actual.getNombre());
 		}
+	}
+	
+	public void procesarTurnoJugador(Jugador j) {
+		//TIRAMOS EL DADO
+		int resultadoDado = tirarDado(j, null);
+				
+		//BUSCAR LA CASILLA A LA CUÁL HA CAÍDO
+		Casilla casillaActual = this.partida.getTablero().getCasillas().get(j.getPosicion());
+				
+		//EJECUTAMOS LA CASILLA
+		this.gestorTablero.ejecutarCasilla(this.partida, (Pinguino) j , casillaActual);
+				
+		//ACTUALIZAMOS LA INTERFAZ
+		actualizarEstadoTablero();
 	}
 }
