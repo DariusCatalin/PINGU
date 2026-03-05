@@ -29,8 +29,10 @@ public class GestorPartida {
 			}
 		}
 		//REINICIAR LA INTERFAZ DEL JUEGO
-		this.actualizarEstadoTablero();
+		this.actualizarTablero();
 		
 		System.out.println("Partida creada. Número de Jugadores: " + jugadores.size());
 	}
+	
+	
 }
