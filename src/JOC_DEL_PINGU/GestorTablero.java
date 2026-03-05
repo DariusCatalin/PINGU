@@ -12,8 +12,7 @@ public class GestorTablero { // creamos la clase que gestiona el tablero.
 	
 	public void comprobarFinTurno(Partida partida) { //creamos el método que va a comprobar cuando finaliza el turno del jugador y si ha terminado la partida llegando a la meta.
 		
-		int jug_actual = partida.getJugadorActual();
-		Jugador jugador = partida.getJugadores().get(jug_actual);
+		Jugador jugador = partida.getJugadorActual();
 		
 		int meta = 50;
 		
@@ -28,12 +27,12 @@ public class GestorTablero { // creamos la clase que gestiona el tablero.
 			
 			System.out.println("Fin de turno de " + jugador.getNombre());
 			
+			int jug_actual = partida.getIndiceJugadorActual();
 			int jugadores = partida.getJugadores().size();
+			
 			int siguiente = (jug_actual + 1) % jugadores;
 			
 			partida.setJugadorActual(siguiente);
-			
-			partida.setTurnos(partida.getTurnos() + 1);
 		}
 		
 		
