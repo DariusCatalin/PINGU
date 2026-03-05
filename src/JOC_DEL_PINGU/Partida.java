@@ -59,4 +59,8 @@ public class Partida {
 	public void setJugadorActual(int jugadorActual) {
 		this.jugadorActual = jugadorActual;
 	}
+	//GETTER INDICE JUGADORACTUAL
+	public int getIndiceJugadorActual() {
+		return this.jugadorActual;
+	}
 }
