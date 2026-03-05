@@ -1,4 +1,5 @@
 package JOC_DEL_PINGU;
+import java.util.Random;
 
 public class Dado extends Item{ // Clase Dado con relación extend a Item
 	
@@ -31,10 +32,10 @@ public class Dado extends Item{ // Clase Dado con relación extend a Item
 		this.min = min;
 	}
 	
-	public int tirar() { // Método que acciona el dado haciendo una tirada aleatoria entre el mínimo y máximo del propio dado
+	public int tirar(Random r) { // Método que acciona el dado haciendo una tirada aleatoria entre el mínimo y máximo del propio dado
 		
-		int r = (int) (Math.random() * this.max) + this.min;
-		return r;
+		int resultado = r.nextInt((this.max-this.min) + 1) + this.min;
+		return resultado;
 		
 	}
 

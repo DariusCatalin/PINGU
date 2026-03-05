@@ -21,7 +21,7 @@ public abstract class Jugador {
     }
 
     public void moverPosicion(int p) {
-        this.posicion = p;
+        this.posicion += p;
     }
  
     //PENALIZACIÓN

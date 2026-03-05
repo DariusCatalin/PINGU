@@ -8,6 +8,14 @@ public class GestorPartida {
 	private GestorBBDD gestorBBDD;
 	private Random random;
 	
+	//CONSTRUCTOR
+	public GestorPartida() {
+        this.random = new Random();
+        this.gestorTablero = new GestorTablero();
+        this.gestorJugador = new GestorJugador();
+        this.gestorBBDD = new GestorBBDD();
+    }
+	
 	public void nuevaPartida(ArrayList<Jugador> jugadores, Tablero tablero) {
 		//CREAMOS LA INSTANCIA DEL MODELO PARTIDA
 		this.partida = new Partida();
@@ -34,5 +42,24 @@ public class GestorPartida {
 		System.out.println("Partida creada. Número de Jugadores: " + jugadores.size());
 	}
 	
-	
+	public int tirarDado(Jugador j, Dado dadoOpcional) {
+		Dado dadoAUsar;
+		
+		//SI USAMOS UN DADO DEL INVENTARIO O NO
+		if (dadoOpcional != null) {
+			dadoAUsar = dadoOpcional;
+			System.out.println(j.getNombre() + " ha usado un dado especial: " + dadoAUsar.getNombre());
+		} else {
+			dadoAUsar = new Dado("Dado Estándar", 1, 1, 6);
+			System.out.println(j.getNombre() + " usa un dado normal.");
+		}
+		
+		//OBTENEMOS EL NÚMERO DEL DADO Y MOVEMOS LA POSICIÓN DEL JUGADOR
+		int resultado = dadoAUsar.tirar(this.random);
+		System.out.println(j.getNombre() + " avanza " + resultado + " casillas.");
+		this.gestorJugador.jugadorSeMueve(j, resultado, this.partida.getTablero());
+		
+		//HACEMOS EL RETURN DEL RESULTADO
+		return resultado;
+	}
 }
