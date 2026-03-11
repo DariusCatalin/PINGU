@@ -1,11 +1,6 @@
 package JOC_DEL_PINGU;
 
 public class main {
-
-    /**
-     * Punto de entrada de la aplicación.
-     * En el diagrama aparece como "+ void main()".
-     */
     public static void main(String[] args) {
         main controladorPrincipal = new main();
         
