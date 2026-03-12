@@ -33,7 +33,7 @@ public class GestorBBDD {
     public void guardarBBDD(Partida p) {
         // 0. ¡SEGURIDAD! Comprobamos si hay conexión antes de hacer nada
         if (this.conexion == null) {
-            System.out.println("Cuidado tt, no hay conexión a la BBDD. Imposible guardar la partida.");
+            System.out.println("No hay conexión a la BBDD. Imposible guardar la partida.");
             return; // Salimos del método para que no pete
         }
         
@@ -49,7 +49,7 @@ public class GestorBBDD {
         if (filasAfectadas > 0) {
             System.out.println("¡Partida guardada con éxito en Oracle!");
         } else {
-            System.out.println("Bro, algo ha fallado al hacer el INSERT en la BBDD.");
+            System.out.println("Algo ha fallado al hacer el INSERT en la BBDD.");
         }
     }
     
