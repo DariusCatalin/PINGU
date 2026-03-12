@@ -9,7 +9,7 @@ public class CasillaFragil extends Casilla {
 	public void realizarAccion(Partida p, Jugador j) {
 		//VARIABLES
 		Inventario invJugador = j.getInventario();
-		int cantidadObjetos;
+		int cantidadObjetos = 0;
 		//BUCLE PARA CONTAR CUÁNTOS OBJETOS TIENE EL JUGADOR
 		for (Item items : invJugador.getLista()) {
 			cantidadObjetos += items.getCantidad();
@@ -23,7 +23,7 @@ public class CasillaFragil extends Casilla {
 					+ "caído hasta la casilla de inicio");
 		//PERDER UN TURNO	
 		} else if (cantidadObjetos > 0 && cantidadObjetos <= 5) {
-			j.penalizarTurno();
+			j.aplicarPenalizacion();
 			System.out.println("Por suerte, el suelo no se ha derrumbado, pero... " 
 					+ j.getNombre() + " pierde el próximo turno.");
 		//NADA	

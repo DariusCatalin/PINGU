@@ -40,7 +40,7 @@ public class Evento extends Casilla {
 		//PERDER OBJETO
 		} else {
 			System.out.println(j.getNombre() + eventos[5]);
-			j.perderObjeto();
+			j.perderObjetoAleatorio();
 		}
 		
 	}
