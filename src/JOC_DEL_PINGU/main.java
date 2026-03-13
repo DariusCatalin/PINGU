@@ -1,18 +1,25 @@
 package JOC_DEL_PINGU;
 
-public class main {
-    public static void main(String[] args) {
-        main controladorPrincipal = new main();
-        
-        //LLAMAMOS A JUGAR
-        controladorPrincipal.jugar();
-    }
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.Parent;
+import javafx.stage.Stage;
 
-    public void jugar() {
-        //INICIALIZAMOS LA PANTALLA DEL MENÚ
-        PantallaMenu pantallaMenu = new PantallaMenu();
-        
-        //MENÚ PARA MOSTRAR SI QUEREMOS JUGAR UNA NUEVA PARTIDA, CARGAR UNA O SALIRNOS
-        pantallaMenu.menu(); 
+public class main extends Application {
+
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+	    FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml"));
+	    Parent root = loader.load();
+
+	    Scene scene = new Scene(root);
+	    primaryStage.setScene(scene);
+	    primaryStage.setTitle("El Juego del Pingüino");
+	    primaryStage.show();
+	}
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }
