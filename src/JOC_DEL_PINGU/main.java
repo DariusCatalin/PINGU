@@ -34,6 +34,7 @@ public class main {
     }
 
     public static void jugar() {
+    	
         // Según tu diagrama, el Main (Controlador) se comunica directamente con PantallaMenu (Vista)
         System.out.println("Cargando el menú principal...");
         
