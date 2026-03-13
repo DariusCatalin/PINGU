@@ -6,12 +6,11 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/Darius/Downloads/ojdbc8.jar"/>
-	<classpathentry kind="lib" path="C:/Users/djdarius995/Downloads/ojdbc8.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Javafx">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="E:/ILERNA/EGONZALO/0485 PROGRAMACIÓ/ojdbc8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
