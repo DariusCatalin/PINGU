@@ -18,7 +18,7 @@ public class Foca extends Jugador {
 
     public void golpearJugador(Pinguino p) {
         System.out.println(this.getNombre() + " ha golpeado a " + p.getNombre());
-        // Lógica del juego aquí
+       
     }
 
     public void esSoborno(int cantidad) {

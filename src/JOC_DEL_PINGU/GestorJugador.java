@@ -17,7 +17,7 @@ public class GestorJugador {
         System.out.println(j.getNombre() + " ha finalizado su turno.");
     }
 
-    //Cae en una casilla de evento (Ojo: en el diagrama pone 'pigüinoEvento' sin la 'n', lo corrijo a pinguino)
+    //Cae en una casilla de evento
     public void pinguinoEvento(Pinguino p) {
         System.out.println("¡Ha ocurrido un evento para el pingüino " + p.getNombre() + "!");
     }
