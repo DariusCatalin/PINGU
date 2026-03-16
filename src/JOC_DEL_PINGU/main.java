@@ -22,7 +22,7 @@ public class main {
             System.out.println("Arrancando el juego...");
             jugar();
         } else {
-            System.out.println("Bro, no se ha podido conectar a la BBDD.");
+            System.out.println("No se ha podido conectar a la BBDD.");
         }
 
         // COMENTADO: No cerramos el scanner para que el juego pueda seguir leyendo por consola
