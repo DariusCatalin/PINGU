@@ -2,7 +2,6 @@ package JOC_DEL_PINGU; // Adaptado a tu estructura de paquetes
 
 import java.util.ArrayList;
 import java.util.Random;
-
 import javafx.animation.TranslateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -58,7 +57,7 @@ public class PantallaPartida {
         Pinguino p1 = new Pinguino(0, "Jugador1", "Azul");
         
         // Añadir el dado normal al inventario (máximo 3 daus permitidos según el PDF)
-        Dado dadoEstandar = new Dado("Dado Normal", 1, 1, 6);
+        Dado dadoEstandar = new Dado("Dado Normal", 1, 6, 1);
         p1.getInventario().getLista().add(dadoEstandar);
         
         jugadores.add(p1);

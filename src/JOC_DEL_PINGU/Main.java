@@ -1,4 +1,4 @@
-package JOC_DEL_PINGU;
+package JOC_DEL_PINGU; 
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -6,21 +6,22 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class main extends Application {
+public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Buscamos el archivo del diseño del menú
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("PantallaMenu.fxml"));
+            // Buscamos tu diseño del menú en el src
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml"));
             Parent root = loader.load();
             
             Scene scene = new Scene(root);
-            primaryStage.setTitle("El Joc del Pingu - Inicio");
+            primaryStage.setTitle("El Joc del Pingu");
             primaryStage.setScene(scene);
             primaryStage.show();
-        } catch(Exception e) {
-            System.out.println("Error: No encuentro el archivo PantallaMenu.fxml tt");
+            
+        } catch (Exception e) {
+            System.out.println("No he podido cargar la ventana:");
             e.printStackTrace();
         }
     }
