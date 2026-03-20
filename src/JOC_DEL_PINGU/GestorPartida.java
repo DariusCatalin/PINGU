@@ -1,5 +1,6 @@
 package JOC_DEL_PINGU;
-import java.util.Random;
+
+import java.util.Random;	
 import java.util.ArrayList;
 
 public class GestorPartida {
@@ -60,7 +61,6 @@ public class GestorPartida {
 		int resultado = dadoAUsar.tirar(this.random);
 		System.out.println(j.getNombre() + " avanza " + resultado + " casillas.");
 		this.gestorJugador.jugadorSeMueve(j, resultado, this.partida.getTablero());
-		j.avanzarCasillas(resultado);
 		
 		//HACEMOS EL RETURN DEL RESULTADO
 		return resultado;
@@ -76,6 +76,9 @@ public class GestorPartida {
 		
 		//VEMOS SI HAY GANADOR
 		this.gestorTablero.comprobarFinTurno(this.partida);
+		
+		//NOTIFICAR FIN DE TURNO (PENALIZACIONES, REDUCIR TURNOS CASTIGOS ETC)
+		this.gestorJugador.jugadorFinalizaTurno(actual);
 		
 		//PASAMOS AL SIGUIENTE TURNO SI NO SE HA ACABADO LA PARTIDA
 		if(!this.partida.isFinalizada()) {
@@ -93,7 +96,7 @@ public class GestorPartida {
 		Casilla casillaActual = this.partida.getTablero().getCasillas().get(j.getPosicion());
 				
 		//EJECUTAMOS LA CASILLA
-		this.gestorTablero.ejecutarCasilla(this.partida, (Pinguino) j , casillaActual);
+		this.gestorTablero.ejecutarCasilla(this.partida, j, casillaActual);
 				
 		//ACTUALIZAMOS LA INTERFAZ
 		actualizarEstadoTablero();

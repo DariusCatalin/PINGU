@@ -2,34 +2,86 @@ package JOC_DEL_PINGU;
 
 public class GestorJugador {
 
-    //Un jugador usa un objeto de su inventario
-    public void jugadorUsaItem(String nombreItem) {
-        System.out.println("El jugador intenta usar el item: " + nombreItem);
+    // Se añadió el parámetro 'Jugador j' ya que es necesario para saber qué inventario usar.
+    public void jugadorUsaItem(Jugador j, String nombreItem) {
+        if (j.getInventario() != null && j.getInventario().getLista() != null) {
+            Item itemAUsar = null;
+            // Buscamos si tiene el item
+            for (Item item : j.getInventario().getLista()) {
+                if (item.getNombre().equalsIgnoreCase(nombreItem)) {
+                    itemAUsar = item;
+                    break;
+                }
+            }
+            
+            if (itemAUsar != null) {
+                // Lo borramos del inventario al usarlo
+                j.getInventario().getLista().remove(itemAUsar);
+                
+                // Si es un Pingüino, llamamos a su método interno
+                if (j instanceof Pinguino) {
+                    ((Pinguino) j).usarItem(itemAUsar);
+                } else {
+                    System.out.println(j.getNombre() + " usa el objeto: " + itemAUsar.getNombre());
+                }
+            } else {
+                System.out.println(j.getNombre() + " no tiene el objeto " + nombreItem + " en su inventario.");
+            }
+        }
     }
 
-    //Mover al jugador por el tablero
     public void jugadorSeMueve(Jugador j, int pasos, Tablero t) {
-        System.out.println(j.getNombre() + " se mueve " + pasos + " pasos.");
+    	int nuevaPos = j.getPosicion() + pasos;
+    	
+        // Obtenemos el tamaño real del tablero (si existe)
+        int maxPos = 49;
+        if (t != null && t.getCasillas() != null && !t.getCasillas().isEmpty()) {
+            maxPos = t.getCasillas().size() - 1;
+        }
+
+    	if(nuevaPos > maxPos) {
+    		nuevaPos = maxPos;
+    	}
+    	
+    	if (nuevaPos < 0 ) {
+    		nuevaPos = 0;
+    	}
+    	
+    	j.setPosicion(nuevaPos);
+        System.out.println(j.getNombre() + " se ha movido a la casilla " + nuevaPos);
     }
 
-    //Acabar el turno
     public void jugadorFinalizaTurno(Jugador j) {
-        System.out.println(j.getNombre() + " ha finalizado su turno.");
+        if (j.getTurnosPenalizados() > 0) {
+            System.out.println(j.getNombre() + " finaliza su turno. Le quedan " + j.getTurnosPenalizados() + " turnos de penalización.");
+        } else {
+            System.out.println(j.getNombre() + " ha finalizado su turno correctamente sin penalizaciones.");
+        }
     }
 
-    //Cae en una casilla de evento
-    public void pinguinoEvento(Pinguino p) {
-        System.out.println("¡Ha ocurrido un evento para el pingüino " + p.getNombre() + "!");
+    public void piguinoEvento(Pinguino p) {
+        System.out.println("¡El pingüino " + p.getNombre() + " ha activado un evento sorpresa!");
+        // Aquí se podría delegar la lógica a una Casilla de Evento
     }
 
-    //Dos pingüinos caen en la misma casilla y se pelean
-    public void pinguinoGuerra(Pinguino p1, Pinguino p2) {
-        System.out.println("¡Guerra! " + p1.getNombre() + " se enfrenta a " + p2.getNombre());
+    public void pingüinoGuerra(Pinguino p1, Pinguino p2) {
+        System.out.println("¡Ha empezado una guerra entre " + p1.getNombre() + " y " + p2.getNombre() + "!");
+        // Utilizamos el método propio de Pinguino
+        p1.gestionarBatalla(p2);
     }
 
-    //Un pingüino se encuentra con la Foca
     public void focaInteractua(Pinguino p, Foca f) {
-        System.out.println("La foca interactúa con el pingüino " + p.getNombre());
+        // Comprobamos si la Foca está sobornada
+        if (f.isSoborno()) {
+            System.out.println("La foca " + f.getNombre() + " está sobornada y amigable. Decide ignorar a " + p.getNombre());
+        } else {
+            // Interacción aleatoria agresiva
+            System.out.println("¡Cuidado! La foca " + f.getNombre() + " no está sobornada y ataca a " + p.getNombre() + "!");
+            if (Math.random() > 0.5) {
+                f.aplastarJugador(p);
+            } else {
+                f.golpearJugador(p);
+            }
+        }
     }
-
 }
