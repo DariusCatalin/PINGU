@@ -24,7 +24,7 @@ public class CasillaFragil extends Casilla {
 		
 		//VOLVER A LA CASILLA DE INICIO
 		if (cantidadObjetos > 5) {
-			j.moverPosicion(1);
+			j.moverPosicion(0);
 			System.out.println(j.getNombre() + " lleva muchos objetos encima, "
 					+ "por lo que el suelo no ha podido aguantar y ha "
 					+ "caído hasta la casilla de inicio");

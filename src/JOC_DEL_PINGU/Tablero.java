@@ -19,18 +19,33 @@ public class Tablero { // Se Crea la clase Tablero
 	}
 	
 	public void actualizarTablero() { // método que actualiza el tablero.
-		System.out.println("Actualizando Tablero ... ");
+		System.out.println("==== DIBUJANDO MAPA ====");
 		
 		if(casillas.isEmpty()) {
-			System.out.println("El tablero no tiene casillas !!");
+			System.out.println("¡El tablero no tiene casillas generadas!");
 		} else {
 			
-			for(Casilla c : casillas) {
-				System.out.println("[Casilla " + c.getPosicion() + "] -> Evento: " + c.getClass().getSimpleName());
+			// Usamos StringBuilder para ir pintando el camino en la misma línea
+			StringBuilder mapa = new StringBuilder();
+			
+			for (int i = 0; i < casillas.size(); i++) {
+				Casilla c = casillas.get(i);
+				// Extraemos el nombre de la clase (Ej: CasillaFragil -> Fragil)
+				String nombreTipo = c.getClass().getSimpleName();
+				
+				mapa.append("[").append(nombreTipo).append("]");
+				
+				// Saltos de línea para que las 50 casillas no se vayan del borde de la pantalla
+				if ((i + 1) % 10 == 0) {
+					mapa.append("\n");
+				} else if (i < casillas.size() - 1) {
+					mapa.append(" - ");
+				}
 			}
 			
+			System.out.println(mapa.toString());
+			System.out.println("========================");
 		}
-		
 	}
 
 }
