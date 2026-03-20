@@ -1,43 +1,67 @@
 package JOC_DEL_PINGU;
 
 import java.sql.Connection;
+import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class GestorBBDD {
+    // Atributos
     private String urlBBDD;
     private String username;
     private String password;
     
-    // Guardamos la conexión aquí para usarla en todos los métodos
+    // Guardamos la conexión aquí para usarla en todos los métodos de esta clase
     private Connection conexion; 
 
-    // Constructor temporal (o método para iniciar la conexión)
-    public void iniciarConexion(java.util.Scanner scan) {
-        // Llamamos a tu archivo bbdd.java para conectarnos
-        this.conexion = BBDD.conectarBaseDatos(scan);
+    // Constructor vacío
+    public GestorBBDD() {
     }
 
-    // Método de tu UML
+    // Método para iniciar la conexión
+    public void iniciarConexion(Scanner scan) {
+      
+        this.conexion = BBDD.conectarBaseDatos(scan);
+    }
+    
+
+    public void cerrarConexion() {
+        BBDD.cerrar(this.conexion);
+    }
+
+  
     public void guardarBBDD(Partida p) {
+      //Comprobamos si hay conexión antes de hacer nada
+        if (this.conexion == null) {
+            System.out.println("No hay conexión a la BBDD. Imposible guardar la partida.");
+            return; 
+        }
         
-        // 1. Extraemos los datos del objeto Partida (y sus jugadores, tablero...)
-        // int idTablero = p.getTablero().getId(); // Ejemplo inventado
+     
         
-        // 2. Preparamos la sentencia SQL
+
         String sql = "INSERT INTO PARTIDA (id_partida, estado, id_tablero) VALUES (1, 'En curso', 1)";
         
         // 3. Usamos tu archivo bbdd.java para ejecutar el insert en Oracle
         int filasAfectadas = BBDD.insert(this.conexion, sql);
         
         if (filasAfectadas > 0) {
-            System.out.println("¡Partida guardada con éxito!");
+            System.out.println("¡Partida guardada con éxito en Oracle!");
+        } else {
+            System.out.println("Algo ha fallado al hacer el INSERT en la BBDD.");
         }
     }
     
-    // Método de tu UML
+    // Método de UML
     public Tablero cargarBBDD(int id) {
-        // Aquí harías un BBDD.select(...) para buscar la partida
-        // Leerías los datos que te devuelve Oracle
-        // Y construirías un objeto Tablero nuevo para devolverlo
-        return null; // Devolvemos null temporalmente
+        if (this.conexion == null) {
+            System.out.println("No hay conexión, no se puede cargar el tablero.");
+            return null; 
+        }
+
+      
+      
+        
+        return null;
     }
 }

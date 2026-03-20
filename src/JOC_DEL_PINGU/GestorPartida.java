@@ -52,7 +52,7 @@ public class GestorPartida {
 			dadoAUsar = dadoOpcional;
 			System.out.println(j.getNombre() + " ha usado un dado especial: " + dadoAUsar.getNombre());
 		} else {
-			dadoAUsar = new Dado("Dado Estándar", 1, 1, 6);
+			dadoAUsar = new Dado("Dado Estándar", 1, 6, 1);
 			System.out.println(j.getNombre() + " usa un dado normal.");
 		}
 		
@@ -132,8 +132,31 @@ public class GestorPartida {
 	
 	public void guardarPartida() {
 		
+		if (this.partida != null) {
+			System.out.println("Preparando todo para guardar la partida...");
+			
+			this.gestorBBDD.guardarBBDD(this.partida);
+		} else {
+			System.out.println("No se puede guardar, no hay ninguna partida en curso");
+		}
+		
 	}
-	public void cargarPartida() {
+	
+	public void cargarPartida(int idPartida) {
+		
+		System.out.println("Buscando la partida con ID " + idPartida + " en Oracle... ");
+		
+		Tablero tableroCargado = this.gestorBBDD.cargarBBDD(idPartida);
+		
+		if (tableroCargado != null) {
+			
+			System.out.println("Datos recuperados con éxito de la base de datos");
+			
+			actualizarEstadoTablero();
+		} else {
+			System.out.println("Fallo al cargar. Comprueba si el ID " + idPartida + " existe");
+		}
+		
 		
 	}
 }
