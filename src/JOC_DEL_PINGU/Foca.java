@@ -12,13 +12,15 @@ public class Foca extends Jugador {
     }
 
     public void aplastarJugador(Pinguino p) {
-        System.out.println(this.getNombre() + " está intentando aplastar a " + p.getNombre());
-        // Lógica del juego: restar vida al pingüino, moverlo al inicio, etc.
+        System.out.println("¡" + this.getNombre() + " lanza su enorme peso y aplasta a " + p.getNombre() + "!");
+        System.out.println(p.getNombre() + " sale despedido por los aires hasta la casilla de salida.");
+        p.moverPosicion(0);
     }
 
     public void golpearJugador(Pinguino p) {
-        System.out.println(this.getNombre() + " ha golpeado a " + p.getNombre());
-       
+        System.out.println("¡" + this.getNombre() + " le ha dado un fuerte aletazo a " + p.getNombre() + "!");
+        System.out.println(p.getNombre() + " se queda aturdido y pierde su próximo turno.");
+        p.aplicarPenalizacion();
     }
 
     public void esSoborno(int cantidad) {
