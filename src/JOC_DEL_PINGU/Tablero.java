@@ -1,11 +1,40 @@
 package JOC_DEL_PINGU;
 import java.util.ArrayList;
+import java.util.Random;
+
 public class Tablero { // Se Crea la clase Tablero
 	
 	private ArrayList<Casilla> casillas; // Creamos ArrayList para guardar las casillas
 	
 	public Tablero() { // Constructor que llama al ArrayList creado
 		this.casillas = new ArrayList<>();
+		generarCasillasAleatorias();
+	}
+	
+	private void generarCasillasAleatorias() {
+		Random rand = new Random();
+
+		// Casilla 0 (Inicio): Siempre vacía/normal
+		this.casillas.add(new CasillaNormal(0));
+
+		// Bucle para añadir casillas aleatorias hasta antes de la meta
+		for (int i = 1; i < 49; i++) {
+			int tipo = rand.nextInt(7); // Agregamos un peso más alto para que también aparezcan casillas normales en medio
+
+			Casilla c;
+			switch (tipo) {
+				case 0: c = new Oso(i); break;
+				case 1: c = new Trineo(i); break;
+				case 2: c = new Agujero(i); break;
+				case 3: c = new Evento(i); break;
+				case 4: c = new CasillaFragil(i); break;
+				default: c = new CasillaNormal(i); // Casos 5 y 6 darán casillas normales para equilibrar el juego
+			}
+			this.casillas.add(c);
+		}
+
+		// Casilla 49 (Meta): Siempre vacía/normal
+		this.casillas.add(new CasillaNormal(49));
 	}
 	
 	//GETTERS/SETTERS
