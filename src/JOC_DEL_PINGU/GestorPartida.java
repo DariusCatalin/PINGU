@@ -52,7 +52,7 @@ public class GestorPartida {
 			dadoAUsar = dadoOpcional;
 			System.out.println(j.getNombre() + " ha usado un dado especial: " + dadoAUsar.getNombre());
 		} else {
-			dadoAUsar = new Dado("Dado Estándar", 1, 1, 6);
+			dadoAUsar = new Dado("Dado Estándar", 1, 6, 1);
 			System.out.println(j.getNombre() + " usa un dado normal.");
 		}
 		
