@@ -10,6 +10,7 @@ public class GestorPartida {
 	private GestorJugador gestorJugador;
 	private GestorBBDD gestorBBDD;
 	private Random random;
+	private GestorEventos gestorEventos;
 	
 	//CONSTRUCTOR
 	public GestorPartida() {
@@ -17,6 +18,7 @@ public class GestorPartida {
         this.gestorTablero = new GestorTablero();
         this.gestorJugador = new GestorJugador();
         this.gestorBBDD = new GestorBBDD();
+        this.gestorEventos = new GestorEventos();
     }
 	
 	public void nuevaPartida(ArrayList<Jugador> jugadores, Tablero tablero) {
@@ -31,6 +33,7 @@ public class GestorPartida {
 		this.partida.setTurnos(0);
 		this.partida.setJugadorActual(0);
 		this.partida.setFinalizada(false);
+		this.partida.setGestorEventos(this.gestorEventos);
 		
 		//ASIGNAR POSICIÓN INICIAL A CADA JUGADOR
 		for (Jugador j : jugadores) {
@@ -59,7 +62,7 @@ public class GestorPartida {
 		
 		//OBTENEMOS EL NÚMERO DEL DADO Y MOVEMOS LA POSICIÓN DEL JUGADOR
 		int resultado = dadoAUsar.tirar(this.random);
-		System.out.println(j.getNombre() + " avanza " + resultado + " casillas.");
+		gestorEventos.registrar(j.getNombre() + " avanza " + resultado + " casillas.");
 		this.gestorJugador.jugadorSeMueve(j, resultado, this.partida.getTablero());
 		
 		//HACEMOS EL RETURN DEL RESULTADO
@@ -74,6 +77,9 @@ public class GestorPartida {
 		//PROCESAMOS SU TURNO
 		procesarTurnoJugador(actual);
 		
+		//TURNO AUTOMÁTICO DE LAS FOCAS
+		ejecutarTurnoFocas();
+		
 		//VEMOS SI HAY GANADOR
 		this.gestorTablero.comprobarFinTurno(this.partida);
 		
@@ -87,6 +93,35 @@ public class GestorPartida {
 			System.out.println("¡El juego ha terminado! El ganador es " + actual.getNombre());
 		}
 	}
+
+	public void ejecutarTurnoFocas() {
+		Tablero tablero = this.partida.getTablero();
+		ArrayList<Jugador> jugadores = this.partida.getJugadores();
+
+		//ITERAMOS SOLO LAS FOCAS
+		for (Jugador j : jugadores) {
+			if (!(j instanceof Foca)) continue;
+			Foca foca = (Foca) j;
+
+			//TIRAMOS EL DADO DE LA FOCA
+			Dado dado = new Dado("Dado Foca", 1, 6, 1);
+			int pasos = dado.tirar(this.random);
+			gestorEventos.registrar("[Foca] " + foca.getNombre() + " avanza " + pasos + " casillas.");
+
+			//MOVEMOS LA FOCA
+			this.gestorJugador.jugadorSeMueve(foca, pasos, tablero);
+
+			// 3. COMPROBAMOS SI CAE EN LA MISMA CASILLA (SOLO MENSAJE)
+			for (Jugador otro : jugadores) {
+				if (otro instanceof Pinguino && otro.getPosicion() == foca.getPosicion()) {
+					this.gestorJugador.focaInteractua((Pinguino) otro, foca, tablero, this.gestorEventos);
+				}
+			}
+		}
+		
+		//ACTUALIZAMOS LA INTERFAZ TRAS EL MOVIMIENTO DE LAS FOCAS
+		actualizarEstadoTablero();
+	}
 	
 	public void procesarTurnoJugador(Jugador j) {
 		//TIRAMOS EL DADO
@@ -97,6 +132,8 @@ public class GestorPartida {
 				
 		//EJECUTAMOS LA CASILLA
 		this.gestorTablero.ejecutarCasilla(this.partida, j, casillaActual);
+		
+		// 4. MECÁNICA ELIMINADA: GUERRA DE PINGÜINOS
 				
 		//ACTUALIZAMOS LA INTERFAZ
 		actualizarEstadoTablero();
@@ -131,6 +168,10 @@ public class GestorPartida {
 	
 	public Partida getPartida() {
 		return this.partida;
+	}
+
+	public GestorEventos getGestorEventos() {
+		return this.gestorEventos;
 	}
 	
 	public void guardarPartida() {

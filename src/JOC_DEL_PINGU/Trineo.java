@@ -20,12 +20,15 @@ public class Trineo extends Casilla {
 			if (c instanceof Trineo) {
 				int casillasAvanzadas = i - j.getPosicion();
 				j.moverPosicion(i);
-				System.out.println("¡" + j.getNombre() + " se desliza por el trineo y avanza " + casillasAvanzadas + " casillas de golpe!");
+				if (p.getGestorEventos() != null) {
+					p.getGestorEventos().registrar("¡" + j.getNombre() + " usa un trineo! Avanza " + casillasAvanzadas + ".");
+				}
 				return; 
 			} 
 		}
 		
 		// SI TERMINA EL BUCLE Y NO HAY TRINEOS:
-		System.out.println("No hay más trineos en el resto del recorrido. " + j.getNombre() + " se baja aquí.");
-	}
+		if (p.getGestorEventos() != null) {
+			p.getGestorEventos().registrar(j.getNombre() + " se baja del trineo (fin de línea).");
+		}	}
 }

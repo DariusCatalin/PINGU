@@ -1,6 +1,7 @@
 package JOC_DEL_PINGU; // Adaptado a tu estructura de paquetes
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import javafx.animation.TranslateTransition;
 import javafx.event.ActionEvent;
@@ -46,33 +47,60 @@ public class PantallaPartida {
     private static final int COLUMNS = 5;
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
 
+    // Mapa para relacionar cada Jugador con su Circle en la UI
+    private HashMap<Jugador, Circle> fichas;
+    // Guardamos las posiciones previas para poder animar
+    private HashMap<Jugador, Integer> posicionesPrevias;
+
     @FXML
     private void initialize() {
-        eventos.setText("¡El juego ha comenzado!");
-
         gestorPartida = new GestorPartida();
+        fichas = new HashMap<>();
+        posicionesPrevias = new HashMap<>();
         
-        // 1. Crear jugadores usando tu constructor real (posicion, nombre, color)
+        // 1. Crear jugadores (Pinguinos)
         ArrayList<Jugador> jugadores = new ArrayList<>();
-        Pinguino p1 = new Pinguino(0, "Jugador1", "Azul");
+        Pinguino p1 = new Pinguino(0, "Pinguino1", "Azul");
+        Pinguino p2 = new Pinguino(0, "Pinguino2", "Rosa"); // Jugador 2
         
-        // Añadir el dado normal al inventario (máximo 3 daus permitidos según el PDF)
-        Dado dadoEstandar = new Dado("Dado Normal", 1, 6, 1);
-        p1.getInventario().getLista().add(dadoEstandar);
+        // Inventario P1
+        p1.getInventario().getLista().add(new Dado("Dado Normal", 1, 6, 1));
+        p1.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 3)); // Usar la clase concreta
+        
+        // Inventario P2
+        p2.getInventario().getLista().add(new Dado("Dado Normal", 1, 6, 1));
+        p2.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 1)); // Usar la clase concreta
         
         jugadores.add(p1);
+        jugadores.add(p2);
 
-        // 2. Crear un tablero (asumiendo que tienes un constructor vacío en Tablero)
+        // 2. Crear las focas
+        Foca f1 = new Foca(0, "Foca1", "Verde", false);
+        Foca f2 = new Foca(0, "Foca2", "Naranja", false);
+        jugadores.add(f1);
+        jugadores.add(f2);
+
+        // 3. Crear tablero e iniciar partida
         Tablero tableroModelo = new Tablero();
-        
-        // 3. Iniciar la partida usando tu método real
         gestorPartida.nuevaPartida(jugadores, tableroModelo);
 
-        // Mostrar info del tablero (requiere que Tablero tenga getCasillas() poblado)
-        if(gestorPartida.getPartida().getTablero().getCasillas() != null && 
-           !gestorPartida.getPartida().getTablero().getCasillas().isEmpty()) {
-            mostrarTiposDeCasillasEnTablero(gestorPartida.getPartida().getTablero());
+        // 4. Asociar cada jugador con su ficha visual (Circle)
+        fichas.put(p1, P1);
+        fichas.put(p2, P2);
+        fichas.put(f1, P3);
+        fichas.put(f2, P4);
+
+        // Posiciones iniciales
+        for (Jugador j : jugadores) {
+            posicionesPrevias.put(j, 0);
         }
+
+        eventos.setText("¡El juego ha comenzado! Turno de Pinguino1.");
+    }
+
+    /** Refresca el Text 'eventos' con el log del GestorEventos. */
+    private void actualizarEventos() {
+        eventos.setText(gestorPartida.getGestorEventos().getLog());
     }
 
     private void mostrarTiposDeCasillasEnTablero(Tablero t) {
@@ -130,64 +158,118 @@ public class PantallaPartida {
         // Obtenemos el jugador actual desde la partida
         Jugador pinguActual = gestorPartida.getPartida().getJugadorActual();
         
-        // Guardamos su posición vieja para la animación
-        int posPrevia = pinguActual.getPosicion();
+        // Guardamos posiciones previas de TODOS antes de mover
+        guardarPosicionesPrevias();
         
         // Buscamos si tiene un dado en el inventario
         Dado dadoAUsar = null;
-        if (!pinguActual.getInventario().getLista().isEmpty()) {
-            // Asumiendo que el primer objeto es un dado
+        if (pinguActual.getInventario() != null && !pinguActual.getInventario().getLista().isEmpty()) {
             dadoAUsar = (Dado) pinguActual.getInventario().getLista().get(0);
         }
         
-        // Tiramos el dado usando tu método (si dadoAUsar es null, tu método ya usa el estándar)
+        // Tiramos el dado del jugador
         int resultado = gestorPartida.tirarDado(pinguActual, dadoAUsar);
-        
-        // Guardamos la nueva posición que ha calculado tu lógica
-        int posNueva = pinguActual.getPosicion();
-
         dadoResultText.setText("Ha salido: " + resultado);
 
-        // Movemos la ficha visualmente usando las posiciones reales del modelo
-        moveP1(posPrevia, posNueva);
+        // Ejecutamos el turno de las focas (se mueven automáticamente)
+        gestorPartida.ejecutarTurnoFocas();
+
+        // 3. COMPROBAMOS SI ALGUIEN HA GANADO
+        gestorPartida.getPartida().getTablero().getCasillas().get(0); // Dummy touch to ensure tablero exists? No.
+        gestorPartida.getPartida().getGestorEventos().registrar("Fin de la ronda. Comprobando meta...");
+        
+        // Llamada clave para disparar la lógica de victoria
+        new GestorTablero().comprobarFinTurno(gestorPartida.getPartida());
+
+        // Actualizamos el log de eventos en la UI
+        actualizarEventos();
+
+        // Movemos TODAS las fichas visualmente
+        actualizarTodasLasFichas();
+
+        // 4. COMPROBAMOS SI LA PARTIDA HA TERMINADO
+        partidaCheckGameOver();
     }
 
-    // He adaptado el método del profe para que reciba la posición de origen y destino reales
-    private void moveP1(int oldPosition, int newPosition) {
+    /** Si la partida ha terminado, desactiva los botones de acción. */
+    private void partidaCheckGameOver() {
+        if (gestorPartida.getPartida().isFinalizada()) {
+            dado.setDisable(true);
+            rapido.setDisable(true);
+            lento.setDisable(true);
+            peces.setDisable(true);
+            nieve.setDisable(true);
+            
+            String ganador = gestorPartida.getPartida().getGanador() != null ? 
+                             gestorPartida.getPartida().getGanador().getNombre() : "Alguien";
+            
+            System.out.println("¡FIN DE JUEGO detectado en UI! Ganador: " + ganador);
+        }
+    }
+
+    /** Guarda las posiciones actuales de todos los jugadores antes de mover. */
+    private void guardarPosicionesPrevias() {
+        for (Jugador j : gestorPartida.getPartida().getJugadores()) {
+            posicionesPrevias.put(j, j.getPosicion());
+        }
+    }
+
+    /** Mueve las fichas UNA POR UNA en secuencia (primero tú, luego las focas). */
+    private void actualizarTodasLasFichas() {
         dado.setDisable(true);
 
-        // Posición vieja
+        // Creamos una cola con los movimientos pendientes
+        java.util.LinkedList<Runnable> cola = new java.util.LinkedList<>();
+
+        for (Jugador j : gestorPartida.getPartida().getJugadores()) {
+            Circle ficha = fichas.get(j);
+            if (ficha == null) continue;
+
+            int posVieja = posicionesPrevias.getOrDefault(j, 0);
+            int posNueva = j.getPosicion();
+
+            if (posVieja == posNueva) continue; // No se ha movido
+
+            // Añadimos cada movimiento como una tarea a la cola
+            cola.add(() -> moverFicha(ficha, posVieja, posNueva, cola));
+        }
+
+        // Al final de la cola, rehabilitamos el botón
+        cola.add(() -> dado.setDisable(false));
+
+        // Arrancamos la primera animación
+        if (!cola.isEmpty()) {
+            cola.poll().run();
+        }
+    }
+
+    /** Mueve una ficha con animación y al terminar lanza la siguiente de la cola. */
+    private void moverFicha(Circle ficha, int oldPosition, int newPosition, java.util.LinkedList<Runnable> cola) {
         int oldRow = oldPosition / COLUMNS;
         int oldCol = oldPosition % COLUMNS;
-
-        // Posición nueva
         int newRow = newPosition / COLUMNS;
         int newCol = newPosition % COLUMNS;
 
-        // Tamaño de celda aproximado
         double cellWidth = tablero.getWidth() / COLUMNS;
         double cellHeight = tablero.getHeight() / 10;
 
         double dx = (newCol - oldCol) * cellWidth;
         double dy = (newRow - oldRow) * cellHeight;
 
-        TranslateTransition slide = new TranslateTransition(Duration.millis(350), P1);
+        TranslateTransition slide = new TranslateTransition(Duration.millis(350), ficha);
         slide.setByX(dx);
         slide.setByY(dy);
 
         slide.setOnFinished(e -> {
-            // Reset translation
-            P1.setTranslateX(0);
-            P1.setTranslateY(0);
+            ficha.setTranslateX(0);
+            ficha.setTranslateY(0);
+            GridPane.setRowIndex(ficha, newRow);
+            GridPane.setColumnIndex(ficha, newCol);
 
-            // Set real position in grid
-            GridPane.setRowIndex(P1, newRow);
-            GridPane.setColumnIndex(P1, newCol);
-
-            dado.setDisable(false);
-            
-            // Aquí podrías comprobar si hay que ejecutar la casilla
-            // gestorPartida.getGestorTablero().ejecutarCasilla(...);
+            // Lanzamos la siguiente animación de la cola
+            if (!cola.isEmpty()) {
+                cola.poll().run();
+            }
         });
 
         slide.play();
