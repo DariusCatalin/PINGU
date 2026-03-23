@@ -25,7 +25,7 @@ public class PantallaPrincipal {
             
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("El Joc d'en Pingu - Partida");
+            stage.setTitle("El Juego del Pingüino - Partida");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,7 +48,7 @@ public class PantallaPrincipal {
             
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("El Joc d'en Pingu - Login");
+            stage.setTitle("El Juego del Pingüino - Login");
             stage.show();
         } catch (Exception e) {
             // Si el nombre es diferente, intentamos con el recurso correcto.
