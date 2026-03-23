@@ -58,25 +58,22 @@ public class PantallaPartida {
         fichas = new HashMap<>();
         posicionesPrevias = new HashMap<>();
         
-        // 1. Crear jugadores (Pinguinos)
+        // 1. Crear jugadores (Pinguino Humano)
         ArrayList<Jugador> jugadores = new ArrayList<>();
         Pinguino p1 = new Pinguino(0, "Pinguino1", "Azul");
-        Pinguino p2 = new Pinguino(0, "Pinguino2", "Rosa"); // Jugador 2
         
         // Inventario P1
         p1.getInventario().getLista().add(new Dado("Dado Normal", 1, 6, 1));
-        p1.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 3)); // Usar la clase concreta
-        
-        // Inventario P2
-        p2.getInventario().getLista().add(new Dado("Dado Normal", 1, 6, 1));
-        p2.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 1)); // Usar la clase concreta
+        p1.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 3));
         
         jugadores.add(p1);
-        jugadores.add(p2);
 
-        // 2. Crear las focas
+        // 2. Crear las focas (CPU)
+        Foca f_roja = new Foca(0, "Foca Roja", "Rojo", false); // Sustituimos el segundo pinguino
         Foca f1 = new Foca(0, "Foca1", "Verde", false);
         Foca f2 = new Foca(0, "Foca2", "Naranja", false);
+        
+        jugadores.add(f_roja);
         jugadores.add(f1);
         jugadores.add(f2);
 
@@ -86,7 +83,7 @@ public class PantallaPartida {
 
         // 4. Asociar cada jugador con su ficha visual (Circle)
         fichas.put(p1, P1);
-        fichas.put(p2, P2);
+        fichas.put(f_roja, P2);
         fichas.put(f1, P3);
         fichas.put(f2, P4);
 
