@@ -164,27 +164,24 @@ public class PantallaPartida {
             dadoAUsar = (Dado) pinguActual.getInventario().getLista().get(0);
         }
         
-        // Tiramos el dado del jugador
-        int resultado = gestorPartida.tirarDado(pinguActual, dadoAUsar);
-        dadoResultText.setText("Ha salido: " + resultado);
-
-        // Ejecutamos el turno de las focas (se mueven automáticamente)
-        gestorPartida.ejecutarTurnoFocas();
-
-        // 3. COMPROBAMOS SI ALGUIEN HA GANADO
-        gestorPartida.getPartida().getTablero().getCasillas().get(0); // Dummy touch to ensure tablero exists? No.
-        gestorPartida.getPartida().getGestorEventos().registrar("Fin de la ronda. Comprobando meta...");
+        // 1. Procesamos el turno del Pingüino (Tirar dado + Casilla + Fin Partida)
+        gestorPartida.procesarTurnoJugador(pinguActual, dadoAUsar);
         
-        // Llamada clave para disparar la lógica de victoria
-        new GestorTablero().comprobarFinTurno(gestorPartida.getPartida());
+        // Actualizamos el texto del dado (el resultado ya está en el log de eventos)
+        // dadoResultText.setText("..."); // El log ya dice cuánto ha salido
 
-        // Actualizamos el log de eventos en la UI
+        // 2. Ejecutamos el turno de las focas (Movimiento + Casilla + Fin Partida)
+        if (!gestorPartida.getPartida().isFinalizada()) {
+            gestorPartida.ejecutarTurnoFocas();
+        }
+
+        // 3. ACTUALIZAMOS EL LOG DE EVENTOS EN LA UI
         actualizarEventos();
 
-        // Movemos TODAS las fichas visualmente
+        // 4. MOVEMOS TODAS LAS FICHAS VISUALMENTE (EN SECUENCIA)
         actualizarTodasLasFichas();
 
-        // 4. COMPROBAMOS SI LA PARTIDA HA TERMINADO
+        // 5. BLOQUEO DEFINITIVO SI HA TERMINADO
         partidaCheckGameOver();
     }
 
@@ -231,8 +228,18 @@ public class PantallaPartida {
             cola.add(() -> moverFicha(ficha, posVieja, posNueva, cola));
         }
 
-        // Al final de la cola, rehabilitamos el botón
-        cola.add(() -> dado.setDisable(false));
+        // Al final de la cola, rehabilitamos los botones SOLO SI LA PARTIDA NO HA TERMINADO
+        cola.add(() -> {
+            if (!gestorPartida.getPartida().isFinalizada()) {
+                dado.setDisable(false);
+                rapido.setDisable(false);
+                lento.setDisable(false);
+                peces.setDisable(false);
+                nieve.setDisable(false);
+            } else {
+                System.out.println("Partida finalizada: botones bloqueados permanentemente.");
+            }
+        });
 
         // Arrancamos la primera animación
         if (!cola.isEmpty()) {

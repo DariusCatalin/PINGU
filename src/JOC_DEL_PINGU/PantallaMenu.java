@@ -74,19 +74,17 @@ public class PantallaMenu {
         // Comprobación básica (Aquí en el futuro llamarás a gestorBBDD para validar)
         if (username != null && !username.trim().isEmpty() && password != null && !password.trim().isEmpty()) {
             try {
-                // OJO: Esta ruta debe coincidir con dónde tienes guardado el diseño de la partida
-                // Si PantallaJuego.fxml y PantallaMenu.fxml están en la misma carpeta, quítale la barra inicial:
-                // getClass().getResource("PantallaJuego.fxml")
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
-                Parent pantallaJuegoRoot = loader.load();
-                Scene pantallaJuegoScene = new Scene(pantallaJuegoRoot);
+                // Redirigir al Menú Principal después del Login
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
+                Parent root = loader.load();
+                Scene scene = new Scene(root);
 
                 // Capturamos la ventana actual a través del botón que acabamos de pulsar
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                 
-                // Cambiamos a la pantalla de la partida
-                stage.setScene(pantallaJuegoScene);
-                stage.setTitle("Joc d'en Pingu - Partida Activa");
+                // Cambiamos a la pantalla principal
+                stage.setScene(scene);
+                stage.setTitle("El Joc d'en Pingu - Menú Principal");
                 stage.show();
                 
             } catch (Exception e) {
