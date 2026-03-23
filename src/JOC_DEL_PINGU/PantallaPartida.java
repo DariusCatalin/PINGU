@@ -11,6 +11,8 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.layout.GridPane;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.image.Image;
 import javafx.util.Duration;
 
 public class PantallaPartida {
@@ -81,13 +83,16 @@ public class PantallaPartida {
         Tablero tableroModelo = new Tablero();
         gestorPartida.nuevaPartida(jugadores, tableroModelo);
 
-        // 4. Asociar cada jugador con su ficha visual (Circle)
+        // 4. Asociar fichas visuales
         fichas.put(p1, P1);
         fichas.put(f_roja, P2);
         fichas.put(f1, P3);
         fichas.put(f2, P4);
 
-        // Posiciones iniciales
+        // 5. APLICAR SKINS (IMÁGENES PIXEL-ART)
+        aplicarSkins();
+
+        // 6. Posiciones iniciales
         for (Jugador j : jugadores) {
             posicionesPrevias.put(j, 0);
         }
@@ -171,7 +176,8 @@ public class PantallaPartida {
         
         try {
             // 1. Procesamos el turno del Pingüino (Tirar dado + Casilla + Fin Partida)
-            gestorPartida.procesarTurnoJugador(pinguActual, dadoAUsar);
+            int resultado = gestorPartida.procesarTurnoJugador(pinguActual, dadoAUsar);
+            dadoResultText.setText("Ha salido: " + resultado);
             
             // 2. Ejecutamos el turno de las focas (Movimiento + Casilla + Fin Partida)
             if (!gestorPartida.getPartida().isFinalizada()) {
@@ -287,21 +293,64 @@ public class PantallaPartida {
     }
 
     @FXML
-    private void handleRapido() { System.out.println("Dado Rápido."); }
+    private void handleRapido() { System.out.println("Usando Dado Rápido."); }
 
     @FXML
-    private void handleLento() { System.out.println("Dado Lento."); }
+    private void handleLento() { System.out.println("Usando Dado Lento."); }
 
     @FXML
-    private void handlePeces() { System.out.println("Usar Pez."); }
+    private void handlePeces() { System.out.println("Usando Pez."); }
 
     @FXML
     private void handleNieve() { 
-        System.out.println("Lanzar Boles de neu."); 
-        // En tu turno, puedes tirar bolas de nieve [cite: 206]
+        System.out.println("Lanzando bolas de nieve."); 
+        System.out.println("Throwing snowballs."); 
     }
 
     public void setGestorPartida(GestorPartida gestorPartida) {
         this.gestorPartida = gestorPartida;
+    }
+
+    /** Carga las imágenes de recursos y las aplica a los círculos. */
+    private void aplicarSkins() {
+        try {
+            // Rutas de los recursos (deben estar en src/resources/)
+            String pathPingu = "/resources/pinguino.png";
+            String pathRojo = "/resources/foca_roja.png";
+            String pathVerde = "/resources/foca_verde.png";
+            String pathAmarillo = "/resources/foca_amarilla.png";
+
+            // Aplicar skin al Pingüino
+            asignarImagenAFicha(P1, pathPingu);
+            // Aplicar skin a Foca Roja
+            asignarImagenAFicha(P2, pathRojo);
+            // Aplicar skin a Foca Verde
+            asignarImagenAFicha(P3, pathVerde);
+            // Aplicar skin a Foca Amarilla (cuando esté disponible)
+            asignarImagenAFicha(P4, pathAmarillo);
+
+        } catch (Exception e) {
+            System.err.println("Aviso: No se han podido cargar todas las skins. Usando colores por defecto.");
+        }
+    }
+
+    private void asignarImagenAFicha(Circle ficha, String path) {
+        try {
+            var resource = getClass().getResourceAsStream(path);
+            if (resource == null) {
+                String fileName = path.substring(path.lastIndexOf("/") + 1);
+                resource = getClass().getResourceAsStream("/" + fileName);
+            }
+            if (resource != null) {
+                Image img = new Image(resource);
+                ficha.setFill(new ImagePattern(img));
+                ficha.setStroke(null); 
+                System.out.println("Skin cargada: " + path);
+            } else {
+                System.err.println("Imagen no encontrada: " + path);
+            }
+        } catch (Exception e) {
+            System.err.println("Error al aplicar skin " + path + ": " + e.getMessage());
+        }
     }
 }

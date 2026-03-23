@@ -126,7 +126,7 @@ public class GestorPartida {
 		actualizarEstadoTablero();
 	}
 	
-	public void procesarTurnoJugador(Jugador j, Dado dadoOpcional) {
+	public int procesarTurnoJugador(Jugador j, Dado dadoOpcional) {
 		// 1. TIRAMOS EL DADO (Centralizado)
 		int resultadoDado = tirarDado(j, dadoOpcional);
 				
@@ -138,9 +138,11 @@ public class GestorPartida {
 		
 		// 4. COMPROBAMOS FIN DE PARTIDA TRAS TODA LA ACCIÓN
 		this.gestorTablero.comprobarFinTurno(this.partida);
-
+ 
 		// 5. ACTUALIZAMOS LA INTERFAZ LOG
 		actualizarEstadoTablero();
+		
+		return resultadoDado;
 	}
 	
 	public void actualizarEstadoTablero() {
