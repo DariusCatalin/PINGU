@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" spacing="30.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="JOC_DEL_PINGU.PantallaPrincipal"
+      stylesheets="@PantallaPrincipal.css"
+      styleClass="main-menu-bg">
+    <padding>
+        <Insets bottom="50.0" left="50.0" right="50.0" top="50.0" />
+    </padding>
+
+    <VBox alignment="CENTER" spacing="10.0" styleClass="title-container">
+        <Label text="EL JOC D'EN PINGU" styleClass="main-title">
+            <font>
+                <Font name="System Bold" size="48.0" />
+            </font>
+        </Label>
+        <Label text="Benvingut de nou, Pingüí!" styleClass="sub-title" />
+    </VBox>
+
+    <VBox alignment="CENTER" spacing="15.0" styleClass="button-container">
+        <Button fx:id="btnNuevaPartida" onAction="#handleNuevaPartida" text="NOVA PARTIDA" styleClass="menu-button, primary-btn" prefWidth="300" />
+        <Button fx:id="btnCargarPartida" onAction="#handleCargarPartida" text="CARREGAR PARTIDA" styleClass="menu-button" prefWidth="300" />
+        <Button fx:id="btnSalir" onAction="#handleCerrarSesion" text="TORNAR AL LOGIN" styleClass="menu-button, secondary-btn" prefWidth="300" />
+    </VBox>
+
+    <Label text="v1.0 - Darius &amp; Eloy Edition" styleClass="footer-text" />
+</VBox>

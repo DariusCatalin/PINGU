@@ -75,7 +75,7 @@ public class GestorPartida {
 		System.out.println("Turno de " + actual.getNombre());
 		
 		//PROCESAMOS SU TURNO
-		procesarTurnoJugador(actual);
+		procesarTurnoJugador(actual, null);
 		
 		//TURNO AUTOMÁTICO DE LAS FOCAS
 		ejecutarTurnoFocas();
@@ -119,23 +119,27 @@ public class GestorPartida {
 			}
 		}
 		
+		// Comprobamos si alguna foca llegó a la meta
+		this.gestorTablero.comprobarFinTurno(this.partida);
+
 		//ACTUALIZAMOS LA INTERFAZ TRAS EL MOVIMIENTO DE LAS FOCAS
 		actualizarEstadoTablero();
 	}
 	
-	public void procesarTurnoJugador(Jugador j) {
-		//TIRAMOS EL DADO
-		int resultadoDado = tirarDado(j, null);
+	public void procesarTurnoJugador(Jugador j, Dado dadoOpcional) {
+		// 1. TIRAMOS EL DADO (Centralizado)
+		int resultadoDado = tirarDado(j, dadoOpcional);
 				
-		//BUSCAR LA CASILLA A LA CUÁL HA CAÍDO
+		// 2. BUSCAR LA CASILLA A LA CUÁL HA CAÍDO TRAS EL MOVIMIENTO INICIAL
 		Casilla casillaActual = this.partida.getTablero().getCasillas().get(j.getPosicion());
 				
-		//EJECUTAMOS LA CASILLA
+		// 3. EJECUTAMOS LA ACCIÓN DE LA CASILLA (Sleds, Holes, Oso, etc.)
 		this.gestorTablero.ejecutarCasilla(this.partida, j, casillaActual);
 		
-		// 4. MECÁNICA ELIMINADA: GUERRA DE PINGÜINOS
-				
-		//ACTUALIZAMOS LA INTERFAZ
+		// 4. COMPROBAMOS FIN DE PARTIDA TRAS TODA LA ACCIÓN
+		this.gestorTablero.comprobarFinTurno(this.partida);
+
+		// 5. ACTUALIZAMOS LA INTERFAZ LOG
 		actualizarEstadoTablero();
 	}
 	
