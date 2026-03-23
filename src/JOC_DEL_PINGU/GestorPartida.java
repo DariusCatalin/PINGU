@@ -152,18 +152,22 @@ public class GestorPartida {
 	}
 	
 	public void siguienteTurno() {
-		//OBTENER EL NÚMERO DE TURNO DEL JUGADOR QUE ACABA DE JUGAR
 		int numTurnoActual = this.partida.getIndiceJugadorActual();
+		ArrayList<Jugador> jugadores = this.partida.getJugadores();
+		int total = jugadores.size();
 		
-		//OBTENEMOS LA CANTIDAD DE JUGADORES QUE HAY EN LA PARTIDA
-		int totalJugadores = this.partida.getJugadores().size();
+		int siguienteIndice = (numTurnoActual + 1) % total;
 		
-		//CALCULAMOS A QUIEN LE TOCARÁ AHORA
-		int siguiente = (numTurnoActual + 1) % totalJugadores;
+		// Buscamos el siguiente Pinguino (humano)
+		// Si solo hay uno, volveremos a él.
+		int intentos = 0;
+		while (!(jugadores.get(siguienteIndice) instanceof Pinguino) && intentos < total) {
+			siguienteIndice = (siguienteIndice + 1) % total;
+			intentos++;
+		}
 		
-		//ACTUALIZAMOS
-		this.partida.setJugadorActual(siguiente);
-		System.out.println("El siguiente en jugar es el jugador número " + siguiente);
+		this.partida.setJugadorActual(siguienteIndice);
+		System.out.println("Siguiente turno: " + jugadores.get(siguienteIndice).getNombre());
 	}
 	
 	public Partida getPartida() {
