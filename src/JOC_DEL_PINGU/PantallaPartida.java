@@ -158,31 +158,38 @@ public class PantallaPartida {
         // Guardamos posiciones previas de TODOS antes de mover
         guardarPosicionesPrevias();
         
-        // Buscamos si tiene un dado en el inventario
+        // Buscamos si tiene un dado en el inventario (Verificando el tipo para evitar errores)
         Dado dadoAUsar = null;
-        if (pinguActual.getInventario() != null && !pinguActual.getInventario().getLista().isEmpty()) {
-            dadoAUsar = (Dado) pinguActual.getInventario().getLista().get(0);
+        if (pinguActual.getInventario() != null) {
+            for (Item item : pinguActual.getInventario().getLista()) {
+                if (item instanceof Dado) {
+                    dadoAUsar = (Dado) item;
+                    break;
+                }
+            }
         }
         
-        // 1. Procesamos el turno del Pingüino (Tirar dado + Casilla + Fin Partida)
-        gestorPartida.procesarTurnoJugador(pinguActual, dadoAUsar);
-        
-        // Actualizamos el texto del dado (el resultado ya está en el log de eventos)
-        // dadoResultText.setText("..."); // El log ya dice cuánto ha salido
+        try {
+            // 1. Procesamos el turno del Pingüino (Tirar dado + Casilla + Fin Partida)
+            gestorPartida.procesarTurnoJugador(pinguActual, dadoAUsar);
+            
+            // 2. Ejecutamos el turno de las focas (Movimiento + Casilla + Fin Partida)
+            if (!gestorPartida.getPartida().isFinalizada()) {
+                gestorPartida.ejecutarTurnoFocas();
+            }
 
-        // 2. Ejecutamos el turno de las focas (Movimiento + Casilla + Fin Partida)
-        if (!gestorPartida.getPartida().isFinalizada()) {
-            gestorPartida.ejecutarTurnoFocas();
+            // 3. ACTUALIZAMOS EL LOG DE EVENTOS EN LA UI
+            actualizarEventos();
+
+            // 4. MOVEMOS TODAS LAS FICHAS VISUALMENTE (EN SECUENCIA)
+            actualizarTodasLasFichas();
+
+            // 5. BLOQUEO DEFINITIVO SI HA TERMINADO
+            partidaCheckGameOver();
+        } catch (Exception e) {
+            System.err.println("¡CRASH en handleDado!");
+            e.printStackTrace();
         }
-
-        // 3. ACTUALIZAMOS EL LOG DE EVENTOS EN LA UI
-        actualizarEventos();
-
-        // 4. MOVEMOS TODAS LAS FICHAS VISUALMENTE (EN SECUENCIA)
-        actualizarTodasLasFichas();
-
-        // 5. BLOQUEO DEFINITIVO SI HA TERMINADO
-        partidaCheckGameOver();
     }
 
     /** Si la partida ha terminado, desactiva los botones de acción. */

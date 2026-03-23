@@ -16,19 +16,19 @@
     </padding>
 
     <VBox alignment="CENTER" spacing="10.0" styleClass="title-container">
-        <Label text="EL JOC D'EN PINGU" styleClass="main-title">
+        <Label text="EL JUEGO DEL PINGÜINO" styleClass="main-title">
             <font>
                 <Font name="System Bold" size="48.0" />
             </font>
         </Label>
-        <Label text="Benvingut de nou, Pingüí!" styleClass="sub-title" />
+        <Label text="¡Bienvenido de nuevo, Pingüino!" styleClass="sub-title" />
     </VBox>
 
     <VBox alignment="CENTER" spacing="15.0" styleClass="button-container">
-        <Button fx:id="btnNuevaPartida" onAction="#handleNuevaPartida" text="NOVA PARTIDA" styleClass="menu-button, primary-btn" prefWidth="300" />
-        <Button fx:id="btnCargarPartida" onAction="#handleCargarPartida" text="CARREGAR PARTIDA" styleClass="menu-button" prefWidth="300" />
-        <Button fx:id="btnSalir" onAction="#handleCerrarSesion" text="TORNAR AL LOGIN" styleClass="menu-button, secondary-btn" prefWidth="300" />
+        <Button fx:id="btnNuevaPartida" onAction="#handleNuevaPartida" text="NUEVA PARTIDA" styleClass="menu-button, primary-btn" prefWidth="300" />
+        <Button fx:id="btnCargarPartida" onAction="#handleCargarPartida" text="CARGAR PARTIDA" styleClass="menu-button" prefWidth="300" />
+        <Button fx:id="btnSalir" onAction="#handleCerrarSesion" text="VOLVER AL LOGIN" styleClass="menu-button, secondary-btn" prefWidth="300" />
     </VBox>
 
-    <Label text="v1.0 - Darius &amp; Eloy Edition" styleClass="footer-text" />
+    <Label text="v1.0 - Darius, Eloy &amp; Unai Edition" styleClass="footer-text" />
 </VBox>

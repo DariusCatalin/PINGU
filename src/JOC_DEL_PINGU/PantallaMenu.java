@@ -84,7 +84,7 @@ public class PantallaMenu {
                 
                 // Cambiamos a la pantalla principal
                 stage.setScene(scene);
-                stage.setTitle("El Joc d'en Pingu - Menú Principal");
+                stage.setTitle("El Juego del Pingüino - Menú Principal");
                 stage.show();
                 
             } catch (Exception e) {

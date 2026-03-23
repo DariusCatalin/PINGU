@@ -29,14 +29,14 @@
     <top>
         <MenuBar>
             <menus>
-                <Menu mnemonicParsing="false" text="File">
+                <Menu mnemonicParsing="false" text="Archivo">
                     <items>
-                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="New" onAction="#handleNewGame"/>
+                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="Nuevo" onAction="#handleNewGame"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Save" onAction="#handleSaveGame"/>
-                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Load" onAction="#handleLoadGame"/>
+                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" onAction="#handleSaveGame"/>
+                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" onAction="#handleLoadGame"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Quit" onAction="#handleQuitGame"/>
+                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" onAction="#handleQuitGame"/>
                     </items>
                 </Menu>
             </menus>
@@ -73,8 +73,8 @@
 
                 <children>
                     <!-- Esquinas -->
-                    <Text text="Start" styleClass="cell-title" />
-                    <Text text="Finish" styleClass="cell-title"
+                    <Text text="Inicio" styleClass="cell-title" />
+                    <Text text="Meta" styleClass="cell-title"
                           GridPane.columnIndex="4" GridPane.rowIndex="9" GridPane.halignment="RIGHT" />
 
                     <!-- Jugadores: fx:id para Controller + id para CSS -->
