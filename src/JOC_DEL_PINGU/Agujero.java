@@ -17,13 +17,17 @@ public class Agujero extends Casilla {
 			if (c instanceof Agujero) {
 				int casillasAtras = j.getPosicion() - i;
 				j.moverPosicion(i);
-				System.out.println("¡" + j.getNombre() + " se ha caído por un agujero y ha retrocedido " + casillasAtras + " casillas de golpe!");
-				return; // Salimos de la función al encontrar el agujero
+				if (p.getGestorEventos() != null) {
+					p.getGestorEventos().registrar("¡" + j.getNombre() + " cae al agujero! Retrocede " + casillasAtras + ".");
+				}
+				return;
 			} 
 		}
 		
 		// SI TERMINA EL BUCLE Y NO HA ENCONTRADO NINGÚN AGUJERO:
-		System.out.println("No hay más agujeros detrás de " + j.getNombre() + ", así que resbala hasta la casilla inicial.");
-		j.moverPosicion(0); // El inicio real es el índice 0, no el 1
+		if (p.getGestorEventos() != null) {
+			p.getGestorEventos().registrar(j.getNombre() + " resbala hasta la casilla inicial.");
+		}
+		j.moverPosicion(0); 
 	}
 }

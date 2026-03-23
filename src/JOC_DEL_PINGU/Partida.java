@@ -10,6 +10,7 @@ public class Partida {
 	private int jugadorActual;
 	private boolean finalizada;
 	private Jugador ganador;
+	private GestorEventos gestorEventos;
 	//CONSTRUCTOR
 	public Partida() {
 		this.tablero = new Tablero();
@@ -62,5 +63,11 @@ public class Partida {
 	//GETTER INDICE JUGADORACTUAL
 	public int getIndiceJugadorActual() {
 		return this.jugadorActual;
+	}
+	public GestorEventos getGestorEventos() {
+		return gestorEventos;
+	}
+	public void setGestorEventos(GestorEventos gestorEventos) {
+		this.gestorEventos = gestorEventos;
 	}
 }

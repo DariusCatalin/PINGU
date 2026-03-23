@@ -25,19 +25,22 @@ public class CasillaFragil extends Casilla {
 		//VOLVER A LA CASILLA DE INICIO
 		if (cantidadObjetos > 5) {
 			j.moverPosicion(0);
-			System.out.println(j.getNombre() + " lleva muchos objetos encima, "
-					+ "por lo que el suelo no ha podido aguantar y ha "
-					+ "caído hasta la casilla de inicio");
+			if (p.getGestorEventos() != null) {
+				p.getGestorEventos().registrar(j.getNombre() + " lleva muchos objetos. ¡Cae al inicio!");
+			}
 			
 		//PERDER UN TURNO	
 		} else if (cantidadObjetos > 0 && cantidadObjetos <= 5) {
 			j.aplicarPenalizacion(); 
-			System.out.println("Por suerte, el suelo no se ha derrumbado, pero... " 
-					+ j.getNombre() + " pierde el próximo turno.");
+			if (p.getGestorEventos() != null) {
+				p.getGestorEventos().registrar(j.getNombre() + " pisa hielo frágil. Pierde un turno.");
+			}
 		//NADA	
 			
 		} else {
-			System.out.println("¡" + j.getNombre() +" se ha salvado! Menos mal que no llevaba objetos encima...");
+			if (p.getGestorEventos() != null) {
+				p.getGestorEventos().registrar(j.getNombre() + " se salva del hielo frágil (sin objetos).");
+			}
 		}
 	}
 }

@@ -33,7 +33,7 @@ public class PantallaMenu {
 
     @FXML
     private void initialize() {
-        System.out.println("¡PantallaMenu inicializada, lista para jugar tt!");
+        System.out.println("¡PantallaMenu inicializada, lista para jugar!");
     }
 
     // ==========================================
@@ -57,7 +57,7 @@ public class PantallaMenu {
 
     @FXML
     private void handleQuitGame() {
-        System.out.println("Saliendo del juego. ¡Nos vemos tt!");
+        System.out.println("Saliendo del juego. ¡Nos vemos!");
         System.exit(0);
     }
     

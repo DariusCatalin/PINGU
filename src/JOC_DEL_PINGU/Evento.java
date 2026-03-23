@@ -24,43 +24,43 @@ public class Evento extends Casilla {
 	
 	@Override
 	public void realizarAccion(Partida p, Jugador j) {
+		GestorEventos ge = p.getGestorEventos();
 		
 		//GENERAR NÚMERO RANDOM PARA LA PROBABILIDAD
-		
 		int i = (int) (Math.random() * 20) + 1;
 		
-		//DADO LENTO
+		// 1-7: DADO LENTO (Obtener dado especial 1-3)
 		if (i <= 7) {
-			System.out.println("¡" + j.getNombre() + eventos[0]);
+			if (ge != null) ge.registrar("¡" + j.getNombre() + " encuentra un dado lento!");
 			j.getInventario().getLista().add(new Dado("Dado Lento", 1, 3, 1));
 			
-		//BOLA DE NIEVE
-		} else if (i >= 8 && i <= 12) {
+		// 8-12: BOLA DE NIEVE (1-3 bolas)
+		} else if (i <= 12) {
 			int cantidadBolas = (int) (Math.random() * 3) + 1;
-			System.out.println(j.getNombre() + eventos[1] + " Cantidad conseguida: " + cantidadBolas);
-			j.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", cantidadBolas));
+			if (ge != null) ge.registrar(j.getNombre() + " recoge " + cantidadBolas + " bolas de nieve.");
+			for(int n=0; n<cantidadBolas; n++) {
+                j.getInventario().getLista().add(new BolaDeNieve("Bola de nieve", 1));
+            }
 			
-		//PEZ
-		} else if (i >= 13 && i <= 15) {
-			System.out.println("¡" + j.getNombre() + eventos[2]);
+		// 13-15: PEZ (Obtener un pez)
+		} else if (i <= 15) {
+			if (ge != null) ge.registrar("¡" + j.getNombre() + " ha pescado un pez!");
 			j.getInventario().getLista().add(new Pez("Pez", 1));
 			
-		//DADO RÁPIDO	
-		} else if (i == 16 || i == 17) {
-			System.out.println("¡" + j.getNombre() + eventos[3]);
-			j.getInventario().getLista().add(new Dado("Dado Rápido", 1, 6, 4));
+		// 16-17: DADO RÁPIDO (Avanza 5-10 casillas, prob baja)
+		} else if (i <= 17) {
+			if (ge != null) ge.registrar("¡" + j.getNombre() + " tiene mucha suerte! ¡DADO RÁPIDO!");
+			j.getInventario().getLista().add(new Dado("Dado Rápido", 5, 10, 1)); // Según PDF: avança 5-10 caselles
 			
-		//PERDER TURNO
-		} else if (i == 18 || i == 19) {
-			System.out.println(j.getNombre() + eventos[4]);
-			
+		// 18-19: PERDER TURNO
+		} else if (i <= 19) {
+			if (ge != null) ge.registrar(j.getNombre() + " pierde un turno por el mal tiempo.");
 			j.aplicarPenalizacion(); 
 			
-		//PERDER OBJETO
+		// 20: PERDER OBJETO ALEATORIO
 		} else {
-			System.out.println(j.getNombre() + eventos[5]);
+			if (ge != null) ge.registrar(j.getNombre() + " ha perdido un objeto por el camino.");
 			j.perderObjetoAleatorio();
 		}
-		
 	}
 }

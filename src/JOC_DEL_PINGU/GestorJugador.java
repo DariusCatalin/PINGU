@@ -64,24 +64,53 @@ public class GestorJugador {
         // Aquí se podría delegar la lógica a una Casilla de Evento
     }
 
-    public void pingüinoGuerra(Pinguino p1, Pinguino p2) {
-        System.out.println("¡Ha empezado una guerra entre " + p1.getNombre() + " y " + p2.getNombre() + "!");
-        // Utilizamos el método propio de Pinguino
-        p1.gestionarBatalla(p2);
+    public void pingüinoGuerra(Pinguino p1, Pinguino p2, GestorEventos ge) {
+        // MECÁNICA ELIMINADA (Nivel IMPOSSIBLE)
+        ge.registrar(p1.getNombre() + " y " + p2.getNombre() + " se saludan amigablemente.");
     }
 
-    public void focaInteractua(Pinguino p, Foca f) {
-        // Comprobamos si la Foca está sobornada
-        if (f.isSoborno()) {
-            System.out.println("La foca " + f.getNombre() + " está sobornada y amigable. Decide ignorar a " + p.getNombre());
-        } else {
-            // Interacción aleatoria agresiva
-            System.out.println("¡Cuidado! La foca " + f.getNombre() + " no está sobornada y ataca a " + p.getNombre() + "!");
-            if (Math.random() > 0.5) {
-                f.aplastarJugador(p);
-            } else {
-                f.golpearJugador(p);
+    private int contarItem(Jugador j, String nombre) {
+        int count = 0;
+        if (j.getInventario() != null) {
+            for (Item item : j.getInventario().getLista()) {
+                if (item.getNombre().equalsIgnoreCase(nombre)) {
+                    count++;
+                }
             }
         }
+        return count;
+    }
+
+    private void vaciarItem(Jugador j, String nombre) {
+        if (j.getInventario() != null) {
+            j.getInventario().getLista().removeIf(item -> item.getNombre().equalsIgnoreCase(nombre));
+        }
+    }
+
+    private void retrocederPinguino(Jugador j, int casillas) {
+        int nuevaPos = j.getPosicion() - casillas;
+        if (nuevaPos < 0) nuevaPos = 0;
+        j.setPosicion(nuevaPos);
+    }
+
+    public void focaInteractua(Pinguino p, Foca f, Tablero t, GestorEventos ge) {
+        // MECÁNICA ELIMINADA (Nivel IMPOSSIBLE)
+        ge.registrar("La foca " + f.getNombre() + " pasa de largo.");
+    }
+
+    public void focaRebasaJugador(Pinguino p, Foca f, GestorEventos ge) {
+        // MECÁNICA ELIMINADA (Nivel IMPOSSIBLE)
+    }
+
+    private int buscarAgujeroAnterior(int posicionActual, Tablero t) {
+        if (t == null || t.getCasillas() == null) return 0;
+        
+        // Buscamos hacia atrás desde la casilla anterior a la actual
+        for (int i = posicionActual - 1; i >= 0; i--) {
+            if (t.getCasillas().get(i) instanceof Agujero) {
+                return i;
+            }
+        }
+        return 0; // Si no hay agujeros previos, vuelve al inicio
     }
 }
