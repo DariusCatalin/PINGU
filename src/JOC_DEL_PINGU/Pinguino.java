@@ -15,9 +15,11 @@ public class Pinguino extends Jugador {
 		System.out.println(this.getNombre() + " estira la aleta y usa el objeto: " + i.getNombre());
 	}
 	
-	public void añadirItem(Item i) { // Añade item al inventario heredado de Jugador
-		this.getInventario().getLista().add(i);
-		System.out.println("Objeto " + i.getNombre() + " guardado en la mochila de " + this.getNombre());
+	public void añadirItem(Item i) { 
+		boolean añadido = this.getInventario().añadirItem(i);
+		if (añadido) {
+			System.out.println("Objeto " + i.getNombre() + " guardado en la mochila de " + this.getNombre());
+		}
 	}
 	
 	public void quitarItem(Item i) { // Quita item del inventario heredado

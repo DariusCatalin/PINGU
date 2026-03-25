@@ -12,6 +12,7 @@ public class GestorEventos {
     private static final int MAX_LINEAS = 8; // Cuántas líneas se muestran en la tarjeta de eventos
 
     private final ArrayList<String> log;
+    private int turnoActual = 0;
 
     public GestorEventos() {
         this.log = new ArrayList<>();
@@ -19,8 +20,9 @@ public class GestorEventos {
 
     /** Añade un mensaje al log (y lo sigue mostrando por consola para debug). */
     public void registrar(String mensaje) {
-        System.out.println("[EVENTO] " + mensaje);
-        log.add(mensaje);
+        String mensajeConTurno = turnoActual + "\t" + mensaje;
+        System.out.println("[EVENTO] " + mensajeConTurno);
+        log.add(mensajeConTurno);
         // Mantenemos solo las últimas MAX_LINEAS entradas
         if (log.size() > MAX_LINEAS) {
             log.remove(0);
@@ -43,5 +45,9 @@ public class GestorEventos {
     /** Vacía el log (útil al iniciar una nueva partida). */
     public void limpiar() {
         log.clear();
+    }
+
+    public void setTurnoActual(int turno) {
+        this.turnoActual = turno;
     }
 }

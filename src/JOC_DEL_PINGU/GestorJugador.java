@@ -102,15 +102,5 @@ public class GestorJugador {
         // MECÁNICA ELIMINADA (Nivel IMPOSSIBLE)
     }
 
-    private int buscarAgujeroAnterior(int posicionActual, Tablero t) {
-        if (t == null || t.getCasillas() == null) return 0;
-        
-        // Buscamos hacia atrás desde la casilla anterior a la actual
-        for (int i = posicionActual - 1; i >= 0; i--) {
-            if (t.getCasillas().get(i) instanceof Agujero) {
-                return i;
-            }
-        }
-        return 0; // Si no hay agujeros previos, vuelve al inicio
     }
-}
+

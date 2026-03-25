@@ -55,6 +55,8 @@ public class GestorPartida {
 		if (dadoOpcional != null) {
 			dadoAUsar = dadoOpcional;
 			System.out.println(j.getNombre() + " ha usado un dado especial: " + dadoAUsar.getNombre());
+			// CONSUMIR DADO
+			j.getInventario().getLista().remove(dadoOpcional);
 		} else {
 			dadoAUsar = new Dado("Dado Estándar", 1, 6, 1);
 			System.out.println(j.getNombre() + " usa un dado normal.");
@@ -103,6 +105,12 @@ public class GestorPartida {
 			if (!(j instanceof Foca)) continue;
 			Foca foca = (Foca) j;
 
+			// COMPROBAR PENALIZACIÓN
+			if (foca.estaPenalizado()) {
+				gestorEventos.registrar(foca.getNombre() + " no se puede mover este turno.");
+				continue;
+			}
+
 			//TIRAMOS EL DADO DE LA FOCA
 			Dado dado = new Dado("Dado Foca", 1, 6, 1);
 			int pasos = dado.tirar(this.random);
@@ -110,6 +118,14 @@ public class GestorPartida {
 
 			//MOVEMOS LA FOCA
 			this.gestorJugador.jugadorSeMueve(foca, pasos, tablero);
+
+			// EJECUTAR EFECTO DE LA CASILLA (MODIFICADO PARA EFECTOS ENCADENADOS)
+			int posActual;
+			do {
+				posActual = foca.getPosicion();
+				Casilla casillaActual = tablero.getCasillas().get(posActual);
+				this.gestorTablero.ejecutarCasilla(this.partida, foca, casillaActual);
+			} while (foca.getPosicion() != posActual);
 
 			// 3. COMPROBAMOS SI CAE EN LA MISMA CASILLA (SOLO MENSAJE)
 			for (Jugador otro : jugadores) {
@@ -127,17 +143,29 @@ public class GestorPartida {
 	}
 	
 	public int procesarTurnoJugador(Jugador j, Dado dadoOpcional) {
+		// INCREMENTAR TURNO Y SINCRONIZAR CON EL GESTOR DE EVENTOS
+		this.partida.setTurnos(this.partida.getTurnos() + 1);
+		this.gestorEventos.setTurnoActual(this.partida.getTurnos());
+
+		// COMPROBAR PENALIZACIÓN
+		if (j.estaPenalizado()) {
+			gestorEventos.registrar(j.getNombre() + " no se puede mover este turno por penalización.");
+			return 0;
+		}
+
 		// 1. TIRAMOS EL DADO (Centralizado)
 		int resultadoDado = tirarDado(j, dadoOpcional);
 				
-		// 2. BUSCAR LA CASILLA A LA CUÁL HA CAÍDO TRAS EL MOVIMIENTO INICIAL
-		Casilla casillaActual = this.partida.getTablero().getCasillas().get(j.getPosicion());
-				
-		// 3. EJECUTAMOS LA ACCIÓN DE LA CASILLA (Sleds, Holes, Oso, etc.)
-		this.gestorTablero.ejecutarCasilla(this.partida, j, casillaActual);
-		
-		// 4. COMPROBAMOS FIN DE PARTIDA TRAS TODA LA ACCIÓN
-		this.gestorTablero.comprobarFinTurno(this.partida);
+		// 2, 3, 4. EJECUTAMOS LA ACCIÓN DE LA CASILLA (CON BUCLE PARA EFECTOS ENCADENADOS)
+		int posActual;
+		do {
+			posActual = j.getPosicion();
+			Casilla casillaActual = this.partida.getTablero().getCasillas().get(posActual);
+			this.gestorTablero.ejecutarCasilla(this.partida, j, casillaActual);
+			
+			// Comprobamos fin de partida en cada paso del encadenamiento
+			this.gestorTablero.comprobarFinTurno(this.partida);
+		} while (j.getPosicion() != posActual && !this.partida.isFinalizada());
  
 		// 5. ACTUALIZAMOS LA INTERFAZ LOG
 		actualizarEstadoTablero();
@@ -146,14 +174,10 @@ public class GestorPartida {
 	}
 	
 	public void actualizarEstadoTablero() {
-		//OBTENER TABLERO Y JUGADORES
-		Tablero tablero = this.partida.getTablero();
+		// ACTUALIZADO: Solo imprimimos un resumen para no saturar la consola
 		ArrayList<Jugador> jugadores = this.partida.getJugadores();
-		
-		//ACTUALIZAMOS POSICIONES DE LOS JUGADORES
 		for (Jugador j : jugadores) {
-			int posicion = j.getPosicion();
-			System.out.println("Sincronizando: " + j.getNombre() + " está en la casilla " + posicion);
+			System.out.println("[SINCRO] " + j.getNombre() + " en casilla " + j.getPosicion());
 		}
 	}
 	
