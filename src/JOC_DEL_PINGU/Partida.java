@@ -2,154 +2,208 @@ package JOC_DEL_PINGU;
 
 import java.util.ArrayList;
 
+
 public class Partida {
-	// ATRIBUTOS
-	private Tablero tablero;
-	private ArrayList<Jugador> jugadores;
-	private int turnos;
-	private int jugadorActual;
-	private boolean finalizada;
-	private Jugador ganador;
-	private GestorEventos gestorEventos;
+    
+    // ==================== ATRIBUTS ====================
+    private Tablero tablero;
+    private ArrayList<Jugador> jugadores;
+    private int turnos;
+    private int jugadorActual;
+    private boolean finalizada;
+    private Jugador ganador;
+    private int maxJugadores; // Per limitar jugadors
+    private boolean modoGuerraActivado; // Només per nivell IMPOSSIBLE
+    
+    // ==================== CONSTRUCTOR ====================
+    public Partida() {
+        this.tablero = new Tablero();
+        this.jugadores = new ArrayList<Jugador>();
+        this.turnos = 0;
+        this.jugadorActual = 0;
+        this.finalizada = false;
+        this.ganador = null;
+        this.maxJugadores = 4; // Màxim 4 jugadors (ampliable per CPU)
+        this.modoGuerraActivado = false; // Desactivat per defecte 
+    }
+    
+    // ==================== MÈTODES DE GESTIÓ DE JUGADORS ====================
+    
+   
+    public boolean agregarJugador(Jugador jugador) {
+        if (jugadores.size() >= maxJugadores) {
+            System.out.println("Màxim de jugadors assolit (" + maxJugadores + ")");
+            return false;
+        }
+        if (jugador == null) {
+            System.out.println("El jugador no pot ser null");
+            return false;
+        }
+        jugadores.add(jugador);
+        System.out.println("Jugador " + jugador.getNombre() + " afegit. Total: " + jugadores.size());
+        return true;
+    }
+    
+ 
+    public boolean puedeIniciarPartida() {
+        return jugadores.size() >= 2;
+    }
+    
+    // ==================== MÈTODES DE TORN ====================
+    
+ 
+    public void pasarTurno() {
+        int intentos = 0;
+        int totalJugadores = jugadores.size();
+        
+        do {
+            jugadorActual++;
+            intentos++;
+            
+            // Si hem donat la volta completa, incrementem el comptador de torns
+            
+            if (jugadorActual >= totalJugadores) {
+                jugadorActual = 0;
+                turnos++;
+            }
+            
+            // Verifiquem si el jugador actual està penalitzat
+            
+            Jugador jActual = jugadores.get(jugadorActual);
+            if (jActual.estaPenalizado()) {
+                jActual.decrementarPenalizacion();
+                System.out.println(jActual.getNombre() + " perd aquest torn per penalització.");
+            }
+            
+            // Prevenció de bucle infinit (seguretat)
+            
+            if (intentos > totalJugadores * 2) {
+                System.out.println("Error: Tots els jugadors estan penalitzats indefinidament.");
+                break;
+            }
+            
+        } while (jugadores.get(jugadorActual).estaPenalizado());
+    }
+    
+    // ==================== MÈTODES DE COL·LISIÓ ====================
+    
+   
+    public void verificarColisiones(Jugador jugadorMovido) {
+        if (!modoGuerraActivado) {
+            return; // No aplicar guerra en nivell intermig
+        }
+        
+        // No hi ha guerres a la sortida (0) ni a la meta (49+)
+        if (jugadorMovido.getPosicion() == 0 || jugadorMovido.getPosicion() >= 49) {
+            return;
+        }
 
-	// CONSTRUCTOR
-	public Partida() {
-		this.tablero = new Tablero();
-		this.jugadores = new ArrayList<Jugador>();
-		this.turnos = 0; // Empezamos en la ronda 0
-		this.jugadorActual = 0; // Empieza el jugador en la posición 0 del ArrayList
-		this.finalizada = false;
-		this.ganador = null;
-	}
+        for (Jugador otro : jugadores) {
+            if (otro != jugadorMovido && otro.getPosicion() == jugadorMovido.getPosicion()) {
+                resolverGuerra(jugadorMovido, otro);
+            }
+        }
+    }
+    
+   
+    private void resolverGuerra(Jugador j1, Jugador j2) {
+        System.out.println("¡GUERRA! " + j1.getNombre() + " vs " + j2.getNombre());
 
-	// MÉTODOS DE LÓGICA DE LA PARTIDA -------------------------
+        int bolasJ1 = j1.contarBolas();
+        int bolasJ2 = j2.contarBolas();
 
-	// Método para pasar al siguiente jugador
-	
-	public void pasarTurno() {
-		this.jugadorActual++;
-		
-		// Si hemos llegado al último jugador, volvemos al primero y sumamos una ronda (turno)
-		
-		if (this.jugadorActual >= this.jugadores.size()) {
-			this.jugadorActual = 0;
-			this.turnos++; 
-		}
-	}
+        // Tots dos gasten les seves boles
+        
+        j1.vaciarBolas();
+        j2.vaciarBolas();
 
-	// Método que comprueba si dos jugadores están en la misma casilla (Guerra de Jugadores)
-	
-	public void verificarColisiones(Jugador jugadorMovido) {
-		
-		// No hay peleas en la casilla de salida (0) ni en la meta (49)
-		
-		if (jugadorMovido.getPosicion() == 0 || jugadorMovido.getPosicion() >= 49) {
-			return;
-		}
-
-		for (Jugador otro : jugadores) {
-			
-			// Si no es él mismo y están en la misma posición
-			
-			if (otro != jugadorMovido && otro.getPosicion() == jugadorMovido.getPosicion()) {
-				
-				if (gestorEventos != null) {
-					gestorEventos.registrar("¡GUERRA! " + jugadorMovido.getNombre() + " y " + otro.getNombre() + " chocan en la casilla " + jugadorMovido.getPosicion());
-				}
-
-				int bolasJ1 = contarBolas(jugadorMovido);
-				int bolasJ2 = contarBolas(otro);
-
-				// Ambos gastan todas sus bolas de nieve
-				gastarBolas(jugadorMovido);
-				gastarBolas(otro);
-
-				// Gana el jugador que se acaba de mover (jugadorMovido)
-				if (bolasJ1 > bolasJ2) {
-					int diferencia = bolasJ1 - bolasJ2;
-					otro.moverPosicion(Math.max(0, otro.getPosicion() - diferencia)); // Retrocede la diferencia (sin bajar de 0)
-					if (gestorEventos != null) {
-						gestorEventos.registrar(jugadorMovido.getNombre() + " gana. " + otro.getNombre() + " retrocede " + diferencia + " casillas.");
-					}
-				// Gana el jugador que ya estaba en la casilla (otro)
-				} else if (bolasJ2 > bolasJ1) {
-					int diferencia = bolasJ2 - bolasJ1;
-					jugadorMovido.moverPosicion(Math.max(0, jugadorMovido.getPosicion() - diferencia));
-					if (gestorEventos != null) {
-						gestorEventos.registrar(otro.getNombre() + " gana. " + jugadorMovido.getNombre() + " retrocede " + diferencia + " casillas.");
-					}
-				// Empate
-				} else {
-					if (gestorEventos != null) {
-						gestorEventos.registrar("¡Empate de bolas! Ambos se quedan sin munición pero nadie retrocede.");
-					}
-				}
-			}
-		}
-	}
-
-	// Método auxiliar para contar las bolas de nieve de un jugador
-	private int contarBolas(Jugador j) {
-		int count = 0;
-		for (Item i : j.getInventario().getLista()) {
-			if (i.getNombre().equalsIgnoreCase("Bola de nieve")) {
-				count++;
-			}
-		}
-		return count;
-	}
-
-	// Método auxiliar para borrar todas las bolas de nieve de un jugador
-	private void gastarBolas(Jugador j) {
-		// Removemos de la lista de inventario todos los items que se llamen "Bola de nieve"
-		j.getInventario().getLista().removeIf(i -> i.getNombre().equalsIgnoreCase("Bola de nieve"));
-	}
-
-	// GETTERS Y SETTERS ---------------------------------------
-	
-	public Tablero getTablero() {
-		return tablero;
-	}
-	public void setTablero(Tablero tablero) {
-		this.tablero = tablero;
-	}
-	public ArrayList<Jugador> getJugadores() {
-		return jugadores;
-	}
-	public void setJugadores(ArrayList<Jugador> jugadores) {
-		this.jugadores = jugadores;
-	}
-	public int getTurnos() {
-		return turnos;
-	}
-	public void setTurnos(int turnos) {
-		this.turnos = turnos;
-	}
-	public boolean isFinalizada() {
-		return finalizada;
-	}
-	public void setFinalizada(boolean finalizada) {
-		this.finalizada = finalizada;
-	}
-	public Jugador getGanador() {
-		return ganador;
-	}
-	public void setGanador(Jugador ganador) {
-		this.ganador = ganador;
-	}
-	public Jugador getJugadorActual() {
-		return this.jugadores.get(this.jugadorActual);
-	}
-	public void setJugadorActual(int jugadorActual) {
-		this.jugadorActual = jugadorActual;
-	}
-	public int getIndiceJugadorActual() {
-		return this.jugadorActual;
-	}
-	public GestorEventos getGestorEventos() {
-		return gestorEventos;
-	}
-	public void setGestorEventos(GestorEventos gestorEventos) {
-		this.gestorEventos = gestorEventos;
-	}
+        if (bolasJ1 > bolasJ2) {
+            int diferencia = bolasJ1 - bolasJ2;
+            j2.moverPosicion(Math.max(0, j2.getPosicion() - diferencia));
+            System.out.println(j1.getNombre() + " guanya. " + j2.getNombre() + 
+                             " retrocedeix " + diferencia + " caselles.");
+        } else if (bolasJ2 > bolasJ1) {
+            int diferencia = bolasJ2 - bolasJ1;
+            j1.moverPosicion(Math.max(0, j1.getPosicion() - diferencia));
+            System.out.println(j2.getNombre() + " guanya. " + j1.getNombre() + 
+                             " retrocedeix " + diferencia + " caselles.");
+        } else {
+            System.out.println("Empat! Cap jugador retrocedeix.");
+        }
+    }
+    
+    // ==================== MÈTODES DE FINALITZACIÓ ====================
+    
+    /**
+     * Verifica si algun jugador ha arribat a la meta (posició 49 o superior)
+     * @return true si la partida ha finalitzat
+     */
+    public boolean verificarFinPartida() {
+        for (Jugador j : jugadores) {
+            if (j.getPosicion() >= 49) {
+                finalizada = true;
+                ganador = j;
+                System.out.println("PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // ==================== GETTERS I SETTERS ====================
+    
+    public Tablero getTablero() {
+        return tablero;
+    }
+    
+    public void setTablero(Tablero tablero) {
+        this.tablero = tablero;
+    }
+    
+    public ArrayList<Jugador> getJugadores() {
+        return jugadores;
+    }
+    
+    public int getTurnos() {
+        return turnos;
+    }
+    
+    public boolean isFinalizada() {
+        return finalizada;
+    }
+    
+    public void setFinalizada(boolean finalizada) {
+        this.finalizada = finalizada;
+    }
+    
+    public Jugador getGanador() {
+        return ganador;
+    }
+    
+    public Jugador getJugadorActual() {
+        if (jugadores.isEmpty()) {
+            return null;
+        }
+        return this.jugadores.get(this.jugadorActual);
+    }
+    
+    public int getIndiceJugadorActual() {
+        return this.jugadorActual;
+    }
+    
+    public void setModoGuerraActivado(boolean activado) {
+        this.modoGuerraActivado = activado;
+    }
+    
+    public boolean isModoGuerraActivado() {
+        return modoGuerraActivado;
+    }
+    
+    public int getMaxJugadores() {
+        return maxJugadores;
+    }
+    
+    public void setMaxJugadores(int max) {
+        this.maxJugadores = max;
+    }
 }
