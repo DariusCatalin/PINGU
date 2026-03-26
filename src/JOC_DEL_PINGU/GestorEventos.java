@@ -2,37 +2,34 @@ package JOC_DEL_PINGU;
 
 import java.util.ArrayList;
 
-/**
- * GestorEventos acumula los mensajes del juego para mostrarlos en la UI.
- * Actúa como un log centralizado: todos los gestores reciben una referencia
- * y añaden mensajes con registrar(). La pantalla los lee con getLog().
- */
 public class GestorEventos {
-
-    private static final int MAX_LINEAS = 8; // Cuántas líneas se muestran en la tarjeta de eventos
-
+    
+    // ==================== ATRIBUTS ====================
+    private static final int MAX_LINEAS = 8; // Quantes línies es mostren a la tarjeta d'esdeveniments
     private final ArrayList<String> log;
     private int turnoActual = 0;
-
+    
+    // ==================== CONSTRUCTOR ====================
+   
     public GestorEventos() {
-        this.log = new ArrayList<>();
+        this.log = new ArrayList<String>();
     }
-
-    /** Añade un mensaje al log (y lo sigue mostrando por consola para debug). */
+    
+    // ==================== MÈTODES DE LOG ====================
+    
+   
     public void registrar(String mensaje) {
         String mensajeConTurno = turnoActual + "\t" + mensaje;
-        System.out.println("[EVENTO] " + mensajeConTurno);
+        System.out.println("[EVENTE] " + mensajeConTurno);
         log.add(mensajeConTurno);
-        // Mantenemos solo las últimas MAX_LINEAS entradas
+        
+        // Mantenim només les últimes MAX_LINEAS entrades
         if (log.size() > MAX_LINEAS) {
             log.remove(0);
         }
     }
-
-    /**
-     * Devuelve los últimos eventos concatenados con saltos de línea,
-     * listos para poner en un javafx.scene.text.Text.
-     */
+    
+   
     public String getLog() {
         StringBuilder sb = new StringBuilder();
         for (String linea : log) {
@@ -41,13 +38,24 @@ public class GestorEventos {
         }
         return sb.toString();
     }
-
-    /** Vacía el log (útil al iniciar una nueva partida). */
+    
+   
     public void limpiar() {
         log.clear();
+        System.out.println("[EVENTE] Log netejat.");
     }
-
+    
+   
     public void setTurnoActual(int turno) {
         this.turnoActual = turno;
+    }
+   
+    public int getTurnoActual() {
+        return turnoActual;
+    }
+    
+   
+    public int getLogSize() {
+        return log.size();
     }
 }

@@ -26,7 +26,11 @@ public class PantallaPartida {
     @FXML private Button nieve;
 
     @FXML private Text dadoResultText;
-    @FXML private Text eventos; // Aquí mostraremos lo que pasa en el juego
+    @FXML private Text rapido_t;
+    @FXML private Text lento_t;
+    @FXML private Text peces_t;
+    @FXML private Text nieve_t;
+    @FXML private Text eventos; 
 
     @FXML private GridPane tablero;
     @FXML private Circle P1; // Pingüino Jugador
@@ -36,12 +40,13 @@ public class PantallaPartida {
 
     // --- LÓGICA DEL JUEGO (EL CEREBRO) ---
     private Partida partida;
+    private static final int COLUMNS = 5;
+    private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
     
-    // Un gestor de eventos simple para mostrar textos en la pantalla
+    // Gestor de eventos simple para mostrar textos en la pantalla
     private GestorEventos gestorUI = new GestorEventos() {
         @Override
         public void registrar(String mensaje) {
-            // Actualiza el texto de la pantalla con lo que pasa
             System.out.println(mensaje);
             if (eventos != null) {
                 eventos.setText(mensaje);
@@ -58,63 +63,125 @@ public class PantallaPartida {
         partida = new Partida();
         partida.setGestorEventos(gestorUI);
         
-        // 2. CREAMOS LOS JUGADORES (Ejemplo: 1 Pingüino y 1 Foca CPU)
+        // 2. CREAMOS LOS JUGADORES
         Pinguino jugador1 = new Pinguino(0, "Pingu", "Azul");
-        Foca cpuFoca = new Foca(0, "Focabrón", "Rojo");
-        
+        Foca cpuFoca = new Foca(0, "Focabrón", "Rojo"); 
+
         partida.getJugadores().add(jugador1);
         partida.getJugadores().add(cpuFoca);
         
-        gestorUI.registrar("¡Partida iniciada! Turno de " + partida.getJugadorActual().getNombre());
+        // Posicionamos visualmente en la salida
+        actualizarPosicionVisual(jugador1, P1);
+        actualizarPosicionVisual(cpuFoca, P2);
+        
+        // Actualizamos los textos de inventario inicial (todo a 0)
+        actualizarTextosInventario(jugador1);
+        
+        // 3. MOSTRAR TIPOS DE CASILLAS
+        mostrarTiposDeCasillasEnTablero(partida.getTablero());
+        
+        gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
+    }
+
+    // ==========================================
+    // MENÚ ARCHIVO (EVENTOS)
+    // ==========================================
+    @FXML
+    private void handleNewGame(ActionEvent event) {
+        gestorUI.registrar("Reiniciando partida...");
+        initialize(); // Volvemos a empezar
+    }
+
+    @FXML
+    private void handleSaveGame(ActionEvent event) {
+        gestorUI.registrar("Guardando partida... (Función no implementada aún)");
+        // TODO: Conectar con GestorBBDD
+    }
+
+    @FXML
+    private void handleLoadGame(ActionEvent event) {
+        gestorUI.registrar("Cargando partida... (Función no implementada aún)");
+        // TODO: Conectar con GestorBBDD
+    }
+
+    @FXML
+    private void handleQuitGame(ActionEvent event) {
+        System.out.println("Saliendo del juego...");
+        System.exit(0);
     }
 
     // ==========================================
     // ACCIÓN PRINCIPAL: TIRAR EL DADO NORMAL
     // ==========================================
     @FXML
-    private void tirarDadoNormal(ActionEvent event) {
+    private void handleDado(ActionEvent event) {
         if (partida.isFinalizada()) return;
 
-        Jugador actual = partida.getJugadorActual();
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         
-        // Verificamos si es un Pingüino (el jugador humano)
         if (actual instanceof Pinguino) {
+            if (actual.estaPenalizado()) {
+                actual.decrementarPenalizacion();
+                gestorUI.registrar("¡" + actual.getNombre() + " está penalizado y pierde este turno!");
+            } else {
+                int tirada = (int)(Math.random() * 6) + 1;
+                moverJugadorYAccion(actual, tirada, "tirada normal");
+                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
+            }
             
+            actualizarTextosInventario(actual);
+            actualizarPosicionVisual(actual, P1); 
+            avanzarTurno();
+
+            // Turno de la CPU
+            Jugador siguiente = partida.getJugadores().get(partida.getIndiceJugadorActual());
+            if (siguiente instanceof Foca) {
+                jugarTurnoCPU_IA((Foca) siguiente, P2);
+            }
         }
     }
-    
- // ==========================================
-    // USO DE OBJETOS DEL INVENTARIO
+
     // ==========================================
-
+    // USO DE OBJ ETOS DEL INVENTARIO
+    // ==========================================
     @FXML
-    private void tirarDadoRapido(ActionEvent event) {
-        usarDadoEspecial("Dado Rápido", 4, 6); // El dado rápido tira entre 4 y 6
+    private void handleRapido(ActionEvent event) {
+        usarDadoEspecial("Dado Rápido", 4, 6); 
+    }
+    
+    @FXML
+    private void handleLento(ActionEvent event) {
+        usarDadoEspecial("Dado Lento", 1, 3); 
+    }
+    
+    @FXML
+    private void handlePeces(ActionEvent event) {
+        usarPez(event);
+    }
+    
+    @FXML
+    private void handleNieve(ActionEvent event) {
+        usarBolaNieve(event);
     }
 
-    @FXML
-    private void tirarDadoLento(ActionEvent event) {
-        usarDadoEspecial("Dado Lento", 1, 3); // El dado lento tira entre 1 y 3
-    }
-
-    // Método auxiliar para no repetir código en los dados
     private void usarDadoEspecial(String nombreDado, int min, int max) {
         if (partida.isFinalizada()) return;
-        Jugador actual = partida.getJugadorActual();
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
 
         if (actual instanceof Pinguino) {
             if (consumirObjeto(actual, nombreDado)) {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
-                actual.avanzarCasillas(tirada);
-                dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
-                gestorUI.registrar(actual.getNombre() + " usa " + nombreDado + " y avanza a la casilla " + actual.getPosicion());
+                moverJugadorYAccion(actual, tirada, nombreDado);
                 
-                ejecutarLogicaCasilla(actual);
-                partida.pasarTurno();
+                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
+                
+                actualizarTextosInventario(actual);
                 actualizarPosicionVisual(actual, P1);
+                avanzarTurno();
 
-                if (partida.getJugadorActual() instanceof Foca) {
-                    jugarTurnoCPU((Foca) partida.getJugadorActual(), P2);
+                Jugador siguiente = partida.getJugadores().get(partida.getIndiceJugadorActual());
+                if (siguiente instanceof Foca) {
+                    jugarTurnoCPU_IA((Foca) siguiente, P2);
                 }
             } else {
                 gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
@@ -124,11 +191,10 @@ public class PantallaPartida {
 
     @FXML
     private void usarPez(ActionEvent event) {
-        Jugador actual = partida.getJugadorActual();
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Pinguino) {
-            // El pez no gasta turno al usarse desde el botón, simplemente avisa que lo tienes preparado
             if (tieneObjeto(actual, "Pez")) {
-                gestorUI.registrar("¡Tienes un Pez listo! Si la Foca te ataca, se lo darás automáticamente.");
+                gestorUI.registrar("¡Tienes un Pez listo! Te protegerá de la Foca.");
             } else {
                 gestorUI.registrar("No tienes Peces. ¡Huye de la Foca!");
             }
@@ -137,68 +203,242 @@ public class PantallaPartida {
 
     @FXML
     private void usarBolaNieve(ActionEvent event) {
-        Jugador actual = partida.getJugadorActual();
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Pinguino) {
-            // Igual que el pez, es un objeto pasivo para las batallas
             int cantidad = contarBolas(actual);
             gestorUI.registrar("Tienes " + cantidad + " Bolas de Nieve listas para la guerra.");
         }
     }
 
     // ==========================================
-    // MÉTODOS AUXILIARES DE INVENTARIO
+    // LÓGICA INTERNA DE TURNOS Y CASILLAS
     // ==========================================
 
-    // Comprueba si tiene el objeto y, si lo tiene, lo borra (lo gasta)
+    private void jugarTurnoCPU_IA(Foca foca, Circle fichaVisual) {
+        if (foca.estaPenalizado()) {
+            foca.decrementarPenalizacion();
+            gestorUI.registrar("La foca " + foca.getNombre() + " está entretenida comiendo. Pierde su turno.");
+        } else {
+            int tirada = (int)(Math.random() * 6) + 1;
+            moverJugadorYAccion(foca, tirada, "tirada CPU");
+        }
+        
+        actualizarPosicionVisual(foca, fichaVisual);
+        avanzarTurno(); // Devuelve el turno al jugador
+    }
+
+    private void moverJugadorYAccion(Jugador j, int tirada, String contexto) {
+        int nuevaPos = j.getPosicion() + tirada;
+
+        // REGLA: META EXACTA (49)
+        if (nuevaPos > 49) {
+            nuevaPos = 49 - (nuevaPos - 49);
+            gestorUI.registrar("¡" + j.getNombre() + " ha sacado un " + tirada + " y se ha pasado! Rebota hasta la " + nuevaPos);
+        } else {
+            gestorUI.registrar(j.getNombre() + " (" + contexto + ") saca un " + tirada + " y avanza a la casilla " + nuevaPos);
+        }
+
+        j.moverPosicion(nuevaPos);
+        ejecutarLogicaCasilla(j);
+    }
+
+    private void ejecutarLogicaCasilla(Jugador j) {
+        if (j.getPosicion() >= 49) {
+            j.moverPosicion(49);
+            partida.setFinalizada(true);
+            gestorUI.registrar("¡" + j.getNombre() + " HA LLEGADO A LA META Y GANA LA PARTIDA!");
+            return;
+        }
+        
+        // Ejecuta la casilla (Oso, Trineo, Evento...)
+        Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
+        casillaActual.realizarAccion(partida, j);
+        
+        // Comprobar colisiones
+        verificarColisionesLocal(j);
+    }
+
+    private void verificarColisionesLocal(Jugador actual) {
+        for (Jugador otro : partida.getJugadores()) {
+            if (otro != actual && actual.getPosicion() == otro.getPosicion() && actual.getPosicion() > 0) {
+                
+                // Si alguien choca contra la Foca
+                if (actual instanceof Foca || otro instanceof Foca) {
+                    Jugador pinguino = (actual instanceof Pinguino) ? actual : otro;
+                    Foca foca = (actual instanceof Foca) ? (Foca) actual : (Foca) otro;
+                    
+                    if (consumirObjeto(pinguino, "Pez")) {
+                        gestorUI.registrar("¡" + pinguino.getNombre() + " le lanza un Pez a la Foca para salvarse!");
+                        foca.aplicarPenalizacion(); 
+                    } else {
+                        // Castigo: mitad de objetos y retroceder al agujero anterior
+                        pinguino.perderMitadInventario();
+                        int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
+                        pinguino.moverPosicion(posHole);
+                        gestorUI.registrar("¡La foca atrapa a " + pinguino.getNombre() + "! Pierde la mitad de objetos y vuelve al agujero en " + posHole);
+                    }
+                } else if (actual instanceof Pinguino && otro instanceof Pinguino) {
+                    // GUERRA DE BOLAS (PvP)
+                    int bolasA = actual.contarBolas();
+                    int bolasO = otro.contarBolas();
+                    actual.vaciarBolas();
+                    otro.vaciarBolas();
+                    
+                    if (bolasA >= bolasO) {
+                        otro.moverPosicion(Math.max(0, otro.getPosicion() - 5));
+                        gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre());
+                    } else {
+                        actual.moverPosicion(Math.max(0, actual.getPosicion() - 5));
+                        gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre());
+                    }
+                }
+            }
+        }
+    }
+
+    private int buscarAgujeroAnterior(int pos, Tablero t) {
+        for (int i = pos - 1; i >= 0; i--) {
+            if (t.getCasillas().get(i) instanceof Agujero) return i;
+        }
+        return 0;
+    }
+
+    private void avanzarTurno() {
+        int turnoActual = partida.getIndiceJugadorActual(); 
+        int siguienteTurno = (turnoActual + 1) % partida.getJugadores().size(); 
+        partida.setJugadorActual(siguienteTurno);
+    }
+
+    private void mostrarTiposDeCasillasEnTablero(Tablero t) {
+        if (tablero == null) return;
+        tablero.getChildren().removeIf(node -> TAG_CASILLA_TEXT.equals(node.getUserData()));
+
+        for (int i = 0; i < t.getCasillas().size(); i++) {
+            Casilla casilla = t.getCasillas().get(i);
+            String tipo = getNombreAmigable(casilla, i, t.getCasillas().size());
+            
+            if (!tipo.isEmpty()) {
+                Text texto = new Text(tipo);
+                texto.setUserData(TAG_CASILLA_TEXT);
+                
+                // Estilo más pequeño para que no moleste
+                texto.setStyle("-fx-font-size: 10px; -fx-fill: #555555; -fx-font-weight: bold;");
+
+                int columna = i % COLUMNS;
+                int fila = 9 - (i / COLUMNS);
+
+                GridPane.setRowIndex(texto, fila);
+                GridPane.setColumnIndex(texto, columna);
+                
+                // Alineación al fondo de la casilla
+                GridPane.setValignment(texto, javafx.geometry.VPos.BOTTOM);
+                GridPane.setHalignment(texto, javafx.geometry.HPos.CENTER);
+                
+                tablero.getChildren().add(texto);
+            }
+        }
+    }
+
+    private String getNombreAmigable(Casilla c, int index, int total) {
+        if (index == 0) return "SALIDA";
+        if (index == total - 1) return "META";
+        if (c instanceof Agujero) return "Agujero";
+        if (c instanceof Trineo) return "Trineo";
+        if (c instanceof Evento) return "EVENTO";
+        if (c instanceof Oso) return "OSO";
+        if (c instanceof CasillaFragil) return "Fragil";
+        return "";
+    }
+
+    // ==========================================
+    // MÉTODOS AUXILIARES Y VISUALES
+    // ==========================================
+
+    private void actualizarPosicionVisual(Jugador j, Circle ficha) {
+        if (ficha == null) return;
+        int pos = j.getPosicion();
+        if (pos > 49) pos = 49;
+        
+        // Tablero de 5 columnas (índices 0-4) y 10 filas (indices 0-9)
+        int columna = pos % 5;
+        int fila = 9 - (pos / 5);
+        
+        GridPane.setColumnIndex(ficha, columna);
+        GridPane.setRowIndex(ficha, fila);
+    }
+
     private boolean consumirObjeto(Jugador j, String nombreObjeto) {
-        for (Item item : j.getInventario().getLista()) {
-            if (item.getNombre().equalsIgnoreCase(nombreObjeto)) {
-                j.getInventario().getLista().remove(item);
-                actualizarTextosInventario(j); // Actualizamos los numeritos de la pantalla
+        ArrayList<Item> inv = j.getInventario().getLista();
+        for (int i = 0; i < inv.size(); i++) {
+            Item item = inv.get(i);
+            if (item.getNombre().equalsIgnoreCase(nombreObjeto) || item.getNombre().contains(nombreObjeto)) {
+                inv.remove(i);
+                actualizarTextosInventario(j);
                 return true;
             }
         }
         return false;
     }
 
-    // Solo comprueba si lo tiene (sin gastarlo)
     private boolean tieneObjeto(Jugador j, String nombreObjeto) {
         for (Item item : j.getInventario().getLista()) {
-            if (item.getNombre().equalsIgnoreCase(nombreObjeto)) {
+            if (item.getNombre().equalsIgnoreCase(nombreObjeto) || item.getNombre().contains(nombreObjeto)) {
                 return true;
             }
         }
         return false;
     }
 
-    // Cuenta cuántas bolas de nieve tiene
     private int contarBolas(Jugador j) {
         int count = 0;
         for (Item item : j.getInventario().getLista()) {
-            if (item.getNombre().equalsIgnoreCase("Bola de nieve")) {
-                count++;
-            }
+            if (item.getNombre().toLowerCase().contains("bola")) count++;
         }
         return count;
     }
 
-    // Actualiza los Text de JavaFX con la cantidad de objetos que te quedan
     private void actualizarTextosInventario(Jugador j) {
         int dadosRapidos = 0, dadosLentos = 0, peces = 0, bolas = 0;
         
         for (Item item : j.getInventario().getLista()) {
-            switch (item.getNombre().toLowerCase()) {
-                case "dado rápido": dadosRapidos++; break;
-                case "dado lento": dadosLentos++; break;
-                case "pez": peces++; break;
-                case "bola de nieve": bolas++; break;
-            }
+            String nombre = item.getNombre().toLowerCase();
+            if (nombre.contains("rápido") || nombre.contains("rapido")) dadosRapidos++;
+            else if (nombre.contains("lento")) dadosLentos++;
+            else if (nombre.contains("pez")) peces++;
+            else if (nombre.contains("bola")) bolas++;
         }
         
-        // Asumiendo que tus Text de la interfaz se llaman así:
         if (rapido_t != null) rapido_t.setText("x" + dadosRapidos);
         if (lento_t != null) lento_t.setText("x" + dadosLentos);
         if (peces_t != null) peces_t.setText("x" + peces);
         if (nieve_t != null) nieve_t.setText("x" + bolas);
+    }
+
+    private void cargarSkins() {
+        try {
+            String pathPingu = "/resources/pinguino_azul.png";
+            String pathRojo = "/resources/foca_roja.png";
+            asignarImagenAFicha(P1, pathPingu);
+            asignarImagenAFicha(P2, pathRojo);
+        } catch (Exception e) {
+            System.err.println("Aviso: No se han podido cargar todas las skins.");
+        }
+    }
+
+    private void asignarImagenAFicha(Circle ficha, String path) {
+        if (ficha == null) return;
+        try {
+            var resource = getClass().getResourceAsStream(path);
+            if (resource == null) {
+                String fileName = path.substring(path.lastIndexOf("/") + 1);
+                resource = getClass().getResourceAsStream("/" + fileName);
+            }
+            if (resource != null) {
+                ficha.setFill(new ImagePattern(new Image(resource)));
+                ficha.setStroke(null); 
+            }
+        } catch (Exception e) {
+            System.err.println("Error aplicando skin: " + e.getMessage());
+        }
     }
 }

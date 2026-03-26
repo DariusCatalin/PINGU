@@ -1,31 +1,44 @@
 package JOC_DEL_PINGU;
-//SUBCLASE OSO
-public class Oso extends Casilla{	
-	public Oso(int posicion) {
-		super(posicion);
-	}	
-	//FUNCIÓN REALIZAR ACCIÓN SI ES OSO
-	@Override
-	public void realizarAccion(Partida p, Jugador j) {
-		GestorEventos ge = p.getGestorEventos();
+
+public class Oso extends Casilla {
+    
+    // ==================== CONSTRUCTOR ====================
+    public Oso(int posicion) {
+        super(posicion);
+    }
+    
+    // ==================== ACCIÓ DE LA CASELLA ====================
+    
+    @Override
+    public void realizarAccion(Partida p, Jugador j) {
+        if (j == null || j.getInventario() == null) {
+            return;
+        }
         
-        // Comprobar si tiene pez para sobornar
+        GestorEventos ge = p.getGestorEventos();
         Item pez = null;
-        if (j.getInventario() != null) {
-            for (Item item : j.getInventario().getLista()) {
-                if (item.getNombre().equalsIgnoreCase("Pez")) {
-                    pez = item;
-                    break;
-                }
+        
+        // Buscar un Pez a l'inventari
+        for (Item item : j.getInventario().getLista()) {
+            if (item != null && item.getNombre().equalsIgnoreCase("Pez")) {
+                pez = item;
+                break;
             }
         }
-
+        
+        // ==================== TÉ PEZ: SUBORNA L'ÓS ====================
         if (pez != null) {
-            j.getInventario().getLista().remove(pez);
-            if (ge != null) ge.registrar("¡" + j.getNombre() + " soborna al oso con un pez y se queda en su sitio!");
+            j.getInventario().eliminarItem(pez);
+            if (ge != null) {
+                ge.registrar("¡" + j.getNombre() + " soborna al oso con un pez y se queda en su sitio!");
+            }
+            
+        // ==================== NO TÉ PEZ: RETORNA A L'INICI ====================
         } else {
-            if (ge != null) ge.registrar("¡" + j.getNombre() + " es atacado por un oso! Vuelve al inicio.");
             j.moverPosicion(0);
+            if (ge != null) {
+                ge.registrar("¡" + j.getNombre() + " es atacado por un oso! Vuelve al inicio.");
+            }
         }
-	}
+    }
 }
