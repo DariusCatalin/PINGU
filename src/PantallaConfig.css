@@ -1,0 +1,114 @@
+/* ============================
+   PANEL CENTRAL DE CONFIGURACIÓN
+   ============================ */
+
+.config-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-radius: 20;
+    -fx-padding: 30;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 10);
+}
+
+/* ============================
+   ETIQUETAS
+   ============================ */
+
+.config-label {
+    -fx-text-fill: #e0f2fe;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.player-label {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.cpu-info {
+    -fx-text-fill: #fde047;
+    -fx-font-size: 13px;
+    -fx-font-style: italic;
+}
+
+.error-label {
+    -fx-text-fill: #fca5a5;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* ============================
+   FILA DE JUGADORES
+   ============================ */
+
+.player-row {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-background-radius: 10;
+    -fx-padding: 10 14;
+}
+
+.player-row-disabled {
+    -fx-opacity: 0.35;
+}
+
+/* ============================
+   CAMPOS DE TEXTO
+   ============================ */
+
+.config-field {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+}
+
+.config-field:focused {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(250,204,21,0.6), 8, 0, 0, 0);
+}
+
+/* ============================
+   COMBO BOX
+   ============================ */
+
+.config-combo {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-background-radius: 8;
+    -fx-font-size: 13px;
+}
+
+/* ============================
+   BOTONES DE TOGGLE (Nº JUGADORES)
+   ============================ */
+
+.toggle-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+}
+
+.toggle-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.35);
+}
+
+.toggle-active {
+    -fx-background-color: #facc15;
+    -fx-text-fill: #1e3a8a;
+    -fx-border-color: #facc15;
+}
+
+/* ============================
+   CHECKBOX CPU
+   ============================ */
+
+.config-checkbox {
+    -fx-text-fill: #e0f2fe;
+    -fx-font-size: 14px;
+}

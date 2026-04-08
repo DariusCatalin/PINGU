@@ -18,14 +18,14 @@ public class PantallaPrincipal {
     @FXML
     private void handleNuevaPartida(ActionEvent event) {
         try {
-            System.out.println("Iniciando nueva partida...");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
+            System.out.println("Abriendo configuración de nueva partida...");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaConfig.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("El Juego del Pingüino - Partida");
+            stage.setTitle("El Juego del Pingüino - Nueva Partida");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
