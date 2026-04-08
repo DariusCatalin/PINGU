@@ -1,17 +1,23 @@
 package JOC_DEL_PINGU;
 
-import java.util.Random; 
+import java.util.Random;
+
 
 public abstract class Jugador {
-	
-    // Atributos
+    
+    // ==================== ATRIBUTS ====================
     private int posicion;
     private String nombre;
     private String color;
-    private Inventario inventario; 
+    private Inventario inventario;
     private int turnosPenalizados;
-
-    // Constructor
+    
+    // Constants per límits d'inventari
+    private static final int MAX_DADOS = 3;
+    private static final int MAX_PECES = 2;
+    private static final int MAX_BOLAS_NIEVE = 6;
+    
+    // ==================== CONSTRUCTOR ====================
     public Jugador(int posicion, String nombre, String color) {
         this.posicion = posicion;
         this.nombre = nombre;
@@ -19,67 +25,164 @@ public abstract class Jugador {
         this.inventario = new Inventario();
         this.turnosPenalizados = 0;
     }
-
+    
+    // ==================== MÈTODES DE MOVIMENT ====================
+    
     public void moverPosicion(int p) {
-        this.posicion = p;
+        // Assegurem que la posició no sigui negativa
+        this.posicion = Math.max(0, p);
     }
     
-    public void avanzarCasillas(int p) {
-    	this.posicion += p;
+    public void avanzarCasillas(int pasos) {
+        this.posicion += pasos;
     }
-    //PENALIZACIÓN
     
+    // ==================== GESTIÓ DE PENALITZACIONS ====================
+    
+   
     public void aplicarPenalizacion() {
         this.turnosPenalizados++;
+        System.out.println(nombre + " ha estat penalitzat. Torns perduts: " + turnosPenalizados);
     }
+    
  
-    // Este método comprueba si está castigado Y resta un turno del castigo
     public boolean estaPenalizado() {
+        return this.turnosPenalizados > 0;
+    }
+    
+    
+    public void decrementarPenalizacion() {
         if (this.turnosPenalizados > 0) {
             this.turnosPenalizados--;
-            return true; 
         }
-        return false; 
     }
-
-    //PERDER OBJETO
+    
+    // ==================== GESTIÓ DE BOLES DE NEU ====================
+    
+    
+    public int contarBolas() {
+        int count = 0;
+        for (Item item : inventario.getLista()) {
+            if (item != null && item.getNombre().toLowerCase().contains("bola")) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+   
+    public void vaciarBolas() {
+        inventario.getLista().removeIf(item -> 
+            item != null && item.getNombre().toLowerCase().contains("bola")
+        );
+    }
+    
+    // ==================== GESTIÓ D'INVENTARI ====================
+    
+   
+    public void perderMitadInventario() {
+        int total = inventario.getLista().size();
+        if (total == 0) {
+            System.out.println(nombre + " no té objectes per perdre.");
+            return;
+        }
+        
+        int aPerder = total / 2;
+        Random rand = new Random();
+        
+        for (int i = 0; i < aPerder; i++) {
+            if (inventario.getLista().isEmpty()) {
+                break;
+            }
+            int index = rand.nextInt(inventario.getLista().size());
+            Item eliminado = inventario.getLista().remove(index);
+            System.out.println(nombre + " perd: " + (eliminado != null ? eliminado.getNombre() : "objecte"));
+        }
+    }
+    
     
     public void perderObjetoAleatorio() {
-        //Accedemos a la lista del inventario
         if (this.inventario.getLista().size() > 0) {
-            
-            //Elegimos un número al azar entre 0 y el tamaño de la lista
             Random rand = new Random();
             int indiceAleatorio = rand.nextInt(this.inventario.getLista().size());
-            
-            //Obtenemos el objeto (opcional, por si quieres imprimir su nombre)
-
-            //Borramos el objeto de la lista
-            this.inventario.getLista().remove(indiceAleatorio);
-            
+            Item eliminado = this.inventario.getLista().remove(indiceAleatorio);
+            System.out.println(nombre + " perd: " + (eliminado != null ? eliminado.getNombre() : "objecte"));
         } else {
-            System.out.println(this.nombre + " no tiene objetos para perder.");
+            System.out.println(nombre + " no té objectes per perdre.");
         }
     }
-
-    // --- Getters y Setters ---
-
-    public int getPosicion() { return posicion; }
-    public void setPosicion(int posicion) { this.posicion = posicion; }
-
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-
-    public String getColor() { return color; }
-    public void setColor(String color) { this.color = color; }
-
+    
+    // ==================== VALIDACIÓ D'INVENTARI ====================
+    
+  
+    public boolean puedeAgregarItem(Item item) {
+        if (item == null) {
+            return false;
+        }
+        
+        String nombre = item.getNombre().toLowerCase();
+        
+        if (nombre.contains("dado")) {
+            return contarTipoItem("dado") < MAX_DADOS;
+        } else if (nombre.contains("pez") || nombre.contains("peix")) {
+            return contarTipoItem("pez") < MAX_PECES;
+        } else if (nombre.contains("bola")) {
+            return contarBolas() < MAX_BOLAS_NIEVE;
+        }
+        
+        return true; // Altres objectes sense límit
+    }
+    
+  
+    private int contarTipoItem(String tipo) {
+        int count = 0;
+        for (Item item : inventario.getLista()) {
+            if (item != null && item.getNombre().toLowerCase().contains(tipo)) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    // ==================== GETTERS I SETTERS ====================
+    
+    public int getPosicion() {
+        return posicion;
+    }
+    
+    public void setPosicion(int posicion) {
+        this.posicion = Math.max(0, posicion);
+    }
+    
+    public String getNombre() {
+        return nombre;
+    }
+    
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+    
+    public String getColor() {
+        return color;
+    }
+    
+    public void setColor(String color) {
+        this.color = color;
+    }
+    
     public Inventario getInventario() {
         return inventario;
     }
+    
     public void setInventario(Inventario inventario) {
         this.inventario = inventario;
     }
- 
-    public int getTurnosPenalizados() { return turnosPenalizados; }
-    public void setTurnosPenalizados(int turnosPenalizados) { this.turnosPenalizados = turnosPenalizados; }
+    
+    public int getTurnosPenalizados() {
+        return turnosPenalizados;
+    }
+    
+    public void setTurnosPenalizados(int turnosPenalizados) {
+        this.turnosPenalizados = turnosPenalizados;
+    }
 }

@@ -1,41 +1,50 @@
 package JOC_DEL_PINGU;
 
-public class GestorTablero { // creamos la clase que gestiona el tablero.
-	
-	public void ejecutarCasilla(Partida partida, Pinguino p, Casilla c) { // método el cual va a ejecutar la casilla donde se situa el jugador.
-		
-		System.out.println("Ejecutando la casilla para el Pingüino: " + p.getNombre());
-		
-		c.realizarAccion(partida, p);
-		
-	}
-	
-	public void comprobarFinTurno(Partida partida) { //creamos el método que va a comprobar cuando finaliza el turno del jugador y si ha terminado la partida llegando a la meta.
-		
-		Jugador jugador = partida.getJugadorActual();
-		
-		int meta = 50;
-		
-		if(jugador.getPosicion() >= meta) {
-			
-			System.out.println("El jugador " + jugador.getNombre() + " ha llegado a la meta.");
-			
-			partida.setGanador(jugador);
-			partida.setFinalizada(true);
-			
-		} else {
-			
-			System.out.println("Fin de turno de " + jugador.getNombre());
-			
-			int jug_actual = partida.getIndiceJugadorActual();
-			int jugadores = partida.getJugadores().size();
-			
-			int siguiente = (jug_actual + 1) % jugadores;
-			
-			partida.setJugadorActual(siguiente);
-		}
-		
-		
-	}
-
+public class GestorTablero {
+    
+    public GestorTablero() {
+        // No cal inicialitzacio addicional
+    }
+    
+    public void ejecutarCasilla(Partida partida, Jugador j, Casilla c) {
+        if (partida == null || j == null || c == null) {
+            System.out.println("Error: Parametros nulos a ejecutarCasilla()");
+            return;
+        }
+        
+        System.out.println("Ejecutando la casilla para el jugador: " + j.getNombre());
+        c.realizarAccion(partida, j);
+    }
+    
+    public void comprobarFinTurno(Partida partida) {
+        if (partida == null) {
+            return;
+        }
+        
+        GestorEventos ge = partida.getGestorEventos();
+        int meta = 49;
+        
+        // Obtenim la mida real del tauler
+        if (partida.getTablero() != null && !partida.getTablero().getCasillas().isEmpty()) {
+            meta = partida.getTablero().getCasillas().size() - 1;
+        }
+        
+        // Comprovar TOTS els jugadors
+        for (Jugador j : partida.getJugadores()) {
+            if (j.getPosicion() >= meta) {
+                partida.setGanador(j);
+                partida.setFinalizada(true);
+                
+                if (ge != null) {
+                    ge.registrar("********************************");
+                    ge.registrar("¡FIN DE LA PARTIDA!");
+                    ge.registrar("EL GANADOR ES: " + j.getNombre());
+                    ge.registrar("********************************");
+                }
+                
+                System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
+                break;
+            }
+        }
+    }
 }

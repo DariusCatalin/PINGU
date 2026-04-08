@@ -1,0 +1,58 @@
+.main-menu-bg {
+    -fx-background-color: linear-gradient(to bottom right, #1e3a8a, #3b82f6);
+}
+
+.title-container {
+    -fx-padding: 0 0 40 0;
+}
+
+.main-title {
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5);
+}
+
+.sub-title {
+    -fx-text-fill: #e0f2fe;
+    -fx-font-size: 18px;
+}
+
+.button-container {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-background-radius: 20;
+    -fx-padding: 40;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 10);
+}
+
+.menu-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 15 30;
+    -fx-background-radius: 12;
+    -fx-cursor: hand;
+    -fx-transition: all 0.3s;
+}
+
+.primary-btn {
+    -fx-background-color: #facc15;
+    -fx-text-fill: #1e3a8a;
+}
+
+.primary-btn:hover {
+    -fx-background-color: #fde047;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.secondary-btn {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+}
+
+.secondary-btn:hover {
+    -fx-background-color: #f87171;
+}
+
+.footer-text {
+    -fx-text-fill: rgba(255,255,255,0.5);
+    -fx-font-size: 12px;
+}

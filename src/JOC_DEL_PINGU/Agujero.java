@@ -1,31 +1,40 @@
 package JOC_DEL_PINGU;
 
 public class Agujero extends Casilla {
-	public Agujero(int posicion) {
-		super(posicion);
-	}
-	//FUNCIÓN REALIZAR ACCIÓN SI ES AGUJERO
-	@Override
-	public void realizarAccion(Partida p , Jugador j) {
-		Tablero t = p.getTablero();
-		int cont = 0;
-		
-		//BUCLE PARA VER HASTA QUE CASILLA RETROCEDEMOS
-		
-		// CORRECCIÓN: Cambiamos i > 50 por i >= 0 para que vaya hacia atrás correctamente
-		
-		for (int i = j.getPosicion(); i >= 0; i--) { 
-			
-			Casilla c = t.getCasillas().get(i); 
-			cont++;
-			if (c instanceof Agujero && i != j.getPosicion()) { // Añadido para no detectar el mismo agujero en el que estamos
-				j.moverPosicion(i);
-				System.out.println(j.getNombre() + " se ha caído por un agujero y ha retrocedido " + cont + " casillas.");
-				return; // Salimos de la función al encontrar el agujero
-			} 
-		}		
-		// SI TERMINA EL BUCLE Y NO HA ENCONTRADO NADA:
-		System.out.println("Como no hay más agujeros detrás de " + j.getNombre() + ", retrocede hasta la casilla inicial.");
-		j.moverPosicion(1);
-	}
+    
+    public Agujero(int posicion) {
+        super(posicion);
+    }
+    
+    @Override
+    public void realizarAccion(Partida p, Jugador j) {
+        if (j == null || p == null || p.getTablero() == null) {
+            return;
+        }
+        
+        Tablero t = p.getTablero();
+        GestorEventos ge = p.getGestorEventos();
+        
+        // Buscar el forat anterior
+        for (int i = j.getPosicion() - 1; i >= 0; i--) {
+            Casilla c = t.getCasilla(i);
+            
+            if (c instanceof Agujero) {
+                int casillasAtras = j.getPosicion() - i;
+                j.moverPosicion(i);
+                
+                if (ge != null) {
+                    ge.registrar(j.getNombre() + " cae al agujero! Retrocede " + casillasAtras + " casillas.");
+                }
+                return;
+            }
+        }
+        
+        // NO HI HA FORAT ANTERIOR: RETORNA A L'INICI
+        j.moverPosicion(0);
+        
+        if (ge != null) {
+            ge.registrar(j.getNombre() + " resbala hasta la casilla inicial (primer agujero).");
+        }
+    }
 }

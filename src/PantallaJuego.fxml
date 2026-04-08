@@ -29,14 +29,14 @@
     <top>
         <MenuBar>
             <menus>
-                <Menu mnemonicParsing="false" text="File">
+                <Menu mnemonicParsing="false" text="Archivo">
                     <items>
-                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="New" onAction="#handleNewGame"/>
+                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="Nuevo" onAction="#handleNewGame"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Save" onAction="#handleSaveGame"/>
-                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Load" onAction="#handleLoadGame"/>
+                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" onAction="#handleSaveGame"/>
+                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" onAction="#handleLoadGame"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Quit" onAction="#handleQuitGame"/>
+                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" onAction="#handleQuitGame"/>
                     </items>
                 </Menu>
             </menus>
@@ -70,22 +70,16 @@
                     <RowConstraints percentHeight="10.0" />
                     <RowConstraints percentHeight="10.0" />
                 </rowConstraints>
-
                 <children>
-                    <!-- Esquinas -->
-                    <Text text="Start" styleClass="cell-title" />
-                    <Text text="Finish" styleClass="cell-title"
-                          GridPane.columnIndex="4" GridPane.rowIndex="9" GridPane.halignment="RIGHT" />
-
                     <!-- Jugadores: fx:id para Controller + id para CSS -->
                     <Circle fx:id="P1" id="P1" radius="14.0" styleClass="player" />
                     <Circle fx:id="P2" id="P2" radius="14.0" styleClass="player">
                         <GridPane.margin><Insets left="34.0" /></GridPane.margin>
                     </Circle>
-                    <Circle fx:id="P3" id="P3" radius="14.0" styleClass="player">
+                    <Circle fx:id="P3" id="P3" radius="14.0" styleClass="player" visible="false">
                         <GridPane.margin><Insets left="68.0" /></GridPane.margin>
                     </Circle>
-                    <Circle fx:id="P4" id="P4" radius="14.0" styleClass="player">
+                    <Circle fx:id="P4" id="P4" radius="14.0" styleClass="player" visible="false">
                         <GridPane.margin><Insets left="102.0" /></GridPane.margin>
                     </Circle>
                 </children>

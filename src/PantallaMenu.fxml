@@ -25,14 +25,14 @@
     <top>
         <MenuBar>
             <menus>
-                <Menu mnemonicParsing="false" text="File">
+                <Menu mnemonicParsing="false" text="Archivo">
                     <items>
-                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="New" />
+                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="Nuevo" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Save" />
-                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Load" />
+                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" />
+                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Quit" />
+                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" />
                     </items>
                 </Menu>
             </menus>
