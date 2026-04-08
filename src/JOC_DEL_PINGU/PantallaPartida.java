@@ -181,14 +181,10 @@ public class PantallaPartida {
             }
             
             actualizarTextosInventario(actual);
-            actualizarPosicionVisual(actual, P1); 
+            actualizarPosicionVisual(actual, getFichaVisual(actual)); 
             avanzarTurno();
 
-            // Turno de la CPU
-            Jugador siguiente = partida.getJugadores().get(partida.getIndiceJugadorActual());
-            if (siguiente instanceof Foca) {
-                jugarTurnoCPU_IA((Foca) siguiente, P2);
-            }
+            procesarTurnosCPU();
         }
     }
 
@@ -227,13 +223,10 @@ public class PantallaPartida {
                 if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
                 
                 actualizarTextosInventario(actual);
-                actualizarPosicionVisual(actual, P1);
+                actualizarPosicionVisual(actual, getFichaVisual(actual));
                 avanzarTurno();
 
-                Jugador siguiente = partida.getJugadores().get(partida.getIndiceJugadorActual());
-                if (siguiente instanceof Foca) {
-                    jugarTurnoCPU_IA((Foca) siguiente, P2);
-                }
+                procesarTurnosCPU();
             } else {
                 gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
             }
@@ -279,6 +272,7 @@ public class PantallaPartida {
     }
 
     private void moverJugadorYAccion(Jugador j, int tirada, String contexto) {
+        int posInicial = j.getPosicion();
         int nuevaPos = j.getPosicion() + tirada;
 
         // REGLA: META EXACTA (49)
@@ -287,6 +281,19 @@ public class PantallaPartida {
             gestorUI.registrar("¡" + j.getNombre() + " ha sacado un " + tirada + " y se ha pasado! Rebota hasta la " + nuevaPos);
         } else {
             gestorUI.registrar(j.getNombre() + " (" + contexto + ") saca un " + tirada + " y avanza a la casilla " + nuevaPos);
+        }
+
+        // REGLA FOCA: Pasar por encima
+        if (j instanceof Foca) {
+            int maxRecorrido = Math.min(49, posInicial + tirada);
+            for (Jugador p : partida.getJugadores()) {
+                if (!(p instanceof Foca) && p.getPosicion() > posInicial && p.getPosicion() <= maxRecorrido) {
+                    if (p.getPosicion() != nuevaPos) { // La posición final se procesa en el choque
+                        p.perderMitadInventario();
+                        gestorUI.registrar("¡La Foca le roba la mitad del equipaje a " + p.getNombre() + " al pasar por encima!");
+                    }
+                }
+            }
         }
 
         j.moverPosicion(nuevaPos);
@@ -335,12 +342,16 @@ public class PantallaPartida {
                     actual.vaciarBolas();
                     otro.vaciarBolas();
                     
-                    if (bolasA >= bolasO) {
-                        otro.moverPosicion(Math.max(0, otro.getPosicion() - 5));
-                        gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre());
+                    if (bolasA > bolasO) {
+                        int diff = bolasA - bolasO;
+                        otro.moverPosicion(Math.max(0, otro.getPosicion() - diff));
+                        gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
+                    } else if (bolasO > bolasA) {
+                        int diff = bolasO - bolasA;
+                        actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
+                        gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
                     } else {
-                        actual.moverPosicion(Math.max(0, actual.getPosicion() - 5));
-                        gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre());
+                        gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
                     }
                 }
             }
@@ -404,6 +415,31 @@ public class PantallaPartida {
     // ==========================================
     // MÉTODOS AUXILIARES Y VISUALES
     // ==========================================
+
+    private void procesarTurnosCPU() {
+        if (partida.isFinalizada()) return;
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+        
+        while (actual instanceof Foca && !partida.isFinalizada()) {
+            jugarTurnoCPU_IA((Foca) actual, getFichaVisual(actual));
+            actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+        }
+        
+        if (actual instanceof Pinguino && !partida.isFinalizada()) {
+            actualizarTextosInventario(actual);
+        }
+    }
+
+    private Circle getFichaVisual(Jugador j) {
+        int index = partida.getJugadores().indexOf(j);
+        switch (index) {
+            case 0: return P1;
+            case 1: return P2;
+            case 2: return P3;
+            case 3: return P4;
+            default: return P1;
+        }
+    }
 
     private void actualizarPosicionVisual(Jugador j, Circle ficha) {
         if (ficha == null) return;
