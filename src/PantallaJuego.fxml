@@ -95,7 +95,7 @@
 
             <!-- Tarjeta Dado -->
             <VBox spacing="10" styleClass="card" prefWidth="280">
-                <Label text="Dado" styleClass="card-title" />
+                <Label fx:id="lblDadoTitulo" text="Dado" styleClass="card-title" />
                 <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="240" />
                 <Button fx:id="dado" text="Tirar dado" onAction="#handleDado"
                         maxWidth="Infinity" styleClass="primary" />
@@ -144,7 +144,8 @@
             <!-- Tarjeta Eventos -->
             <VBox spacing="10" styleClass="card" prefWidth="320">
                 <Label text="Eventos" styleClass="card-title" />
-                <Text fx:id="eventos" text="Evento ocurrido" styleClass="events" wrappingWidth="280" />
+                <javafx.scene.control.TextArea fx:id="eventos" editable="false" wrapText="true" 
+                                               styleClass="events-area" prefHeight="130" />
             </VBox>
 
         </HBox>

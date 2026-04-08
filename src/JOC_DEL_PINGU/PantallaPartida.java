@@ -20,6 +20,7 @@ public class PantallaPartida {
     @FXML private MenuItem quitGame;
 
     @FXML private Button dado;
+    @FXML private javafx.scene.control.Label lblDadoTitulo;
     @FXML private Button rapido;
     @FXML private Button lento;
     @FXML private Button peces;
@@ -30,7 +31,7 @@ public class PantallaPartida {
     @FXML private Text lento_t;
     @FXML private Text peces_t;
     @FXML private Text nieve_t;
-    @FXML private Text eventos; 
+    @FXML private javafx.scene.control.TextArea eventos;
 
     @FXML private GridPane tablero;
     @FXML private Circle P1; // Pingüino Jugador
@@ -49,7 +50,9 @@ public class PantallaPartida {
         public void registrar(String mensaje) {
             System.out.println(mensaje);
             if (eventos != null) {
-                eventos.setText(mensaje);
+                eventos.appendText(mensaje + "\n");
+                // Auto-scroll the TextArea to bottom
+                eventos.setScrollTop(Double.MAX_VALUE);
             }
         }
     };
@@ -92,6 +95,7 @@ public class PantallaPartida {
             actualizarPosicionVisual(jugador1, P1);
             actualizarPosicionVisual(cpuFoca, P2);
             actualizarTextosInventario(jugador1);
+            actualizarTextosTurno();
             mostrarTiposDeCasillasEnTablero(partida.getTablero());
             gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
         }
@@ -129,6 +133,8 @@ public class PantallaPartida {
                 break;
             }
         }
+        
+        actualizarTextosTurno();
 
         mostrarTiposDeCasillasEnTablero(partida.getTablero());
         gestorUI.registrar("¡Partida iniciada con " + jugadoresConfig.size() + " jugadores!");
@@ -427,6 +433,19 @@ public class PantallaPartida {
         
         if (actual instanceof Pinguino && !partida.isFinalizada()) {
             actualizarTextosInventario(actual);
+            actualizarTextosTurno();
+        }
+    }
+
+    private void actualizarTextosTurno() {
+        if (partida == null || partida.isFinalizada()) return;
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+        
+        if (lblDadoTitulo != null) {
+            lblDadoTitulo.setText("Dado Jugador: " + actual.getNombre());
+        }
+        if (dado != null) {
+            dado.setText("Tirar Dado (" + actual.getNombre() + ")");
         }
     }
 
@@ -495,10 +514,10 @@ public class PantallaPartida {
             else if (nombre.contains("bola")) bolas++;
         }
         
-        if (rapido_t != null) rapido_t.setText("x" + dadosRapidos);
-        if (lento_t != null) lento_t.setText("x" + dadosLentos);
-        if (peces_t != null) peces_t.setText("x" + peces);
-        if (nieve_t != null) nieve_t.setText("x" + bolas);
+        if (rapido_t != null) rapido_t.setText("Dado Rápido: " + dadosRapidos);
+        if (lento_t != null) lento_t.setText("Dado Lento: " + dadosLentos);
+        if (peces_t != null) peces_t.setText("Peces: " + peces);
+        if (nieve_t != null) nieve_t.setText("Bolas: " + bolas);
     }
 
     private void cargarSkins() {
