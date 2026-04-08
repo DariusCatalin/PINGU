@@ -54,33 +54,84 @@ public class PantallaPartida {
         }
     };
 
+    // Jugadores pre-configurados (recibidos desde PantallaConfig)
+    private java.util.ArrayList<Jugador> jugadoresConfig = null;
+
+    /**
+     * Llamado por PantallaConfig antes de mostrar la pantalla,
+     * para pasar la lista de jugadores configurados.
+     */
+    public void setJugadores(java.util.ArrayList<Jugador> jugadores) {
+        this.jugadoresConfig = jugadores;
+        // Si initialize() ya se ejecutó, re-lanzamos la configuración
+        if (partida != null) {
+            configurarPartida();
+        }
+    }
+
     @FXML
     private void initialize() {
         System.out.println("Cargando Pantalla Partida...");
         cargarSkins();
-        
+
         // 1. INICIALIZAMOS LA PARTIDA
         partida = new Partida();
         partida.setGestorEventos(gestorUI);
-        
-        // 2. CREAMOS LOS JUGADORES
-        Pinguino jugador1 = new Pinguino(0, "Pingu", "Azul");
-        Foca cpuFoca = new Foca(0, "Focabrón", "Rojo"); 
 
-        partida.getJugadores().add(jugador1);
-        partida.getJugadores().add(cpuFoca);
-        
-        // Posicionamos visualmente en la salida
-        actualizarPosicionVisual(jugador1, P1);
-        actualizarPosicionVisual(cpuFoca, P2);
-        
-        // Actualizamos los textos de inventario inicial (todo a 0)
-        actualizarTextosInventario(jugador1);
-        
-        // 3. MOSTRAR TIPOS DE CASILLAS
+        // 2. Si llegaron jugadores desde PantallaConfig, los usamos.
+        //    Si no, creamos uno por defecto (modo fallback / reinicio).
+        if (jugadoresConfig != null) {
+            configurarPartida();
+        } else {
+            // Fallback: 1 Pingüino + 1 Foca CPU por defecto
+            Pinguino jugador1 = new Pinguino(0, "Pingu", "Azul");
+            Foca cpuFoca = new Foca(0, "Focabrón", "Rojo");
+            partida.getJugadores().add(jugador1);
+            partida.getJugadores().add(cpuFoca);
+
+            actualizarPosicionVisual(jugador1, P1);
+            actualizarPosicionVisual(cpuFoca, P2);
+            actualizarTextosInventario(jugador1);
+            mostrarTiposDeCasillasEnTablero(partida.getTablero());
+            gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
+        }
+    }
+
+    /** Configura la partida usando los jugadores recibidos de PantallaConfig. */
+    private void configurarPartida() {
+        partida.getJugadores().clear();
+        for (Jugador j : jugadoresConfig) {
+            partida.getJugadores().add(j);
+        }
+
+        // Fichas visuales disponibles en el FXML
+        Circle[] fichas = {P1, P2, P3, P4};
+
+        // Ocultar todas primero
+        for (Circle c : fichas) {
+            if (c != null) c.setVisible(false);
+        }
+
+        // Asignar y mostrar las fichas para cada jugador
+        for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
+            Jugador j = jugadoresConfig.get(i);
+            Circle ficha = fichas[i];
+            if (ficha != null) {
+                ficha.setVisible(true);
+                actualizarPosicionVisual(j, ficha);
+            }
+        }
+
+        // Actualizar inventario del primer pingüino
+        for (Jugador j : jugadoresConfig) {
+            if (j instanceof Pinguino) {
+                actualizarTextosInventario(j);
+                break;
+            }
+        }
+
         mostrarTiposDeCasillasEnTablero(partida.getTablero());
-        
-        gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
+        gestorUI.registrar("¡Partida iniciada con " + jugadoresConfig.size() + " jugadores!");
     }
 
     // ==========================================

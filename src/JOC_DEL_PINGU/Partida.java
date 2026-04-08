@@ -14,6 +14,7 @@ public class Partida {
     private Jugador ganador;
     private int maxJugadores; // Per limitar jugadors
     private boolean modoGuerraActivado; // Només per nivell IMPOSSIBLE
+    private GestorEventos gestorEventos;
     
     // ==================== CONSTRUCTOR ====================
     public Partida() {
@@ -134,10 +135,7 @@ public class Partida {
     
     // ==================== MÈTODES DE FINALITZACIÓ ====================
     
-    /**
-     * Verifica si algun jugador ha arribat a la meta (posició 49 o superior)
-     * @return true si la partida ha finalitzat
-     */
+   
     public boolean verificarFinPartida() {
         for (Jugador j : jugadores) {
             if (j.getPosicion() >= 49) {
@@ -164,8 +162,16 @@ public class Partida {
         return jugadores;
     }
     
+    public void setJugadores(ArrayList<Jugador> jugadores) {
+        this.jugadores = jugadores;
+    }
+    
     public int getTurnos() {
         return turnos;
+    }
+    
+    public void setTurnos(int turnos) {
+        this.turnos = turnos;
     }
     
     public boolean isFinalizada() {
@@ -180,6 +186,10 @@ public class Partida {
         return ganador;
     }
     
+    public void setGanador(Jugador ganador) {
+        this.ganador = ganador;
+    }
+    
     public Jugador getJugadorActual() {
         if (jugadores.isEmpty()) {
             return null;
@@ -189,6 +199,18 @@ public class Partida {
     
     public int getIndiceJugadorActual() {
         return this.jugadorActual;
+    }
+    
+    public void setJugadorActual(int indice) {
+        this.jugadorActual = indice;
+    }
+    
+    public GestorEventos getGestorEventos() {
+        return gestorEventos;
+    }
+    
+    public void setGestorEventos(GestorEventos gestorEventos) {
+        this.gestorEventos = gestorEventos;
     }
     
     public void setModoGuerraActivado(boolean activado) {
