@@ -11,6 +11,11 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.image.Image;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
 public class PantallaPartida {
 
     // --- INTERFAZ (FXML) ---
@@ -141,13 +146,8 @@ public class PantallaPartida {
     }
 
     // ==========================================
-    // MENÚ ARCHIVO (EVENTOS)
+    // MENÚ OPCIONES (EVENTOS)
     // ==========================================
-    @FXML
-    private void handleNewGame(ActionEvent event) {
-        gestorUI.registrar("Reiniciando partida...");
-        initialize(); // Volvemos a empezar
-    }
 
     @FXML
     private void handleSaveGame(ActionEvent event) {
@@ -156,15 +156,52 @@ public class PantallaPartida {
     }
 
     @FXML
-    private void handleLoadGame(ActionEvent event) {
-        gestorUI.registrar("Cargando partida... (Función no implementada aún)");
-        // TODO: Conectar con GestorBBDD
+    private void handleSaveAndQuit(ActionEvent event) {
+        gestorUI.registrar("Guardando partida... (Función no implementada aún)");
+        // TODO: Conectar con GestorBBDD para guardar primero
+        System.out.println("Saliendo al menú tras guardar...");
+        volverAlMenu(event);
     }
 
     @FXML
-    private void handleQuitGame(ActionEvent event) {
-        System.out.println("Saliendo del juego...");
-        System.exit(0);
+    private void handleQuitWithoutSaving(ActionEvent event) {
+        System.out.println("Saliendo al menú sin guardar...");
+        volverAlMenu(event);
+    }
+
+    private void volverAlMenu(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+            Stage stage = null;
+            
+            // Intento 1: A través del tablero
+            if (tablero != null && tablero.getScene() != null && tablero.getScene().getWindow() != null) {
+                stage = (Stage) tablero.getScene().getWindow();
+            } 
+            // Intento 2: A través del evento (MenuItem -> MenuBar -> Stage)
+            else if (event.getSource() instanceof MenuItem) {
+                MenuItem mItem = (MenuItem) event.getSource();
+                if (mItem.getParentPopup() != null && mItem.getParentPopup().getOwnerWindow() != null) {
+                    stage = (Stage) mItem.getParentPopup().getOwnerWindow();
+                }
+            }
+
+            if (stage != null) {
+                stage.setScene(scene);
+                stage.setTitle("El Juego del Pingüino - Menú Principal");
+                stage.show();
+            } else {
+                throw new Exception("No se pudo obtener la ventana principal (Stage).");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setHeaderText("Error al volver al menú");
+            alert.setContentText(e.toString() + " - " + e.getMessage());
+            alert.showAndWait();
+        }
     }
 
     // ==========================================

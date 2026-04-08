@@ -24,7 +24,8 @@ public class Main extends Application {
             // Configurem l'escenari principal
             primaryStage.setTitle("El Joc del Pingu");
             primaryStage.setScene(scene);
-            primaryStage.setResizable(false); // Opcional: evitar redimensionar
+            primaryStage.setResizable(true); // Permitir redimensionar y full screen
+            primaryStage.setMaximized(true); // Empezar maximizado
             primaryStage.show();
             
             System.out.println("✅ Aplicació iniciada correctament!");
