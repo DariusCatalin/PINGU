@@ -25,23 +25,11 @@ public class CasillaFragil extends Casilla {
                 ge.registrar(j.getNombre() + " pesa demasiado. ¡Rompe el hielo y cae al inicio!");
             }
             
-        // 1-5 OBJECTES: Penalitzacio aleatoria
+        // 1-5 OBJECTES: Pierde un turno
         } else if (cantidadObjetos > 0 && cantidadObjetos <= 5) {
-            Random rand = new Random();
-            int opcion = rand.nextInt(2); // 0 o 1
-            
-            if (opcion == 0) {
-                // Opcio A: Perdre un torn
-                j.aplicarPenalizacion();
-                if (ge != null) {
-                    ge.registrar(j.getNombre() + " pisa hielo fragil con cuidado. Pierde un turno.");
-                }
-            } else {
-                // Opcio B: Perdre un objecte aleatori
-                j.perderObjetoAleatorio();
-                if (ge != null) {
-                    ge.registrar(j.getNombre() + " el hielo cruje. Pierde un objeto del inventario.");
-                }
+            j.aplicarPenalizacion();
+            if (ge != null) {
+                ge.registrar(j.getNombre() + " pisa hielo frágil con cuidado y pierde un turno.");
             }
             
         // 0 OBJECTES: Cap penalitzacio

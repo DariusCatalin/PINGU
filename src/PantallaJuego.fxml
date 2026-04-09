@@ -27,16 +27,14 @@
     styleClass="root">
 
     <top>
-        <MenuBar>
+        <MenuBar style="-fx-font-size: 16px; -fx-padding: 4px;">
             <menus>
-                <Menu mnemonicParsing="false" text="Archivo">
+                <Menu mnemonicParsing="false" text="Opciones">
                     <items>
-                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="Nuevo" onAction="#handleNewGame"/>
+                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar partida" onAction="#handleSaveGame"/>
+                        <MenuItem fx:id="saveAndQuit" mnemonicParsing="false" text="Guardar y salir" onAction="#handleSaveAndQuit"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" onAction="#handleSaveGame"/>
-                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" onAction="#handleLoadGame"/>
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" onAction="#handleQuitGame"/>
+                        <MenuItem fx:id="quitWithoutSaving" mnemonicParsing="false" text="Salir sin guardar" onAction="#handleQuitWithoutSaving"/>
                     </items>
                 </Menu>
             </menus>
@@ -95,7 +93,7 @@
 
             <!-- Tarjeta Dado -->
             <VBox spacing="10" styleClass="card" prefWidth="280">
-                <Label text="Dado" styleClass="card-title" />
+                <Label fx:id="lblDadoTitulo" text="Dado" styleClass="card-title" />
                 <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="240" />
                 <Button fx:id="dado" text="Tirar dado" onAction="#handleDado"
                         maxWidth="Infinity" styleClass="primary" />
@@ -144,7 +142,8 @@
             <!-- Tarjeta Eventos -->
             <VBox spacing="10" styleClass="card" prefWidth="320">
                 <Label text="Eventos" styleClass="card-title" />
-                <Text fx:id="eventos" text="Evento ocurrido" styleClass="events" wrappingWidth="280" />
+                <javafx.scene.control.TextArea fx:id="eventos" editable="false" wrapText="true" 
+                                               styleClass="events-area" prefHeight="130" />
             </VBox>
 
         </HBox>
