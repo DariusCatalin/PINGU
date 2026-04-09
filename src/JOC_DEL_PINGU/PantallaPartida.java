@@ -5,11 +5,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.GridPane;
-import javafx.scene.shape.Circle;
-import javafx.scene.text.Text;
-import javafx.scene.paint.ImagePattern;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 
 public class PantallaPartida {
 
@@ -33,10 +31,10 @@ public class PantallaPartida {
     @FXML private Text eventos; 
 
     @FXML private GridPane tablero;
-    @FXML private Circle P1; // Pingüino Jugador
-    @FXML private Circle P2; // Foca CPU
-    @FXML private Circle P3;
-    @FXML private Circle P4;
+    @FXML private ImageView P1; // Jugador 1
+    @FXML private ImageView P2; // Jugador 2
+    @FXML private ImageView P3; // Jugador 3
+    @FXML private ImageView P4; // Jugador 4
 
     // --- LÓGICA DEL JUEGO (EL CEREBRO) ---
     private Partida partida;
@@ -105,18 +103,19 @@ public class PantallaPartida {
         }
 
         // Fichas visuales disponibles en el FXML
-        Circle[] fichas = {P1, P2, P3, P4};
+        ImageView[] fichas = {P1, P2, P3, P4};
 
         // Ocultar todas primero
-        for (Circle c : fichas) {
-            if (c != null) c.setVisible(false);
+        for (ImageView iv : fichas) {
+            if (iv != null) iv.setVisible(false);
         }
 
-        // Asignar y mostrar las fichas para cada jugador
+        // Asignar imagen según color y mostrar la ficha de cada jugador
         for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
             Jugador j = jugadoresConfig.get(i);
-            Circle ficha = fichas[i];
+            ImageView ficha = fichas[i];
             if (ficha != null) {
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha);
             }
@@ -181,7 +180,7 @@ public class PantallaPartida {
             }
             
             actualizarTextosInventario(actual);
-            actualizarPosicionVisual(actual, P1); 
+            actualizarPosicionVisual(actual, P1);
             avanzarTurno();
 
             // Turno de la CPU
@@ -265,7 +264,7 @@ public class PantallaPartida {
     // LÓGICA INTERNA DE TURNOS Y CASILLAS
     // ==========================================
 
-    private void jugarTurnoCPU_IA(Foca foca, Circle fichaVisual) {
+    private void jugarTurnoCPU_IA(Foca foca, ImageView fichaVisual) {
         if (foca.estaPenalizado()) {
             foca.decrementarPenalizacion();
             gestorUI.registrar("La foca " + foca.getNombre() + " está entretenida comiendo. Pierde su turno.");
@@ -362,58 +361,65 @@ public class PantallaPartida {
 
     private void mostrarTiposDeCasillasEnTablero(Tablero t) {
         if (tablero == null) return;
+        // Eliminar imágenes de casillas anteriores
         tablero.getChildren().removeIf(node -> TAG_CASILLA_TEXT.equals(node.getUserData()));
 
         for (int i = 0; i < t.getCasillas().size(); i++) {
             Casilla casilla = t.getCasillas().get(i);
-            String tipo = getNombreAmigable(casilla, i, t.getCasillas().size());
-            
-            if (!tipo.isEmpty()) {
-                Text texto = new Text(tipo);
-                texto.setUserData(TAG_CASILLA_TEXT);
-                
-                // Estilo más pequeño para que no moleste
-                texto.setStyle("-fx-font-size: 10px; -fx-fill: #555555; -fx-font-weight: bold;");
+            String rutaImg = getRutaCasilla(casilla, i, t.getCasillas().size());
 
-                int columna = i % COLUMNS;
-                int fila = 9 - (i / COLUMNS);
+            if (rutaImg != null) {
+                try {
+                    var resource = getClass().getResourceAsStream(rutaImg);
+                    if (resource != null) {
+                        ImageView imgView = new ImageView(new Image(resource));
+                        imgView.setFitWidth(90);
+                        imgView.setFitHeight(50);
+                        imgView.setPreserveRatio(false);
+                        imgView.setUserData(TAG_CASILLA_TEXT);
 
-                GridPane.setRowIndex(texto, fila);
-                GridPane.setColumnIndex(texto, columna);
-                
-                // Alineación al fondo de la casilla
-                GridPane.setValignment(texto, javafx.geometry.VPos.BOTTOM);
-                GridPane.setHalignment(texto, javafx.geometry.HPos.CENTER);
-                
-                tablero.getChildren().add(texto);
+                        int columna = i % COLUMNS;
+                        int fila = 9 - (i / COLUMNS);
+
+                        GridPane.setRowIndex(imgView, fila);
+                        GridPane.setColumnIndex(imgView, columna);
+                        GridPane.setValignment(imgView, javafx.geometry.VPos.CENTER);
+                        GridPane.setHalignment(imgView, javafx.geometry.HPos.CENTER);
+
+                        tablero.getChildren().add(imgView);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error cargando imagen casilla " + i + ": " + e.getMessage());
+                }
             }
         }
     }
 
-    private String getNombreAmigable(Casilla c, int index, int total) {
-        if (index == 0) return "SALIDA";
-        if (index == total - 1) return "META";
-        if (c instanceof Agujero) return "Agujero";
-        if (c instanceof Trineo) return "Trineo";
-        if (c instanceof Evento) return "EVENTO";
-        if (c instanceof Oso) return "OSO";
-        if (c instanceof CasillaFragil) return "Fragil";
-        return "";
+    /** Devuelve la ruta del recurso imagen para cada tipo de casilla. */
+    private String getRutaCasilla(Casilla c, int index, int total) {
+        // Casilla normal (inicio, meta, y casillas sin tipo especial) usan imagen normal
+        if (c instanceof Agujero)     return "/resources/Casilla_Agujero.png";
+        if (c instanceof Oso)         return "/resources/Casilla_Oso.png";
+        if (c instanceof Trineo)      return "/resources/Casilla_Trineo.png";
+        if (c instanceof Evento)      return "/resources/Casilla_Interrogante.png";
+        if (c instanceof CasillaFragil) return "/resources/Casilla_Normal.png";
+        // CasillaNormal (incluye salida y meta)
+        return "/resources/Casilla_Normal.png";
     }
 
     // ==========================================
     // MÉTODOS AUXILIARES Y VISUALES
     // ==========================================
 
-    private void actualizarPosicionVisual(Jugador j, Circle ficha) {
+    private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
         if (ficha == null) return;
         int pos = j.getPosicion();
         if (pos > 49) pos = 49;
-        
+
         // Tablero de 5 columnas (índices 0-4) y 10 filas (indices 0-9)
         int columna = pos % 5;
         int fila = 9 - (pos / 5);
-        
+
         GridPane.setColumnIndex(ficha, columna);
         GridPane.setRowIndex(ficha, fila);
     }
@@ -465,28 +471,32 @@ public class PantallaPartida {
         if (nieve_t != null) nieve_t.setText("x" + bolas);
     }
 
-    private void cargarSkins() {
-        try {
-            String pathPingu = "/resources/pinguino_azul.png";
-            String pathRojo = "/resources/foca_roja.png";
-            asignarImagenAFicha(P1, pathPingu);
-            asignarImagenAFicha(P2, pathRojo);
-        } catch (Exception e) {
-            System.err.println("Aviso: No se han podido cargar todas las skins.");
+    /** Devuelve la ruta del PNG según el color del jugador. */
+    private String obtenerRutaPersonaje(String color) {
+        if (color == null) return "/resources/Personaje Amarillo.png";
+        switch (color.toLowerCase()) {
+            case "amarillo": return "/resources/Personaje Amarillo.png";
+            case "rojo":     return "/resources/Personaje Rojo.png";
+            case "verde":    return "/resources/Personaje Verde.png";
+            case "azul":
+            default:         return "/resources/Gemini_Generated_Image_y5ki0gy5ki0gy5ki-fotor-bg-remover-202603161643.png";
         }
     }
 
-    private void asignarImagenAFicha(Circle ficha, String path) {
+    private void cargarSkins() {
+        // En el modo fallback (sin PantallaConfig), asignar skins por defecto
+        asignarImagenAFicha(P1, obtenerRutaPersonaje("azul"));
+        asignarImagenAFicha(P2, obtenerRutaPersonaje("rojo"));
+    }
+
+    private void asignarImagenAFicha(ImageView ficha, String path) {
         if (ficha == null) return;
         try {
             var resource = getClass().getResourceAsStream(path);
-            if (resource == null) {
-                String fileName = path.substring(path.lastIndexOf("/") + 1);
-                resource = getClass().getResourceAsStream("/" + fileName);
-            }
             if (resource != null) {
-                ficha.setFill(new ImagePattern(new Image(resource)));
-                ficha.setStroke(null); 
+                ficha.setImage(new Image(resource));
+            } else {
+                System.err.println("No se encontró el recurso: " + path);
             }
         } catch (Exception e) {
             System.err.println("Error aplicando skin: " + e.getMessage());
