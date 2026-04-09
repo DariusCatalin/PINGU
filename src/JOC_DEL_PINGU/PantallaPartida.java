@@ -8,6 +8,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.text.Text;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -411,6 +412,35 @@ public class PantallaPartida {
         int turnoActual = partida.getIndiceJugadorActual(); 
         int siguienteTurno = (turnoActual + 1) % partida.getJugadores().size(); 
         partida.setJugadorActual(siguienteTurno);
+    }
+
+    private void procesarTurnosCPU() {
+        while (!partida.isFinalizada()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+            if (actual instanceof Foca) {
+                jugarTurnoCPU_IA((Foca) actual, getFichaVisual(actual));
+            } else {
+                break;
+            }
+        }
+    }
+
+    private ImageView getFichaVisual(Jugador j) {
+        int index = partida.getJugadores().indexOf(j);
+        ImageView[] fichas = {P1, P2, P3, P4};
+        if (index >= 0 && index < fichas.length) {
+            return fichas[index];
+        }
+        return null;
+    }
+
+    private void actualizarTextosTurno() {
+        if (partida != null && partida.getJugadores() != null && !partida.getJugadores().isEmpty()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+            if (lblDadoTitulo != null) {
+                lblDadoTitulo.setText("Turno de: " + actual.getNombre());
+            }
+        }
     }
 
     private void mostrarTiposDeCasillasEnTablero(Tablero t) {
