@@ -174,6 +174,7 @@ public class PantallaPartida {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             Stage stage = null;
             
             // Intento 1: A través del tablero
@@ -192,6 +193,8 @@ public class PantallaPartida {
                 stage.setScene(scene);
                 stage.setTitle("El Juego del Pingüino - Menú Principal");
                 stage.show();
+                final Stage finalStage = stage; // necesario: stage no es effectively final
+                javafx.application.Platform.runLater(() -> finalStage.setMaximized(true));
             } else {
                 throw new Exception("No se pudo obtener la ventana principal (Stage).");
             }
@@ -224,9 +227,8 @@ public class PantallaPartida {
             }
             
             actualizarTextosInventario(actual);
-            actualizarPosicionVisual(actual, P1);
+            actualizarPosicionVisual(actual, getFichaVisual(actual));
             avanzarTurno();
-
             procesarTurnosCPU();
         }
     }
@@ -236,7 +238,7 @@ public class PantallaPartida {
     // ==========================================
     @FXML
     private void handleRapido(ActionEvent event) {
-        usarDadoEspecial("Dado Rápido", 4, 6); 
+        usarDadoEspecial("Dado Rápido", 5, 10); // Especificació: avança entre 5 i 10 caselles
     }
     
     @FXML
@@ -290,11 +292,59 @@ public class PantallaPartida {
 
     @FXML
     private void usarBolaNieve(ActionEvent event) {
+        if (partida.isFinalizada()) return;
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
-        if (actual instanceof Pinguino) {
-            int cantidad = contarBolas(actual);
-            gestorUI.registrar("Tienes " + cantidad + " Bolas de Nieve listas para la guerra.");
+
+        if (!(actual instanceof Pinguino)) return;
+
+        int bolasActual = contarBolas(actual);
+        if (bolasActual == 0) {
+            gestorUI.registrar("¡No tienes Bolas de Nieve para lanzar!");
+            return;
         }
+
+        // Buscar objetivo: el pinguino humano que va más adelante
+        Jugador objetivo = null;
+        int maxPos = -1;
+        for (Jugador j : partida.getJugadores()) {
+            if (j != actual && j instanceof Pinguino && j.getPosicion() > maxPos) {
+                maxPos = j.getPosicion();
+                objetivo = j;
+            }
+        }
+
+        if (objetivo == null) {
+            gestorUI.registrar("No hay otros pingüinos a los que lanzar bolas de nieve.");
+            return;
+        }
+
+        // ¡GUERRA DE BOLAS DE NIEVE! Ambos gastan todas sus bolas
+        int bolasObj = contarBolas(objetivo);
+        actual.vaciarBolas();
+        objetivo.vaciarBolas();
+        actualizarTextosInventario(actual);
+        actualizarTextosInventario(objetivo);
+
+        if (bolasActual > bolasObj) {
+            int diff = bolasActual - bolasObj;
+            objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
+            gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
+                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            actualizarPosicionVisual(objetivo, getFichaVisual(objetivo));
+        } else if (bolasObj > bolasActual) {
+            int diff = bolasObj - bolasActual;
+            actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
+            gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
+                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            actualizarPosicionVisual(actual, getFichaVisual(actual));
+        } else {
+            gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
+                + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
+        }
+
+        // Lanzar bolas ES la acción del turno (reemplaza tirar dado)
+        avanzarTurno();
+        procesarTurnosCPU();
     }
 
     // ==========================================
@@ -367,16 +417,19 @@ public class PantallaPartida {
                 if (actual instanceof Foca || otro instanceof Foca) {
                     Jugador pinguino = (actual instanceof Pinguino) ? actual : otro;
                     Foca foca = (actual instanceof Foca) ? (Foca) actual : (Foca) otro;
-                    
+
                     if (consumirObjeto(pinguino, "Pez")) {
-                        gestorUI.registrar("¡" + pinguino.getNombre() + " le lanza un Pez a la Foca para salvarse!");
-                        foca.aplicarPenalizacion(); 
+                        // El pingüino le da un pez: la Foca queda bloqueada 2 turnos
+                        gestorUI.registrar("¡" + pinguino.getNombre() + " le lanza un Pez a la Foca! ¡La Foca queda bloqueada 2 turnos!");
+                        foca.aplicarPenalizacion();
+                        foca.aplicarPenalizacion(); // 2 turnos según especificación
                     } else {
-                        // Castigo: mitad de objetos y retroceder al agujero anterior
-                        pinguino.perderMitadInventario();
+                        // Sin pez: coletazo → solo retrocede al agujero anterior (NO pierde objetos)
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
                         pinguino.moverPosicion(posHole);
-                        gestorUI.registrar("¡La foca atrapa a " + pinguino.getNombre() + "! Pierde la mitad de objetos y vuelve al agujero en " + posHole);
+                        gestorUI.registrar("¡La Foca da un coletazo a " + pinguino.getNombre()
+                            + "! Es enviado al agujero anterior (casilla " + posHole + ").");
+                        actualizarPosicionVisual(pinguino, getFichaVisual(pinguino));
                     }
                 } else if (actual instanceof Pinguino && otro instanceof Pinguino) {
                     // GUERRA DE BOLAS (PvP)
@@ -389,10 +442,12 @@ public class PantallaPartida {
                         int diff = bolasA - bolasO;
                         otro.moverPosicion(Math.max(0, otro.getPosicion() - diff));
                         gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
+                        actualizarPosicionVisual(otro, getFichaVisual(otro));
                     } else if (bolasO > bolasA) {
                         int diff = bolasO - bolasA;
                         actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
                         gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
+                        actualizarPosicionVisual(actual, getFichaVisual(actual));
                     } else {
                         gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
                     }

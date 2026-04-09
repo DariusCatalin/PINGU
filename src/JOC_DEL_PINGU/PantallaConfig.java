@@ -179,10 +179,12 @@ public class PantallaConfig {
             controlador.setJugadores(jugadores);
 
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Partida");
             stage.show();
+            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             mostrarError("Error al cargar el juego: " + e.getMessage());
             e.printStackTrace();
@@ -196,10 +198,12 @@ public class PantallaConfig {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Menú Principal");
             stage.show();
+            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             e.printStackTrace();
         }

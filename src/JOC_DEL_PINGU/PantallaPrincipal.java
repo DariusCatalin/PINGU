@@ -22,11 +22,13 @@ public class PantallaPrincipal {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaConfig.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Nueva Partida");
             stage.show();
+            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -45,11 +47,13 @@ public class PantallaPrincipal {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml")); // Asumiendo este nombre para el login
             Parent root = loader.load();
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Login");
             stage.show();
+            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             // Si el nombre es diferente, intentamos con el recurso correcto.
             // A veces el login se llama de otra forma en FXML.
