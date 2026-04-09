@@ -78,6 +78,7 @@ public class PantallaMenu {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
                 Parent root = loader.load();
                 Scene scene = new Scene(root);
+                try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
 
                 // Capturamos la ventana actual a través del botón que acabamos de pulsar
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -86,6 +87,7 @@ public class PantallaMenu {
                 stage.setScene(scene);
                 stage.setTitle("El Juego del Pingüino - Menú Principal");
                 stage.show();
+                javafx.application.Platform.runLater(() -> stage.setMaximized(true));
                 
             } catch (Exception e) {
                 System.out.println("¡Error al intentar cargar la vista del juego!");

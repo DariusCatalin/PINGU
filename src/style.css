@@ -1,0 +1,78 @@
+/* style.css */
+
+.root {
+    -fx-background-image: url("resources/FONDO%20MEN%C3%9A.png");
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-color: #0d1b2a;
+}
+
+.button {
+    -fx-background-color: linear-gradient(to bottom, #5bc0de, #31b0d5);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 16px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: #269abc;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 4, 0, 0, 2);
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: linear-gradient(to bottom, #3fe0ff, #38c8f4);
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 6, 0, 0, 3);
+}
+
+.button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #218ba8, #166e87);
+    -fx-translate-y: 2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 2, 0, 0, 1);
+}
+
+.label, .text, .check-box {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.text-area {
+    -fx-background-color: rgba(255, 255, 255, 0.85);
+    -fx-control-inner-background: rgba(255, 255, 255, 0.85);
+    -fx-border-color: #5bc0de;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111111;
+}
+
+.text-field, .password-field {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-border-color: #5bc0de;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+    -fx-text-fill: #111111;
+}
+
+.combo-box {
+    -fx-background-color: rgba(255, 255, 255, 0.9);
+    -fx-border-color: #5bc0de;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.panel-container, .vbox, .hbox {
+    -fx-background-color: rgba(25, 42, 66, 0.75);
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(91, 192, 222, 0.5);
+    -fx-border-width: 2px;
+    -fx-border-radius: 10px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 4);
+    -fx-padding: 15px;
+}

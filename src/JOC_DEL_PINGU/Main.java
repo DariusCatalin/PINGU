@@ -20,6 +20,7 @@ public class Main extends Application {
             
             // Creem l'escena amb el contingut carregat
             Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             
             // Configurem l'escenari principal
             primaryStage.setTitle("El Joc del Pingu");
