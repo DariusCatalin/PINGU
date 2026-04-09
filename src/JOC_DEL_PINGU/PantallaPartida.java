@@ -398,6 +398,8 @@ public class PantallaPartida {
             j.moverPosicion(49);
             partida.setFinalizada(true);
             gestorUI.registrar("¡" + j.getNombre() + " HA LLEGADO A LA META Y GANA LA PARTIDA!");
+            // Navegar a la pantalla de victoria tras un breve retardo para que el log se vea
+            javafx.application.Platform.runLater(() -> irAPantallaVictoria(j));
             return;
         }
         
@@ -407,6 +409,37 @@ public class PantallaPartida {
         
         // Comprobar colisiones
         verificarColisionesLocal(j);
+    }
+
+    /** Carga la pantalla de victoria y le pasa el nombre y color del ganador. */
+    private void irAPantallaVictoria(Jugador ganador) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaVictoria.fxml"));
+            Parent root = loader.load();
+
+            // Pasar datos del ganador al controlador de victoria
+            PantallaVictoria controlador = loader.getController();
+            controlador.setGanador(ganador.getNombre(), ganador.getColor());
+
+            Scene scene = new Scene(root);
+
+            // Obtener la ventana actual
+            Stage stage = null;
+            if (tablero != null && tablero.getScene() != null && tablero.getScene().getWindow() != null) {
+                stage = (Stage) tablero.getScene().getWindow();
+            }
+
+            if (stage != null) {
+                stage.setScene(scene);
+                stage.setTitle("El Juego del Pingüino - ¡Victoria!");
+                stage.show();
+                final Stage finalStage = stage;
+                javafx.application.Platform.runLater(() -> finalStage.setMaximized(true));
+            }
+        } catch (Exception e) {
+            System.err.println("Error al cargar PantallaVictoria: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void verificarColisionesLocal(Jugador actual) {

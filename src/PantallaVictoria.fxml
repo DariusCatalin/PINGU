@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+
+<BorderPane
+    xmlns="http://javafx.com/javafx/21"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="JOC_DEL_PINGU.PantallaVictoria"
+    stylesheets="@PantallaVictoria.css"
+    styleClass="victoria-root">
+
+    <center>
+        <StackPane>
+            <!-- Imagen de victoria: ocupa toda la pantalla -->
+            <ImageView fx:id="imgVictoria"
+                       fitWidth="1920" fitHeight="980"
+                       preserveRatio="true"
+                       styleClass="victoria-img"/>
+        </StackPane>
+    </center>
+
+    <bottom>
+        <VBox alignment="CENTER" spacing="16" styleClass="victoria-bottom">
+            <padding>
+                <Insets top="20" right="40" bottom="30" left="40"/>
+            </padding>
+
+            <!-- Nombre del ganador -->
+            <Label fx:id="lblGanador" text="¡GANADOR!" styleClass="victoria-title"/>
+
+            <!-- Botones de acción -->
+            <HBox alignment="CENTER" spacing="24">
+                <Button fx:id="btnNuevaPartida" text="🎮  NUEVA PARTIDA"
+                        onAction="#handleNuevaPartida"
+                        styleClass="victoria-btn, primary-btn"
+                        prefWidth="220"/>
+                <Button fx:id="btnGuardar" text="💾  GUARDAR"
+                        onAction="#handleGuardar"
+                        styleClass="victoria-btn"
+                        prefWidth="180"/>
+                <Button fx:id="btnMenu" text="🏠  MENÚ PRINCIPAL"
+                        onAction="#handleMenu"
+                        styleClass="victoria-btn"
+                        prefWidth="220"/>
+                <Button fx:id="btnSalir" text="❌  SALIR"
+                        onAction="#handleSalir"
+                        styleClass="victoria-btn, danger-btn"
+                        prefWidth="160"/>
+            </HBox>
+        </VBox>
+    </bottom>
+
+</BorderPane>
