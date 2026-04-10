@@ -51,29 +51,37 @@ public class BBDD {
 		System.out.println("¿Contraseña?");
 		String pwd = scan.nextLine(); // aquí NO hago trim por si la contraseña tuviera espacios
 
+		return conectarBBDDInternal(url, user, pwd);
+	}
+
+	public static Connection conectarBaseDatosGUI() {
+		System.out.println("Intentando conectarse a la BBDD (Modo GUI)...");
+		// HARDCODEADO PARA EVITAR QUE LA INTERFAZ SE CONGELE PIDIENDO POR CONSOLA
+		String url = "jdbc:oracle:thin:@//oracle.ilerna.com:1521/XEPDB2"; 
+		String user = "DW2526_GR07_PINGU"; 
+		String pwd = "ADAEGUT"; 
+		return conectarBBDDInternal(url, user, pwd);
+	}
+
+	private static Connection conectarBBDDInternal(String url, String user, String pwd) {
 		// 3) Conectar
 		try {
-			// En muchos casos con JDBC moderno no hace falta, pero lo dejamos por si acaso
 			Class.forName("oracle.jdbc.driver.OracleDriver");
-
 			Connection con = DriverManager.getConnection(url, user, pwd);
 
-			// 4) Comprobar que la conexión es válida (timeout 5 s)
+			// 4) Comprobar
 			if (con.isValid(5)) {
-				System.out.println("Conectados a la base de datos (" + entorno.toUpperCase() + ").");
+				System.out.println("Conectados a la base de datos con éxito.");
 			} else {
 				System.out.println("Conexión creada, pero no parece válida. Revisa red/URL.");
 			}
-
 			return con;
-
 		} catch (ClassNotFoundException e) {
 			System.out.println("No se ha encontrado el driver de Oracle. ¿Está el ojdbc en el proyecto?");
 		} catch (SQLException e) {
 			System.out.println("No se pudo conectar. Revisa URL/usuario/contraseña.");
 			System.out.println("Detalle: " + e.getMessage());
 		}
-
 		return null;
 	}
 

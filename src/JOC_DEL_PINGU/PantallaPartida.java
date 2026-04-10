@@ -75,6 +75,41 @@ public class PantallaPartida {
             configurarPartida();
         }
     }
+    
+    /**
+     * Llamado por PantallaPrincipal o GestorBBDD al cargar una partida existente.
+     */
+    public void setPartidaCargada(Partida pCargada) {
+        this.partida = pCargada;
+        this.partida.setGestorEventos(gestorUI);
+        this.jugadoresConfig = pCargada.getJugadores();
+        
+        ImageView[] fichas = {P1, P2, P3, P4};
+        for (ImageView iv : fichas) {
+            if (iv != null) iv.setVisible(false);
+        }
+
+        for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
+            Jugador j = jugadoresConfig.get(i);
+            ImageView ficha = fichas[i];
+            if (ficha != null) {
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                ficha.setVisible(true);
+                actualizarPosicionVisual(j, ficha);
+            }
+        }
+
+        for (Jugador j : jugadoresConfig) {
+            if (j instanceof Pinguino) {
+                actualizarTextosInventario(j);
+                break;
+            }
+        }
+        
+        actualizarTextosTurno();
+        mostrarTiposDeCasillasEnTablero(partida.getTablero());
+        gestorUI.registrar("¡Partida Restaurada desde Base de Datos con " + jugadoresConfig.size() + " jugadores!");
+    }
 
     @FXML
     private void initialize() {
@@ -151,15 +186,35 @@ public class PantallaPartida {
 
     @FXML
     private void handleSaveGame(ActionEvent event) {
-        gestorUI.registrar("Guardando partida... (Función no implementada aún)");
-        // TODO: Conectar con GestorBBDD
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog("");
+        dialog.setTitle("Guardar Partida");
+        dialog.setHeaderText("Guardar el estado actual en la BBDD Oracle");
+        dialog.setContentText("Introduce el ID numérico de tu partida:");
+
+        java.util.Optional<String> result = dialog.showAndWait();
+        result.ifPresent(idStr -> {
+            try {
+                int idPartida = Integer.parseInt(idStr);
+                GestorBBDD gestor = new GestorBBDD();
+                gestor.iniciarConexionGUI();
+                boolean extio = gestor.guardarBBDD(partida, idPartida);
+                gestor.cerrarConexion();
+                
+                if (extio) {
+                    gestorUI.registrar("✅ Partida " + idPartida + " guardada en BBDD.");
+                } else {
+                    gestorUI.registrar("❌ Error al guardar en BBDD.");
+                }
+            } catch (NumberFormatException e) {
+                gestorUI.registrar("❌ El ID introducido no es válido. Debe ser número.");
+            }
+        });
     }
 
     @FXML
     private void handleSaveAndQuit(ActionEvent event) {
-        gestorUI.registrar("Guardando partida... (Función no implementada aún)");
-        // TODO: Conectar con GestorBBDD para guardar primero
-        System.out.println("Saliendo al menú tras guardar...");
+        System.out.println("Guardando antes de salir...");
+        handleSaveGame(event);
         volverAlMenu(event);
     }
 
