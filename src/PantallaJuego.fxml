@@ -44,10 +44,10 @@
     <center>
         <StackPane>
             <padding>
-                <Insets top="20" right="20" bottom="20" left="20"/>
+                <Insets top="40" right="20" bottom="20" left="40"/>
             </padding>
 
-            <GridPane fx:id="tablero" gridLinesVisible="true" styleClass="board" prefHeight="520.0">
+            <GridPane fx:id="tablero" styleClass="board" maxHeight="700" maxWidth="1000" StackPane.alignment="CENTER_LEFT">
                 <columnConstraints>
                     <ColumnConstraints percentWidth="20.0" />
                     <ColumnConstraints percentWidth="20.0" />
@@ -85,22 +85,22 @@
         </StackPane>
     </center>
 
-    <bottom>
-        <HBox spacing="16" styleClass="bottom-bar">
+    <right>
+        <VBox spacing="16" styleClass="right-panel">
             <padding>
-                <Insets top="16" right="16" bottom="16" left="16"/>
+                <Insets top="140" right="20" bottom="20" left="0"/>
             </padding>
 
             <!-- Tarjeta Dado -->
-            <VBox spacing="10" styleClass="card" prefWidth="280">
+            <VBox spacing="10" styleClass="card" prefWidth="250">
                 <Label fx:id="lblDadoTitulo" text="Dado" styleClass="card-title" />
-                <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="240" />
+                <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="220" />
                 <Button fx:id="dado" text="Tirar dado" onAction="#handleDado"
                         maxWidth="Infinity" styleClass="primary" />
             </VBox>
 
             <!-- Tarjeta Objetos -->
-            <VBox spacing="10" styleClass="card" HBox.hgrow="ALWAYS">
+            <VBox spacing="10" styleClass="card" prefWidth="250" VBox.vgrow="ALWAYS">
                 <Label text="Objetos" styleClass="card-title" />
 
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="objects-scroll">
@@ -139,14 +139,14 @@
                 </ScrollPane>
             </VBox>
 
-            <!-- Tarjeta Eventos -->
-            <VBox spacing="10" styleClass="card" prefWidth="320">
-                <Label text="Eventos" styleClass="card-title" />
+            <!-- Tarjeta Eventos (Historial) -->
+            <VBox spacing="10" styleClass="card" prefWidth="250" prefHeight="230">
+                <Label text="Historial" styleClass="card-title" />
                 <javafx.scene.control.TextArea fx:id="eventos" editable="false" wrapText="true" 
-                                               styleClass="events-area" prefHeight="130" />
+                                               styleClass="events-area" prefHeight="180" VBox.vgrow="ALWAYS" />
             </VBox>
 
-        </HBox>
-    </bottom>
+        </VBox>
+    </right>
 
 </BorderPane>

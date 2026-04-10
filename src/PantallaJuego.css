@@ -1,6 +1,8 @@
 .root {
     -fx-font-family: "System";
-    -fx-background-color: #f6f7fb;
+    -fx-background-image: url("/resources/Pantalla_Partida.png");
+    -fx-background-size: cover;
+    -fx-background-position: center;
 }
 
 /* MENU */
@@ -10,15 +12,15 @@
     -fx-border-width: 0 0 1 0;
 }
 
-/* TABLERO */
+/* TABLERO (Cristal Esmerilado para disimular los PNGs blancos) */
 .board {
-    -fx-background-color: white;
-    -fx-background-radius: 14;
-    -fx-padding: 14;
-    -fx-border-color: #e6e7ee;
-    -fx-border-radius: 14;
-
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 14, 0.15, 0, 2);
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(255, 255, 255, 0.5);
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 20, 0, 0, 4);
 }
 
 /* TEXTOS DEL TABLERO */
@@ -38,36 +40,49 @@
     -fx-background-color: transparent;
 }
 
-/* TARJETAS */
+/* TARJETAS RIGHT PANEL (Dark Glassmorphism) */
 .card {
-    -fx-background-color: white;
+    -fx-background-color: rgba(16, 26, 48, 0.85); 
     -fx-background-radius: 14;
-    -fx-padding: 14;
-    -fx-border-color: #e6e7ee;
+    -fx-padding: 16;
+    -fx-border-color: rgba(80, 140, 255, 0.4);
     -fx-border-radius: 14;
-
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 14, 0.15, 0, 2);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 15, 0, 0, 4);
 }
 
 .card-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
-    -fx-opacity: 0.75;
+    -fx-text-fill: #99c2ff;
 }
 
 .big-text {
-    -fx-font-size: 22px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
+    -fx-text-fill: white;
 }
 
 .stat {
     -fx-font-size: 15px;
-    -fx-opacity: 0.85;
+    -fx-text-fill: #e2e8f0;
 }
 
-.events {
-    -fx-font-size: 14px;
-    -fx-opacity: 0.85;
+.events-area {
+    -fx-control-inner-background: rgba(10, 15, 30, 0.5);
+    -fx-background-color: transparent;
+    -fx-text-fill: #a3cfff;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 13px;
+    -fx-border-color: rgba(80, 140, 255, 0.2);
+    -fx-border-radius: 6;
+}
+
+.events-area .viewport {
+    -fx-background-color: transparent;
+}
+.events-area .content {
+    -fx-background-color: transparent;
 }
 
 /* BOTONES */

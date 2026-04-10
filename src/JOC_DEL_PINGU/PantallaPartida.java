@@ -593,6 +593,13 @@ public class PantallaPartida {
 
         for (int i = 0; i < t.getCasillas().size(); i++) {
             Casilla casilla = t.getCasillas().get(i);
+            
+            // LA CASILLA 49 ES LA META (IGLÚ). Como ya viene dibujada en el fondo,
+            // no queremos poner una placa de hielo azul encima que lo tape.
+            if (i == 49) {
+                continue;
+            }
+            
             String rutaImg = getRutaCasilla(casilla, i, t.getCasillas().size());
 
             if (rutaImg != null) {
@@ -600,9 +607,9 @@ public class PantallaPartida {
                     var resource = getClass().getResourceAsStream(rutaImg);
                     if (resource != null) {
                         ImageView imgView = new ImageView(new Image(resource));
-                        imgView.setFitWidth(90);
-                        imgView.setFitHeight(50);
-                        imgView.setPreserveRatio(false);
+                        imgView.setFitWidth(110);
+                        imgView.setFitHeight(80);
+                        imgView.setPreserveRatio(true);
                         imgView.setUserData(TAG_CASILLA_TEXT);
 
                         int columna = i % COLUMNS;
