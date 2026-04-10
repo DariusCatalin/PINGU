@@ -8,6 +8,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Alert;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class PantallaPrincipal {
 
@@ -36,8 +40,66 @@ public class PantallaPrincipal {
 
     @FXML
     private void handleCargarPartida(ActionEvent event) {
-        System.out.println("Cargar partida pulsado. Aquí iría el selector de partidas de la BBDD.");
-        // TODO: Mostrar lista de partidas guardadas
+        System.out.println("Buscando partidas en la BBDD...");
+        
+        GestorBBDD gestor = new GestorBBDD();
+        gestor.iniciarConexionGUI();
+        
+        ArrayList<Integer> partidas = gestor.obtenerListaPartidas();
+        
+        if (partidas == null || partidas.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Cargar Partida");
+            alert.setHeaderText("No hay partidas guardadas");
+            alert.setContentText("Actualmente no hay ninguna partida guardada en la base de datos.");
+            alert.showAndWait();
+            gestor.cerrarConexion();
+            return;
+        }
+
+        ChoiceDialog<Integer> dialog = new ChoiceDialog<>(partidas.get(0), partidas);
+        dialog.setTitle("Cargar Partida");
+        dialog.setHeaderText("Selector de Partidas Guardadas");
+        dialog.setContentText("Selecciona el ID de la partida que quieres cargar:");
+
+        Optional<Integer> result = dialog.showAndWait();
+        result.ifPresent(idPartida -> {
+            Partida p = gestor.cargarBBDD(idPartida);
+            if (p != null) {
+                try {
+                    System.out.println("Partida " + idPartida + " cargada. Abriendo el tablero...");
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
+                    Parent root = loader.load();
+                    
+                    PantallaPartida controller = loader.getController();
+                    // Pasarle la partida directamente al controlador del tablero
+                    controller.setPartidaCargada(p);
+
+                    Scene scene = new Scene(root);
+                    try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
+                    
+                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                    stage.setScene(scene);
+                    stage.setTitle("El Juego del Pingüino - ID Partida: " + idPartida);
+                    stage.show();
+                    javafx.application.Platform.runLater(() -> stage.setMaximized(true));
+                } catch (Exception e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error al Cargar");
+                    alert.setHeaderText("Error cargando la vista de la partida");
+                    alert.setContentText(e.getMessage());
+                    alert.showAndWait();
+                    e.printStackTrace();
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error de carga");
+                alert.setContentText("No se pudo regenerar la partida " + idPartida + " desde la BBDD.");
+                alert.showAndWait();
+            }
+        });
+        
+        gestor.cerrarConexion();
     }
 
     @FXML

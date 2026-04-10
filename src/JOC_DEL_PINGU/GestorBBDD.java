@@ -1,6 +1,7 @@
 package JOC_DEL_PINGU;
 
 import java.sql.Connection;
+import java.sql.CallableStatement;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -33,6 +34,10 @@ public class GestorBBDD {
    
     public void iniciarConexion(Scanner scan) {
         this.conexion = BBDD.conectarBaseDatos(scan);
+    }
+    
+    public void iniciarConexionGUI() {
+        this.conexion = BBDD.conectarBaseDatosGUI();
     }
     
    
@@ -87,7 +92,9 @@ public class GestorBBDD {
             return false;
         }
         
-        try {
+        String plsql = "{ call GuardarPartidaSegura(?, ?, ?) }";
+        
+        try (CallableStatement cs = this.conexion.prepareCall(plsql)) {
             // 1. Preparar les dades dels jugadors (encriptades)
             StringBuilder dadesJugadors = new StringBuilder();
             for (Jugador j : p.getJugadores()) {
@@ -106,36 +113,22 @@ public class GestorBBDD {
                                               "|turnos:" + p.getTurnos() + 
                                               "|finalitzada:" + p.isFinalizada());
             
-            // 3. Construir la consulta SQL (ús de placeholders per seguretat)
-            // NOTA: Per simplificar, fem INSERT directe. En producció usaríem PreparedStatement
-            String sql = "MERGE INTO PARTIDA p " +
-                        "USING dual " +
-                        "ON (p.id_partida = " + idPartida + ") " +
-                        "WHEN MATCHED THEN " +
-                        "UPDATE SET estat = '" + estatEncriptat + 
-                        "', dades_jugadors = '" + dadesJugadorsEncriptat + 
-                        "', data_modificacio = SYSDATE " +
-                        "WHEN NOT MATCHED THEN " +
-                        "INSERT (id_partida, estat, dades_jugadors, data_creacio) " +
-                        "VALUES (" + idPartida + ", '" + estatEncriptat + 
-                        "', '" + dadesJugadorsEncriptat + "', SYSDATE)";
+            // 3. Configurar paràmetres procediment emmagatzemat (PL/SQL)
+            cs.setInt(1, idPartida);
+            cs.setString(2, estatEncriptat);
+            cs.setString(3, dadesJugadorsEncriptat);
             
-            // 4. Executar la consulta
-            int filesAfectades = BBDD.update(this.conexion, sql);
+            // 4. Executar el procediment
+            cs.execute();
             
-            if (filesAfectades > 0) {
-                System.out.println("✅ Partida guardada amb èxit a Oracle! (ID: " + idPartida + ")");
-                System.out.println("   - Jugadors: " + p.getJugadores().size());
-                System.out.println("   - Torn actual: " + p.getIndiceJugadorActual());
-                System.out.println("   - Dades encriptades: SÍ");
-                return true;
-            } else {
-                System.out.println("❌ Error al guardar la partida a la BBDD.");
-                return false;
-            }
+            System.out.println("✅ Partida guardada amb èxit a Oracle via Procediment Emmagatzemat! (ID: " + idPartida + ")");
+            System.out.println("   - Jugadors: " + p.getJugadores().size());
+            System.out.println("   - Torn actual: " + p.getIndiceJugadorActual());
+            System.out.println("   - Dades encriptades: SÍ");
+            return true;
             
         } catch (Exception e) {
-            System.out.println("❌ Excepció al guardar: " + e.getMessage());
+            System.out.println("❌ Excepció al guardar a PL/SQL: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -313,10 +306,37 @@ public class GestorBBDD {
             return false;
         }
         
-        String sql = "DELETE FROM PARTIDA WHERE id_partida = " + idPartida;
-        int filesAfectades = BBDD.delete(this.conexion, sql);
+        String plsql = "{ call EliminarPartida(?) }";
+        try (CallableStatement cs = this.conexion.prepareCall(plsql)) {
+            cs.setInt(1, idPartida);
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.out.println("❌ Excepció a l'eliminar partida via PL/SQL: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public ArrayList<Integer> obtenerListaPartidas() {
+        ArrayList<Integer> lista = new ArrayList<>();
+        if (this.conexion == null) {
+            return lista;
+        }
         
-        return filesAfectades > 0;
+        String sql = "SELECT id_partida FROM PARTIDA ORDER BY id_partida";
+        ArrayList<java.util.LinkedHashMap<String, String>> resultats = BBDD.select(this.conexion, sql);
+        
+        for (java.util.LinkedHashMap<String, String> fila : resultats) {
+            String idStr = fila.get("ID_PARTIDA");
+            if (idStr != null) {
+                try {
+                    lista.add(Integer.parseInt(idStr));
+                } catch (NumberFormatException e) {
+                    // Ignorar error de parseo
+                }
+            }
+        }
+        return lista;
     }
     
   
