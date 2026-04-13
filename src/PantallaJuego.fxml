@@ -42,111 +42,106 @@
     </top>
 
     <center>
-        <StackPane>
-            <padding>
-                <Insets top="40" right="20" bottom="20" left="40"/>
-            </padding>
+        <HBox alignment="CENTER_LEFT">
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                <padding>
+                    <Insets top="40" right="20" bottom="20" left="40"/>
+                </padding>
+                <GridPane fx:id="tablero" styleClass="board" StackPane.alignment="CENTER_LEFT">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="20.0" />
+                        <ColumnConstraints percentWidth="20.0" />
+                        <ColumnConstraints percentWidth="20.0" />
+                        <ColumnConstraints percentWidth="20.0" />
+                        <ColumnConstraints percentWidth="20.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                        <RowConstraints percentHeight="10.0" />
+                    </rowConstraints>
+                    <children>
+                        <!-- Jugadores: ImageView con PNG del pingüino según color -->
+                        <ImageView fx:id="P1" id="P1" fitWidth="50" fitHeight="60" preserveRatio="true" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                        <ImageView fx:id="P2" id="P2" fitWidth="50" fitHeight="60" preserveRatio="true" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                        <ImageView fx:id="P3" id="P3" fitWidth="50" fitHeight="60" preserveRatio="true" visible="false" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                        <ImageView fx:id="P4" id="P4" fitWidth="50" fitHeight="60" preserveRatio="true" visible="false" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                    </children>
+                </GridPane>
+            </StackPane>
+            
+            <VBox alignment="TOP_CENTER" spacing="16" styleClass="right-panel" HBox.hgrow="NEVER" prefWidth="350" minWidth="250">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20"/>
+                </padding>
 
-            <GridPane fx:id="tablero" styleClass="board" maxHeight="700" maxWidth="1000" StackPane.alignment="CENTER_LEFT">
-                <columnConstraints>
-                    <ColumnConstraints percentWidth="20.0" />
-                    <ColumnConstraints percentWidth="20.0" />
-                    <ColumnConstraints percentWidth="20.0" />
-                    <ColumnConstraints percentWidth="20.0" />
-                    <ColumnConstraints percentWidth="20.0" />
-                </columnConstraints>
+                <!-- Espacio superior transparente para ver el fondo (~25%) -->
+                <Region prefHeight="250" VBox.vgrow="NEVER" />
 
-                <rowConstraints>
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                    <RowConstraints percentHeight="10.0" />
-                </rowConstraints>
-                <children>
-                    <!-- Jugadores: ImageView con PNG del pingüino según color -->
-                    <ImageView fx:id="P1" id="P1" fitWidth="50" fitHeight="60" preserveRatio="true" />
-                    <ImageView fx:id="P2" id="P2" fitWidth="50" fitHeight="60" preserveRatio="true">
-                        <GridPane.margin><Insets left="34.0" /></GridPane.margin>
-                    </ImageView>
-                    <ImageView fx:id="P3" id="P3" fitWidth="50" fitHeight="60" preserveRatio="true" visible="false">
-                        <GridPane.margin><Insets left="68.0" /></GridPane.margin>
-                    </ImageView>
-                    <ImageView fx:id="P4" id="P4" fitWidth="50" fitHeight="60" preserveRatio="true" visible="false">
-                        <GridPane.margin><Insets left="102.0" /></GridPane.margin>
-                    </ImageView>
-                </children>
-            </GridPane>
-        </StackPane>
+                <!-- Tarjeta Dado -->
+                <VBox spacing="10" styleClass="card" prefWidth="310">
+                    <Label fx:id="lblDadoTitulo" text="Dado" styleClass="card-title" />
+                    <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="220" />
+                    <Button fx:id="dado" text="Tirar dado" onAction="#handleDado"
+                            maxWidth="Infinity" styleClass="primary" />
+                </VBox>
+
+                <!-- Tarjeta Objetos -->
+                <VBox spacing="10" styleClass="card" prefWidth="310" VBox.vgrow="ALWAYS">
+                    <Label text="Objetos" styleClass="card-title" />
+
+                    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="objects-scroll">
+                        <content>
+                            <VBox spacing="10">
+                                <padding>
+                                    <Insets top="6" right="6" bottom="6" left="6"/>
+                                </padding>
+
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
+                                    <Text fx:id="rapido_t" text="Dado rápido: 0" styleClass="stat" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="rapido" text="Usar" onAction="#handleRapido"/>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
+                                    <Text fx:id="lento_t" text="Dado lento: 0" styleClass="stat" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="lento" text="Usar" onAction="#handleLento"/>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
+                                    <Text fx:id="peces_t" text="Peces: 0" styleClass="stat" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="peces" text="Usar" onAction="#handlePeces"/>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
+                                    <Text fx:id="nieve_t" text="Bolas de nieve: 0" styleClass="stat" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="nieve" text="Usar" onAction="#handleNieve"/>
+                                </HBox>
+
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+                </VBox>
+
+                <!-- Tarjeta Eventos (Historial) -->
+                <VBox spacing="10" styleClass="card" prefWidth="310" prefHeight="230">
+                    <Label text="Historial" styleClass="card-title" />
+                    <javafx.scene.control.TextArea fx:id="eventos" editable="false" wrapText="true" 
+                                                   styleClass="events-area" prefHeight="180" VBox.vgrow="ALWAYS" />
+                </VBox>
+
+            </VBox>
+        </HBox>
     </center>
-
-    <right>
-        <VBox spacing="16" styleClass="right-panel">
-            <padding>
-                <Insets top="140" right="20" bottom="20" left="0"/>
-            </padding>
-
-            <!-- Tarjeta Dado -->
-            <VBox spacing="10" styleClass="card" prefWidth="250">
-                <Label fx:id="lblDadoTitulo" text="Dado" styleClass="card-title" />
-                <Text fx:id="dadoResultText" text="Ha salido: -" styleClass="big-text" wrappingWidth="220" />
-                <Button fx:id="dado" text="Tirar dado" onAction="#handleDado"
-                        maxWidth="Infinity" styleClass="primary" />
-            </VBox>
-
-            <!-- Tarjeta Objetos -->
-            <VBox spacing="10" styleClass="card" prefWidth="250" VBox.vgrow="ALWAYS">
-                <Label text="Objetos" styleClass="card-title" />
-
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="objects-scroll">
-                    <content>
-                        <VBox spacing="10">
-                            <padding>
-                                <Insets top="6" right="6" bottom="6" left="6"/>
-                            </padding>
-
-                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
-                                <Text fx:id="rapido_t" text="Dado rápido: 0" styleClass="stat" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="rapido" text="Usar" onAction="#handleRapido"/>
-                            </HBox>
-
-                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
-                                <Text fx:id="lento_t" text="Dado lento: 0" styleClass="stat" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="lento" text="Usar" onAction="#handleLento"/>
-                            </HBox>
-
-                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
-                                <Text fx:id="peces_t" text="Peces: 0" styleClass="stat" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="peces" text="Usar" onAction="#handlePeces"/>
-                            </HBox>
-
-                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
-                                <Text fx:id="nieve_t" text="Bolas de nieve: 0" styleClass="stat" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="nieve" text="Usar" onAction="#handleNieve"/>
-                            </HBox>
-
-                        </VBox>
-                    </content>
-                </ScrollPane>
-            </VBox>
-
-            <!-- Tarjeta Eventos (Historial) -->
-            <VBox spacing="10" styleClass="card" prefWidth="250" prefHeight="230">
-                <Label text="Historial" styleClass="card-title" />
-                <javafx.scene.control.TextArea fx:id="eventos" editable="false" wrapText="true" 
-                                               styleClass="events-area" prefHeight="180" VBox.vgrow="ALWAYS" />
-            </VBox>
-
-        </VBox>
-    </right>
 
 </BorderPane>
