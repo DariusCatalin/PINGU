@@ -162,9 +162,10 @@ public class PantallaPartida {
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
                 ficha.setVisible(true);
-                actualizarPosicionVisual(j, ficha);
             }
         }
+        
+        inicializarColas();
 
         // Actualizar inventario del primer pingüino
         for (Jugador j : jugadoresConfig) {
@@ -282,9 +283,8 @@ public class PantallaPartida {
             }
             
             actualizarTextosInventario(actual);
-            actualizarPosicionVisual(actual, getFichaVisual(actual));
             avanzarTurno();
-            procesarTurnosCPU();
+            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
         }
     }
 
@@ -323,10 +323,8 @@ public class PantallaPartida {
                 if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
                 
                 actualizarTextosInventario(actual);
-                actualizarPosicionVisual(actual, getFichaVisual(actual));
                 avanzarTurno();
-
-                procesarTurnosCPU();
+                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
             } else {
                 gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
             }
@@ -399,7 +397,7 @@ public class PantallaPartida {
 
         // Lanzar bolas ES la acción del turno (reemplaza tirar dado)
         avanzarTurno();
-        procesarTurnosCPU();
+        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
     }
 
     // ==========================================
@@ -425,9 +423,13 @@ public class PantallaPartida {
 
         // REGLA: META EXACTA (49)
         if (nuevaPos > 49) {
-            nuevaPos = 49 - (nuevaPos - 49);
+            int finalBounce = 49 - (nuevaPos - 49);
+            encolarCaminoPasoAPaso(j, posInicial, 49);
+            encolarCaminoPasoAPaso(j, 49, finalBounce);
+            nuevaPos = finalBounce;
             gestorUI.registrar("¡" + j.getNombre() + " ha sacado un " + tirada + " y se ha pasado! Rebota hasta la " + nuevaPos);
         } else {
+            encolarCaminoPasoAPaso(j, posInicial, nuevaPos);
             gestorUI.registrar(j.getNombre() + " (" + contexto + ") saca un " + tirada + " y avanza a la casilla " + nuevaPos);
         }
 
@@ -460,7 +462,11 @@ public class PantallaPartida {
         
         // Ejecuta la casilla (Oso, Trineo, Evento...)
         Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
+        int posAntesCasilla = j.getPosicion();
         casillaActual.realizarAccion(partida, j);
+        if (posAntesCasilla != j.getPosicion()) {
+            encolarCaminoPasoAPaso(j, posAntesCasilla, j.getPosicion());
+        }
         
         // Comprobar colisiones
         verificarColisionesLocal(j);
@@ -514,10 +520,10 @@ public class PantallaPartida {
                     } else {
                         // Sin pez: coletazo → solo retrocede al agujero anterior (NO pierde objetos)
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
+                        encolarCaminoPasoAPaso(pinguino, pinguino.getPosicion(), posHole);
                         pinguino.moverPosicion(posHole);
                         gestorUI.registrar("¡La Foca da un coletazo a " + pinguino.getNombre()
                             + "! Es enviado al agujero anterior (casilla " + posHole + ").");
-                        actualizarPosicionVisual(pinguino, getFichaVisual(pinguino));
                     }
                 } else if (actual instanceof Pinguino && otro instanceof Pinguino) {
                     // GUERRA DE BOLAS (PvP)
@@ -528,14 +534,16 @@ public class PantallaPartida {
                     
                     if (bolasA > bolasO) {
                         int diff = bolasA - bolasO;
-                        otro.moverPosicion(Math.max(0, otro.getPosicion() - diff));
+                        int dest = Math.max(0, otro.getPosicion() - diff);
+                        encolarCaminoPasoAPaso(otro, otro.getPosicion(), dest);
+                        otro.moverPosicion(dest);
                         gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
-                        actualizarPosicionVisual(otro, getFichaVisual(otro));
                     } else if (bolasO > bolasA) {
                         int diff = bolasO - bolasA;
-                        actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
+                        int dest = Math.max(0, actual.getPosicion() - diff);
+                        encolarCaminoPasoAPaso(actual, actual.getPosicion(), dest);
+                        actual.moverPosicion(dest);
                         gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
-                        actualizarPosicionVisual(actual, getFichaVisual(actual));
                     } else {
                         gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
                     }
@@ -557,14 +565,26 @@ public class PantallaPartida {
         partida.setJugadorActual(siguienteTurno);
     }
 
-    private void procesarTurnosCPU() {
-        while (!partida.isFinalizada()) {
-            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
-            if (actual instanceof Foca) {
-                jugarTurnoCPU_IA((Foca) actual, getFichaVisual(actual));
+    private void procesarTurnosCPU_Async() {
+        if (partida.isFinalizada()) return;
+        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+        if (actual instanceof Foca) {
+            // Lógica
+            if (actual.estaPenalizado()) {
+                actual.decrementarPenalizacion();
+                gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
             } else {
-                break;
+                int tirada = (int)(Math.random() * 6) + 1;
+                moverJugadorYAccion(actual, tirada, "tirada CPU");
             }
+            
+            avanzarTurno();
+            
+            // Animación y callback a la siguiente CPU
+            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+        } else {
+            // Turno humano: controles habilitados
+            setUIInteractuable(true);
         }
     }
 
@@ -593,13 +613,13 @@ public class PantallaPartida {
 
         for (int i = 0; i < t.getCasillas().size(); i++) {
             Casilla casilla = t.getCasillas().get(i);
-            
+
             // LA CASILLA 49 ES LA META (IGLÚ). Como ya viene dibujada en el fondo,
-            // no queremos poner una placa de hielo azul encima que lo tape.
+            // no queremos poner una placa de hielo normal encima, dejando ver el fondo.
             if (i == 49) {
                 continue;
             }
-            
+
             String rutaImg = getRutaCasilla(casilla, i, t.getCasillas().size());
 
             if (rutaImg != null) {
@@ -620,42 +640,147 @@ public class PantallaPartida {
                         GridPane.setValignment(imgView, javafx.geometry.VPos.CENTER);
                         GridPane.setHalignment(imgView, javafx.geometry.HPos.CENTER);
 
-                        tablero.getChildren().add(imgView);
+                        tablero.getChildren().add(0, imgView);
                     }
                 } catch (Exception e) {
                     System.err.println("Error cargando imagen casilla " + i + ": " + e.getMessage());
                 }
             }
         }
+        
+        // Z-Index fix: Ensure players are always drawn on top of the board cells
+        if (P1 != null) P1.toFront();
+        if (P2 != null) P2.toFront();
+        if (P3 != null) P3.toFront();
+        if (P4 != null) P4.toFront();
     }
 
     /** Devuelve la ruta del recurso imagen para cada tipo de casilla. */
     private String getRutaCasilla(Casilla c, int index, int total) {
-        // Casilla normal (inicio, meta, y casillas sin tipo especial) usan imagen normal
+
         if (c instanceof Agujero)     return "/resources/Casilla_Agujero.png";
         if (c instanceof Oso)         return "/resources/Casilla_Oso.png";
         if (c instanceof Trineo)      return "/resources/Casilla_Trineo.png";
         if (c instanceof Evento)      return "/resources/Casilla_Interrogante.png";
         if (c instanceof CasillaFragil) return "/resources/Casilla_Normal.png";
-        // CasillaNormal (incluye salida y meta)
+        
         return "/resources/Casilla_Normal.png";
     }
 
     // ==========================================
-    // MÉTODOS AUXILIARES Y VISUALES
+    // SISTEMA DE ANIMACIÓN Y AGRUPACIÓN
     // ==========================================
+    private java.util.Map<Jugador, java.util.Queue<Integer>> colasAnimacion = new java.util.HashMap<>();
+    private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
+    private boolean animando = false;
 
-    private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
-        if (ficha == null) return;
-        int pos = j.getPosicion();
-        if (pos > 49) pos = 49;
+    private void inicializarColas() {
+        for (Jugador j : partida.getJugadores()) {
+            colasAnimacion.put(j, new java.util.LinkedList<>());
+            posVisual.put(j, j.getPosicion());
+        }
+    }
 
-        // Tablero de 5 columnas (índices 0-4) y 10 filas (indices 0-9)
-        int columna = pos % 5;
-        int fila = 9 - (pos / 5);
+    private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
+        java.util.Queue<Integer> q = colasAnimacion.get((Jugador)j);
+        if (q == null) return;
 
-        GridPane.setColumnIndex(ficha, columna);
-        GridPane.setRowIndex(ficha, fila);
+        if (desde < hasta) {
+            for (int i = desde + 1; i <= hasta; i++) q.add(i);
+        } else if (desde > hasta) {
+            for (int i = desde - 1; i >= hasta; i--) q.add(i);
+        }
+    }
+
+    private void setUIInteractuable(boolean interactuable) {
+        if (dado != null) dado.setDisable(!interactuable);
+        if (rapido != null) rapido.setDisable(!interactuable);
+        if (lento != null) lento.setDisable(!interactuable);
+        if (peces != null) peces.setDisable(!interactuable);
+        if (nieve != null) nieve.setDisable(!interactuable);
+    }
+
+    private void dispararAnimadorVisual(Runnable onFinished) {
+        if (animando) return;
+        animando = true;
+        setUIInteractuable(false);
+
+        javafx.animation.Timeline tl = new javafx.animation.Timeline();
+        tl.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(350), e -> {
+            boolean qVacia = true;
+            for (Jugador j : partida.getJugadores()) {
+                java.util.Queue<Integer> q = colasAnimacion.get(j);
+                if (q != null && !q.isEmpty()) {
+                    qVacia = false;
+                    int next = q.poll();
+                    posVisual.put(j, next);
+                    
+                    // Colocar en el grid según el índice visual
+                    ImageView ficha = getFichaVisual(j);
+                    if (ficha != null) {
+                        int pos = next;
+                        if (pos > 49) pos = 49;
+                        int col = pos % 5;
+                        int fil = 9 - (pos / 5);
+                        GridPane.setColumnIndex(ficha, col);
+                        GridPane.setRowIndex(ficha, fil);
+                    }
+                }
+            }
+
+            refrescarDistribucionVisual();
+
+            if (qVacia) {
+                tl.stop();
+                animando = false;
+                setUIInteractuable(true);
+                if (onFinished != null) javafx.application.Platform.runLater(onFinished);
+            }
+        });
+        tl.getKeyFrames().add(kf);
+        tl.play();
+    }
+
+    private void refrescarDistribucionVisual() {
+        // Encontrar jugadores por celda visual
+        java.util.Map<Integer, java.util.List<Jugador>> celdaJugadores = new java.util.HashMap<>();
+        for (Jugador j : partida.getJugadores()) {
+            int pos = posVisual.getOrDefault(j, j.getPosicion());
+            celdaJugadores.computeIfAbsent(pos, k -> new java.util.ArrayList<>()).add(j);
+        }
+
+        // Aplicar offset a jugadores compartiendo celda
+        for (java.util.List<Jugador> lista : celdaJugadores.values()) {
+            int total = lista.size();
+            for (int i = 0; i < total; i++) {
+                ImageView ficha = getFichaVisual(lista.get(i));
+                if (ficha == null) continue;
+                
+                if (total == 1) {
+                    ficha.setTranslateX(0);
+                    ficha.setScaleX(1.0);
+                    ficha.setScaleY(1.0);
+                } else if (total == 2) {
+                    ficha.setScaleX(0.85);
+                    ficha.setScaleY(0.85);
+                    ficha.setTranslateX(i == 0 ? -15 : 15);
+                } else if (total == 3) {
+                    ficha.setScaleX(0.70);
+                    ficha.setScaleY(0.70);
+                    if (i == 0) ficha.setTranslateX(-20);
+                    else if (i == 1) ficha.setTranslateX(0);
+                    else ficha.setTranslateX(20);
+                } else {
+                    ficha.setScaleX(0.60);
+                    ficha.setScaleY(0.60);
+                    if (i == 0) ficha.setTranslateX(-22);
+                    else if (i == 1) ficha.setTranslateX(-7);
+                    else if (i == 2) ficha.setTranslateX(7);
+                    else ficha.setTranslateX(22);
+                }
+            }
+        }
     }
 
     private boolean consumirObjeto(Jugador j, String nombreObjeto) {
