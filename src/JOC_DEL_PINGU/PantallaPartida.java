@@ -47,7 +47,9 @@ public class PantallaPartida {
     private Partida partida;
     private static final int COLUMNS = 5;
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
-    
+    /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
+    private javafx.scene.control.ContextMenu ctxMenuEscape;
+
     // Gestor de eventos simple para mostrar textos en la pantalla
     private GestorEventos gestorUI = new GestorEventos() {
         @Override
@@ -63,6 +65,7 @@ public class PantallaPartida {
 
     // Jugadores pre-configurados (recibidos desde PantallaConfig)
     private java.util.ArrayList<Jugador> jugadoresConfig = null;
+
 
     /**
      * Llamado por PantallaConfig antes de mostrar la pantalla,
@@ -138,6 +141,9 @@ public class PantallaPartida {
             mostrarTiposDeCasillasEnTablero(partida.getTablero());
             gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
         }
+
+        // 3. Configurar escucha de tecla Escape para el menú de opciones
+        configurarEscapeMenu();
     }
 
     /** Configura la partida usando los jugadores recibidos de PantallaConfig. */
@@ -269,23 +275,101 @@ public class PantallaPartida {
     @FXML
     private void handleDado(ActionEvent event) {
         if (partida.isFinalizada()) return;
-
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
-        
-        if (actual instanceof Pinguino) {
-            if (actual.estaPenalizado()) {
-                actual.decrementarPenalizacion();
-                gestorUI.registrar("¡" + actual.getNombre() + " está penalizado y pierde este turno!");
-            } else {
-                int tirada = (int)(Math.random() * 6) + 1;
-                moverJugadorYAccion(actual, tirada, "tirada normal");
-                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
-            }
-            
+
+        if (!(actual instanceof Pinguino)) {
+            avanzarTurno();
+            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+            return;
+        }
+
+        if (actual.estaPenalizado()) {
+            actual.decrementarPenalizacion();
+            gestorUI.registrar("¡" + actual.getNombre() + " está penalizado y pierde este turno!");
             actualizarTextosInventario(actual);
             avanzarTurno();
             dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+            return;
         }
+
+        // 3. Popup si tiene objetos usables antes de tirar
+        if (tieneObjetosUsables(actual)) {
+            mostrarPopupObjetos(actual);
+        } else {
+            ejecutarTiradaNormal(actual);
+        }
+    }
+
+    /** Ejecuta una tirada normal de dado (1-6) y avanza el turno. */
+    private void ejecutarTiradaNormal(Jugador actual) {
+        int tirada = (int)(Math.random() * 6) + 1;
+        moverJugadorYAccion(actual, tirada, "tirada normal");
+        // 4. Resultado del dado visible: texto grande y claro
+        if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
+        actualizarTextosInventario(actual);
+        avanzarTurno();
+        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+    }
+
+    /** Comprueba si el jugador tiene objetos que puede usar activamente (dados/bolas). */
+    private boolean tieneObjetosUsables(Jugador j) {
+        if (!(j instanceof Pinguino)) return false;
+        for (Item item : j.getInventario().getLista()) {
+            String n = item.getNombre().toLowerCase();
+            if (n.contains("rapido") || n.contains("rápido") ||
+                n.contains("lento")  || n.contains("bola")) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 3. Popup que aparece antes de tirar el dado si el jugador tiene objetos disponibles.
+     * Muestra un botón por objeto usable y un botón "No, tirar dado normal".
+     */
+    private void mostrarPopupObjetos(Jugador actual) {
+        int nRapidos = contarItemPorNombre(actual, "rapido", "rápido");
+        int nLentos  = contarItemPorNombre(actual, "lento");
+        int nBolas   = contarBolas(actual);
+
+        javafx.scene.control.Alert popup = new javafx.scene.control.Alert(
+            javafx.scene.control.Alert.AlertType.NONE);
+        popup.setTitle("¿Usar objeto?");
+        popup.setHeaderText("Turno de " + actual.getNombre());
+        popup.setContentText("¿Quieres usar algún objeto antes de tirar el dado?");
+
+        java.util.List<javafx.scene.control.ButtonType> bts = new java.util.ArrayList<>();
+        if (nRapidos > 0) bts.add(new javafx.scene.control.ButtonType(
+            "🎲 Dado Rápido (" + nRapidos + ")"));
+        if (nLentos > 0)  bts.add(new javafx.scene.control.ButtonType(
+            "🐢 Dado Lento  (" + nLentos  + ")"));
+        if (nBolas > 0)   bts.add(new javafx.scene.control.ButtonType(
+            "❄️ Bola de Nieve (" + nBolas + ")"));
+        bts.add(new javafx.scene.control.ButtonType("No, tirar dado normal",
+            javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE));
+        popup.getButtonTypes().setAll(bts);
+
+        popup.showAndWait().ifPresent(btn -> {
+            String t = btn.getText();
+            if (t.contains("Rápido") || t.contains("Rapido")) {
+                usarDadoEspecial("Dado Rápido", 5, 10);
+            } else if (t.contains("Lento")) {
+                usarDadoEspecial("Dado Lento", 1, 3);
+            } else if (t.contains("Nieve") || t.contains("Bola")) {
+                usarBolaNieve(null);
+            } else {
+                ejecutarTiradaNormal(actual);
+            }
+        });
+    }
+
+    /** Cuenta items cuyo nombre contenga alguna de las palabras clave dadas. */
+    private int contarItemPorNombre(Jugador j, String... claves) {
+        int n = 0;
+        for (Item item : j.getInventario().getLista()) {
+            String nombre = item.getNombre().toLowerCase();
+            for (String clave : claves) { if (nombre.contains(clave)) { n++; break; } }
+        }
+        return n;
     }
 
     // ==========================================
@@ -569,7 +653,7 @@ public class PantallaPartida {
         if (partida.isFinalizada()) return;
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
-            // Lógica
+            // Lógica CPU
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
                 gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
@@ -577,15 +661,46 @@ public class PantallaPartida {
                 int tirada = (int)(Math.random() * 6) + 1;
                 moverJugadorYAccion(actual, tirada, "tirada CPU");
             }
-            
             avanzarTurno();
-            
             // Animación y callback a la siguiente CPU
             dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
         } else {
-            // Turno humano: controles habilitados
+            // 5. Turno humano: actualizar texto de turno + habilitar controles
+            actualizarTextosTurno();
             setUIInteractuable(true);
         }
+    }
+
+    /**
+     * 1. Configura el listener global de teclado: Escape abre/cierra el menú de opciones
+     * (implementado como ContextMenu anclado a la ventana).
+     */
+    private void configurarEscapeMenu() {
+        ctxMenuEscape = new javafx.scene.control.ContextMenu();
+
+        javafx.scene.control.MenuItem miGuardar = new javafx.scene.control.MenuItem("Guardar partida");
+        miGuardar.setOnAction(this::handleSaveGame);
+        javafx.scene.control.MenuItem miGuardarSalir = new javafx.scene.control.MenuItem("Guardar y salir");
+        miGuardarSalir.setOnAction(this::handleSaveAndQuit);
+        javafx.scene.control.SeparatorMenuItem sep = new javafx.scene.control.SeparatorMenuItem();
+        javafx.scene.control.MenuItem miSalir = new javafx.scene.control.MenuItem("Salir sin guardar");
+        miSalir.setOnAction(this::handleQuitWithoutSaving);
+        ctxMenuEscape.getItems().addAll(miGuardar, miGuardarSalir, sep, miSalir);
+
+        // Adjuntar listener cuando la escena esté disponible
+        tablero.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+                    if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                        if (ctxMenuEscape.isShowing()) {
+                            ctxMenuEscape.hide();
+                        } else {
+                            ctxMenuEscape.show(newScene.getWindow(), 0, 32);
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private ImageView getFichaVisual(Jugador j) {

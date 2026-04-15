@@ -6,387 +6,463 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Base64;
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-
+/**
+ * GestorBBDD — Guardado y carga de partidas con cifrado AES-128/CBC.
+ *
+ * Formato de datos (antes de cifrar):
+ *
+ * === BLOB 1: "estat" ===
+ *   torn:<idx>|turnos:<n>|finalizada:<bool>|tablero:<t0>,<t1>,...,<t49>
+ *   Donde cada <ti> es un código de 1 letra:
+ *     N=CasillaNormal  A=Agujero  T=Trineo  E=Evento  F=CasillaFragil  O=Oso  M=Meta
+ *
+ * === BLOB 2: "dades_jugadors" ===
+ *   nombre|pos|color|tipo|peces|bolas|rapidos|lentos;nombre2|...;
+ *   Donde tipo = P (Pinguino) o F (Foca)
+ */
 public class GestorBBDD {
-    
+
     // ==================== ATRIBUTS ====================
     private String urlBBDD;
     private String username;
     private String password;
     private Connection conexion;
-    
-    // Clau per a encriptació (AES 128 bits)
-    private static final String CLAU_ENCRYPTACIO = "JocPingu2024Clau"; // 16 caràcters per AES-128
-    
+
+    /** Clave AES-128 (16 bytes exactos). */
+    private static final String CLAVE_AES = "JocPingu2024Clau";
+
     // ==================== CONSTRUCTOR ====================
     public GestorBBDD() {
         this.urlBBDD = "";
         this.username = "";
         this.password = "";
     }
-    
+
     // ==================== GESTIÓ DE CONNEXIÓ ====================
-    
-   
+
     public void iniciarConexion(Scanner scan) {
         this.conexion = BBDD.conectarBaseDatos(scan);
     }
-    
+
     public void iniciarConexionGUI() {
         this.conexion = BBDD.conectarBaseDatosGUI();
     }
-    
-   
+
     public void cerrarConexion() {
         BBDD.cerrar(this.conexion);
         this.conexion = null;
     }
-    
-    // ==================== ENCRYPTACIÓ/DESENCRIPTACIÓ ====================
-    
-   
-    private String encriptar(String text) {
+
+    // ==================== CIFRADO AES-128/CBC+IV ====================
+
+    /**
+     * Cifra un texto con AES-128 en modo CBC usando un IV aleatorio.
+     * Formato resultado: Base64(IV_16bytes + ciphertext)
+     */
+    private String encriptar(String texto) {
         try {
-            byte[] clauBytes = CLAU_ENCRYPTACIO.getBytes("UTF-8");
-            SecretKeySpec clau = new SecretKeySpec(clauBytes, "AES");
-            Cipher xifrat = Cipher.getInstance("AES");
-            xifrat.init(Cipher.ENCRYPT_MODE, clau);
-            byte[] textEncriptat = xifrat.doFinal(text.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(textEncriptat);
+            byte[] claveBytes = CLAVE_AES.getBytes("UTF-8");
+            SecretKeySpec clave = new SecretKeySpec(claveBytes, "AES");
+
+            // IV aleatorio de 16 bytes (CBC necesita IV)
+            byte[] ivBytes = new byte[16];
+            new java.security.SecureRandom().nextBytes(ivBytes);
+            IvParameterSpec iv = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, clave, iv);
+            byte[] cifrado = cipher.doFinal(texto.getBytes("UTF-8"));
+
+            // Concatenar IV + cifrado para que el descifrado pueda recuperar el IV
+            byte[] resultado = new byte[16 + cifrado.length];
+            System.arraycopy(ivBytes, 0, resultado, 0, 16);
+            System.arraycopy(cifrado, 0, resultado, 16, cifrado.length);
+
+            return Base64.getEncoder().encodeToString(resultado);
         } catch (Exception e) {
-            System.out.println("Error en encriptar: " + e.getMessage());
-            return text; // Si falla, retorna el text original (fallback)
+            System.err.println("❌ Error al cifrar: " + e.getMessage());
+            return texto; // fallback sin cifrar
         }
     }
-    
-  
-    private String desencriptar(String textEncriptat) {
+
+    /**
+     * Descifra un texto producido por {@link #encriptar(String)}.
+     * Extrae el IV de los primeros 16 bytes del blob Base64.
+     */
+    private String desencriptar(String textoCifrado) {
         try {
-            byte[] clauBytes = CLAU_ENCRYPTACIO.getBytes("UTF-8");
-            SecretKeySpec clau = new SecretKeySpec(clauBytes, "AES");
-            Cipher xifrat = Cipher.getInstance("AES");
-            xifrat.init(Cipher.DECRYPT_MODE, clau);
-            byte[] textDesencriptat = xifrat.doFinal(Base64.getDecoder().decode(textEncriptat));
-            return new String(textDesencriptat, "UTF-8");
+            byte[] todo = Base64.getDecoder().decode(textoCifrado);
+
+            // Los primeros 16 bytes son el IV
+            byte[] ivBytes   = new byte[16];
+            byte[] cipherBytes = new byte[todo.length - 16];
+            System.arraycopy(todo, 0,  ivBytes,    0, 16);
+            System.arraycopy(todo, 16, cipherBytes, 0, cipherBytes.length);
+
+            byte[] claveBytes = CLAVE_AES.getBytes("UTF-8");
+            SecretKeySpec clave = new SecretKeySpec(claveBytes, "AES");
+            IvParameterSpec iv  = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, clave, iv);
+            byte[] descifrado = cipher.doFinal(cipherBytes);
+
+            return new String(descifrado, "UTF-8");
         } catch (Exception e) {
-            System.out.println("Error en desencriptar: " + e.getMessage());
-            return textEncriptat; // Si falla, retorna el text original (fallback)
+            // Compatibilidad con datos guardados con la versión anterior (AES/ECB)
+            try {
+                return desencriptarLegacy(textoCifrado);
+            } catch (Exception ex) {
+                System.err.println("❌ Error al descifrar: " + e.getMessage());
+                return textoCifrado;
+            }
         }
     }
-    
+
+    /** Compatibilidad con el cifrado antiguo AES/ECB (sin IV). */
+    private String desencriptarLegacy(String textoCifrado) throws Exception {
+        byte[] claveBytes = CLAVE_AES.getBytes("UTF-8");
+        SecretKeySpec clave = new SecretKeySpec(claveBytes, "AES");
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, clave);
+        byte[] descifrado = cipher.doFinal(Base64.getDecoder().decode(textoCifrado));
+        return new String(descifrado, "UTF-8");
+    }
+
     // ==================== GUARDAR PARTIDA ====================
-    
-    
+
+    /**
+     * Guarda la partida en la base de datos Oracle.
+     * Toda la información se cifra con AES-128/CBC antes de persistirse.
+     *
+     * BLOB 1 (estat): turno + tablero (50 tipos de casillas)
+     * BLOB 2 (dades_jugadors): jugadores con posición, tipo, inventario detallado
+     */
     public boolean guardarBBDD(Partida p, int idPartida) {
         if (this.conexion == null) {
-            System.out.println("❌ No hi ha connexió a la BBDD. Imposible guardar la partida.");
+            System.out.println("❌ Sin conexión a la BBDD. Imposible guardar.");
             return false;
         }
-        
         if (p == null) {
-            System.out.println("❌ La partida no pot ser null.");
+            System.out.println("❌ La partida no puede ser null.");
             return false;
         }
-        
-        String plsql = "{ call GuardarPartidaSegura(?, ?, ?) }";
-        
-        try (CallableStatement cs = this.conexion.prepareCall(plsql)) {
-            // 1. Preparar les dades dels jugadors (encriptades)
-            StringBuilder dadesJugadors = new StringBuilder();
+
+        try (CallableStatement cs = this.conexion.prepareCall("{ call GuardarPartidaSegura(?, ?, ?) }")) {
+
+            // --- BLOB 1: Estado general + tablero ---
+            String tableroStr = serializarTablero(p.getTablero());
+            String estat = "torn:" + p.getIndiceJugadorActual()
+                         + "|turnos:" + p.getTurnos()
+                         + "|finalizada:" + p.isFinalizada()
+                         + "|tablero:" + tableroStr;
+            String estatCifrado = encriptar(estat);
+
+            // --- BLOB 2: Jugadores ---
+            StringBuilder jugadoresStr = new StringBuilder();
             for (Jugador j : p.getJugadores()) {
-                // Format: nom|posicio|color|inventari
-                String inventariJSON = inventariAString(j.getInventario());
-                dadesJugadors.append(j.getNombre())
-                            .append("|").append(j.getPosicion())
-                            .append("|").append(j.getColor())
-                            .append("|").append(inventariJSON)
-                            .append(";");
+                jugadoresStr.append(serializarJugador(j)).append(";");
             }
-            
-            // 2. Encriptar les dades sensibles
-            String dadesJugadorsEncriptat = encriptar(dadesJugadors.toString());
-            String estatEncriptat = encriptar("torn:" + p.getIndiceJugadorActual() + 
-                                              "|turnos:" + p.getTurnos() + 
-                                              "|finalitzada:" + p.isFinalizada());
-            
-            // 3. Configurar paràmetres procediment emmagatzemat (PL/SQL)
+            String jugadoresCifrado = encriptar(jugadoresStr.toString());
+
             cs.setInt(1, idPartida);
-            cs.setString(2, estatEncriptat);
-            cs.setString(3, dadesJugadorsEncriptat);
-            
-            // 4. Executar el procediment
+            cs.setString(2, estatCifrado);
+            cs.setString(3, jugadoresCifrado);
             cs.execute();
-            
-            System.out.println("✅ Partida guardada amb èxit a Oracle via Procediment Emmagatzemat! (ID: " + idPartida + ")");
-            System.out.println("   - Jugadors: " + p.getJugadores().size());
-            System.out.println("   - Torn actual: " + p.getIndiceJugadorActual());
-            System.out.println("   - Dades encriptades: SÍ");
+
+            System.out.println("✅ Partida guardada (ID: " + idPartida + ") — AES-128/CBC");
+            System.out.println("   Jugadores: " + p.getJugadores().size());
+            System.out.println("   Tablero:   " + p.getTablero().getTotalCasillas() + " casillas guardadas");
+            System.out.println("   Cifrado:   SÍ (AES-128/CBC + IV aleatorio)");
             return true;
-            
+
         } catch (Exception e) {
-            System.out.println("❌ Excepció al guardar a PL/SQL: " + e.getMessage());
+            System.out.println("❌ Excepción al guardar en PL/SQL: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
-    
-   
-    private String inventariAString(Inventario inv) {
-        if (inv == null || inv.getLista() == null) {
-            return "[]";
+
+    /**
+     * Serializa el tablero como una cadena de códigos de 1 letra separados por comas.
+     *   CasillaNormal → N, Agujero → A, Trineo → T, Evento → E,
+     *   CasillaFragil → F, Oso → O, (meta/otros) → M
+     */
+    private String serializarTablero(Tablero t) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < t.getCasillas().size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append(codigoCasilla(t.getCasillas().get(i), i));
         }
-        
-        StringBuilder json = new StringBuilder("[");
-        boolean primer = true;
-        
-        for (Item item : inv.getLista()) {
-            if (item != null) {
-                if (!primer) json.append(",");
-                json.append("{")
-                    .append("\"nom\":\"").append(item.getNombre()).append("\"")
-                    .append(",\"quantitat\":").append(item.getCantidad())
-                    .append("}");
-                primer = false;
+        return sb.toString();
+    }
+
+    private char codigoCasilla(Casilla c, int indice) {
+        if (indice == 49)              return 'M'; // meta siempre M
+        if (c instanceof Agujero)      return 'A';
+        if (c instanceof Trineo)       return 'T';
+        if (c instanceof Evento)       return 'E';
+        if (c instanceof CasillaFragil) return 'F';
+        if (c instanceof Oso)          return 'O';
+        return 'N'; // CasillaNormal
+    }
+
+    /**
+     * Serializa un jugador con sus datos completos:
+     *   nombre|posicion|color|tipo(P/F)|peces|bolas|rapidos|lentos
+     *
+     * El inventario se guarda como CONTADORES explícitos, no como lista de ítems,
+     * para garantizar una restauración exacta y sin ambigüedades.
+     */
+    private String serializarJugador(Jugador j) {
+        String tipo = (j instanceof Foca) ? "F" : "P";
+        int peces    = contarItemsTipo(j, "pez", "peix");
+        int bolas    = contarItemsTipo(j, "bola");
+        int rapidos  = contarItemsTipo(j, "rapido", "rápido", "ràpid");
+        int lentos   = contarItemsTipo(j, "lento");
+
+        return j.getNombre()
+             + "|" + j.getPosicion()
+             + "|" + j.getColor()
+             + "|" + tipo
+             + "|" + peces
+             + "|" + bolas
+             + "|" + rapidos
+             + "|" + lentos;
+    }
+
+    /** Cuenta los ítems del inventario cuyo nombre contiene alguna de las palabras clave. */
+    private int contarItemsTipo(Jugador j, String... claves) {
+        int n = 0;
+        for (Item item : j.getInventario().getLista()) {
+            String nombre = item.getNombre().toLowerCase();
+            for (String clave : claves) {
+                if (nombre.contains(clave)) { n++; break; }
             }
         }
-        
-        json.append("]");
-        return json.toString();
+        return n;
     }
-    
-    // ==================== CARREGAR PARTIDA ====================
-    
-  
+
+    // ==================== CARGAR PARTIDA ====================
+
+    /**
+     * Carga una partida desde la base de datos Oracle y la reconstruye exactamente:
+     * - Tipos de casillas del tablero restaurados
+     * - Posiciones de cada jugador restauradas
+     * - Tipo de jugador (Pinguino / Foca) restaurado
+     * - Inventario: cantidad exacta de cada tipo de ítem
+     */
     public Partida cargarBBDD(int idPartida) {
         if (this.conexion == null) {
-            System.out.println("❌ No hi ha connexió, no es pot carregar el tauler.");
+            System.out.println("❌ Sin conexión, no se puede cargar la partida.");
             return null;
         }
-        
+
         try {
-            // 1. Consultar la partida a la BBDD
             String sql = "SELECT estat, dades_jugadors FROM PARTIDA WHERE id_partida = " + idPartida;
-            ArrayList<java.util.LinkedHashMap<String, String>> resultats = BBDD.select(this.conexion, sql);
-            
-            if (resultats == null || resultats.isEmpty()) {
-                System.out.println("❌ No s'ha trobat cap partida amb ID: " + idPartida);
+            ArrayList<java.util.LinkedHashMap<String, String>> resultados =
+                BBDD.select(this.conexion, sql);
+
+            if (resultados == null || resultados.isEmpty()) {
+                System.out.println("❌ No se encontró partida con ID: " + idPartida);
                 return null;
             }
-            
-            // 2. Extreure les dades
-            java.util.LinkedHashMap<String, String> fila = resultats.get(0);
-            String estatEncriptat = fila.get("ESTAT");
-            String dadesJugadorsEncriptat = fila.get("DADES_JUGADORS");
-            
-            if (estatEncriptat == null || dadesJugadorsEncriptat == null) {
-                System.out.println("❌ Dades corruptes a la BBDD.");
+
+            java.util.LinkedHashMap<String, String> fila = resultados.get(0);
+            String estatCifrado       = fila.get("ESTAT");
+            String jugadoresCifrado   = fila.get("DADES_JUGADORS");
+
+            if (estatCifrado == null || jugadoresCifrado == null) {
+                System.out.println("❌ Datos corruptos en la BBDD.");
                 return null;
             }
-            
-            // 3. Desencriptar les dades
-            String estatDesencriptat = desencriptar(estatEncriptat);
-            String dadesJugadorsDesencriptat = desencriptar(dadesJugadorsEncriptat);
-            
-            System.out.println("✅ Dades desencriptades correctament.");
-            
-            // 4. Crear nova partida
-            Partida p = new Partida();
-            
-            // 5. Parsejar l'estat (torn, turnos, finalitzada)
-            String[] partsEstat = estatDesencriptat.split("\\|");
-            for (String part : partsEstat) {
-                String[] clauValor = part.split(":");
-                if (clauValor.length == 2) {
-                    switch (clauValor[0]) {
-                        case "torn":
-                            p.setJugadorActual(Integer.parseInt(clauValor[1]));
-                            break;
-                        case "turnos":
-                            // p.setTurnos(Integer.parseInt(clauValor[1])); // Si tens el setter
-                            break;
-                        case "finalitzada":
-                            p.setFinalizada(Boolean.parseBoolean(clauValor[1]));
-                            break;
-                    }
+
+            // --- Descifrar ---
+            String estat       = desencriptar(estatCifrado);
+            String jugadoresStr = desencriptar(jugadoresCifrado);
+
+            System.out.println("✅ Datos descifrados correctamente.");
+
+            // --- Reconstruir partida ---
+            Partida p = new Partida(); // genera tablero aleatorio inicial; lo vamos a reemplazar
+
+            // Parsear BLOB 1: estat
+            String tableroStr = null;
+            for (String parte : estat.split("\\|")) {
+                String[] kv = parte.split(":", 2);
+                if (kv.length != 2) continue;
+                switch (kv[0]) {
+                    case "torn":       p.setJugadorActual(Integer.parseInt(kv[1]));       break;
+                    case "turnos":     p.setTurnos(Integer.parseInt(kv[1]));              break;
+                    case "finalizada": p.setFinalizada(Boolean.parseBoolean(kv[1]));     break;
+                    case "tablero":    tableroStr = kv[1];                                break;
                 }
             }
-            
-            // 6. Parsejar els jugadors i els seus inventaris
-            String[] jugadorsData = dadesJugadorsDesencriptat.split(";");
-            for (String jugadorData : jugadorsData) {
-                if (jugadorData.trim().isEmpty()) continue;
-                
-                String[] parts = jugadorData.split("\\|");
-                if (parts.length >= 4) {
-                    String nom = parts[0];
-                    int posicio = Integer.parseInt(parts[1]);
-                    String color = parts[2];
-                    String inventariJSON = parts[3];
-                    
-                    // Crear jugador (Pinguino per defecte)
-                    Pinguino j = new Pinguino(posicio, nom, color);
-                    
-                    // Restaurar inventari
-                    restaurarInventari(j, inventariJSON);
-                    
-                    p.getJugadores().add(j);
-                }
+
+            // Restaurar el tablero si se guardó
+            if (tableroStr != null && !tableroStr.isEmpty()) {
+                p.setTablero(deserializarTablero(tableroStr));
             }
-            
-            System.out.println("✅ Partida carregada amb èxit!");
-            System.out.println("   - Jugadors restaurats: " + p.getJugadores().size());
-            System.out.println("   - Torn actual: " + p.getIndiceJugadorActual());
-            
+
+            // Parsear BLOB 2: jugadores
+            for (String jStr : jugadoresStr.split(";")) {
+                if (jStr.trim().isEmpty()) continue;
+                Jugador j = deserializarJugador(jStr.trim());
+                if (j != null) p.getJugadores().add(j);
+            }
+
+            System.out.println("✅ Partida cargada (ID: " + idPartida + ")");
+            System.out.println("   Jugadores:  " + p.getJugadores().size());
+            System.out.println("   Tablero:    " + p.getTablero().getTotalCasillas() + " casillas");
+            System.out.println("   Turno:      " + p.getIndiceJugadorActual());
             return p;
-            
+
         } catch (Exception e) {
-            System.out.println("❌ Excepció al carregar: " + e.getMessage());
+            System.out.println("❌ Excepción al cargar: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
-    
-   
-    private void restaurarInventari(Jugador j, String inventariJSON) {
-        // Parseig simple del JSON (en producció usaríem una llibreria com Gson)
-        inventariJSON = inventariJSON.replace("[", "").replace("]", "");
-        
-        if (inventariJSON.trim().isEmpty()) {
-            return;
+
+    /**
+     * Deserializa la cadena de códigos de casilla y devuelve un Tablero con esas casillas.
+     * Formato: "N,A,T,E,F,O,N,..." (50 valores separados por comas)
+     */
+    private Tablero deserializarTablero(String str) {
+        String[] codigos = str.split(",");
+        ArrayList<Casilla> casillas = new ArrayList<>();
+        for (int i = 0; i < codigos.length; i++) {
+            casillas.add(casillaDesdeCodigo(codigos[i].trim(), i));
         }
-        
-        String[] items = inventariJSON.split("},\\{");
-        for (String itemData : items) {
-            itemData = itemData.replace("{", "").replace("}", "");
-            String[] parts = itemData.split(",");
-            
-            String nom = "";
-            int quantitat = 1;
-            
-            for (String part : parts) {
-                String[] clauValor = part.split(":");
-                if (clauValor.length == 2) {
-                    if (clauValor[0].equals("\"nom\"")) {
-                        nom = clauValor[1].replace("\"", "");
-                    } else if (clauValor[0].equals("\"quantitat\"")) {
-                        quantitat = Integer.parseInt(clauValor[1]);
-                    }
-                }
-            }
-            
-            // Crear l'item segons el nom
-            Item item = null;
-            if (nom.toLowerCase().contains("dado")) {
-                if (nom.toLowerCase().contains("ràpid") || nom.toLowerCase().contains("rapido")) {
-                    item = new Dado(nom, quantitat, 10, 5);
-                } else {
-                    item = new Dado(nom, quantitat, 3, 1);
-                }
-            } else if (nom.toLowerCase().contains("pez") || nom.toLowerCase().contains("peix")) {
-                item = new Pez(nom, quantitat);
-            } else if (nom.toLowerCase().contains("bola")) {
-                item = new BolaDeNieve(nom, quantitat);
-            }
-            
-            if (item != null) {
-                j.getInventario().agregarItem(item);
-            }
+        // Si el tablero guardado tiene < 50 casillas (corrupción parcial), completar
+        for (int i = casillas.size(); i < 50; i++) {
+            casillas.add(new CasillaNormal(i));
+        }
+        Tablero t = new Tablero(); // genera casillas aleatorias por constructor
+        t.setCasillas(casillas);  // las reemplazamos con las guardadas
+        return t;
+    }
+
+    private Casilla casillaDesdeCodigo(String codigo, int pos) {
+        if (codigo.isEmpty()) return new CasillaNormal(pos);
+        switch (codigo.charAt(0)) {
+            case 'A': return new Agujero(pos);
+            case 'T': return new Trineo(pos);
+            case 'E': return new Evento(pos);
+            case 'F': return new CasillaFragil(pos);
+            case 'O': return new Oso(pos);
+            default:  return new CasillaNormal(pos); // 'N' y 'M'
         }
     }
-    
-    // ==================== ALTRES MÈTODES ====================
-    
-    
-    public boolean eliminarPartida(int idPartida) {
-        if (this.conexion == null) {
-            return false;
+
+    /**
+     * Deserializa un jugador desde su cadena serializada.
+     * Formato: nombre|posicion|color|tipo|peces|bolas|rapidos|lentos
+     *
+     * Inventario restaurado:
+     *  - Peces:   [peces]    items Pez           (protección automática vs Foca)
+     *  - Bolas:   [bolas]    items BolaDeNieve   (1–3 obtenidos al caer en su casilla; se usan en guerra)
+     *  - Rápidos: [rapidos]  items Dado rápido   (baja probabilidad; avanza 5–10 casillas)
+     *  - Lentos:  [lentos]   items Dado lento    (alta probabilidad; avanza 1–3 casillas)
+     */
+    private Jugador deserializarJugador(String str) {
+        String[] partes = str.split("\\|");
+        if (partes.length < 8) {
+            System.err.println("⚠️ Formato de jugador inválido: " + str);
+            return null;
         }
-        
-        String plsql = "{ call EliminarPartida(?) }";
-        try (CallableStatement cs = this.conexion.prepareCall(plsql)) {
+        try {
+            String nombre = partes[0];
+            int    pos    = Integer.parseInt(partes[1]);
+            String color  = partes[2];
+            String tipo   = partes[3]; // "P" o "F"
+            int    peces    = Integer.parseInt(partes[4]);
+            int    bolas    = Integer.parseInt(partes[5]);
+            int    rapidos  = Integer.parseInt(partes[6]);
+            int    lentos   = Integer.parseInt(partes[7]);
+
+            Jugador j;
+            if ("F".equals(tipo)) {
+                j = new Foca(pos, nombre, color);
+            } else {
+                j = new Pinguino(pos, nombre, color);
+            }
+
+            // --- Restaurar inventario con las cantidades exactas guardadas ---
+            // Peces (protección automática vs Foca)
+            for (int i = 0; i < peces; i++) {
+                j.getInventario().agregarItem(new Pez("Pez", 1));
+            }
+            // Bolas de nieve (obtenidas 1–3 por casilla; usadas en guerra de bolas)
+            for (int i = 0; i < bolas; i++) {
+                j.getInventario().agregarItem(new BolaDeNieve("Bola de nieve", 1));
+            }
+            // Dado rápido (baja prob.; permite avanzar 5–10 casillas)
+            for (int i = 0; i < rapidos; i++) {
+                j.getInventario().agregarItem(new Dado("Dado Rápido", 1, 10, 5));
+            }
+            // Dado lento (alta prob.; avanza 1–3 casillas)
+            for (int i = 0; i < lentos; i++) {
+                j.getInventario().agregarItem(new Dado("Dado Lento", 1, 3, 1));
+            }
+
+            return j;
+        } catch (Exception e) {
+            System.err.println("⚠️ Error deserializando jugador: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // ==================== ALTRES MÈTODES ====================
+
+    public boolean eliminarPartida(int idPartida) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call EliminarPartida(?) }")) {
             cs.setInt(1, idPartida);
             cs.execute();
             return true;
         } catch (Exception e) {
-            System.out.println("❌ Excepció a l'eliminar partida via PL/SQL: " + e.getMessage());
+            System.out.println("❌ Excepción al eliminar partida: " + e.getMessage());
             return false;
         }
     }
-    
+
     public ArrayList<Integer> obtenerListaPartidas() {
         ArrayList<Integer> lista = new ArrayList<>();
-        if (this.conexion == null) {
-            return lista;
-        }
-        
+        if (this.conexion == null) return lista;
         String sql = "SELECT id_partida FROM PARTIDA ORDER BY id_partida";
-        ArrayList<java.util.LinkedHashMap<String, String>> resultats = BBDD.select(this.conexion, sql);
-        
-        for (java.util.LinkedHashMap<String, String> fila : resultats) {
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        for (java.util.LinkedHashMap<String, String> fila : resultados) {
             String idStr = fila.get("ID_PARTIDA");
             if (idStr != null) {
-                try {
-                    lista.add(Integer.parseInt(idStr));
-                } catch (NumberFormatException e) {
-                    // Ignorar error de parseo
-                }
+                try { lista.add(Integer.parseInt(idStr)); } catch (NumberFormatException ignored) {}
             }
         }
         return lista;
     }
-    
-  
+
     public boolean existeixPartida(int idPartida) {
-        if (this.conexion == null) {
-            return false;
-        }
-        
+        if (this.conexion == null) return false;
         String sql = "SELECT COUNT(*) as total FROM PARTIDA WHERE id_partida = " + idPartida;
-        ArrayList<java.util.LinkedHashMap<String, String>> resultats = BBDD.select(this.conexion, sql);
-        
-        if (resultats != null && !resultats.isEmpty()) {
-            String total = resultats.get(0).get("TOTAL");
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        if (resultados != null && !resultados.isEmpty()) {
+            String total = resultados.get(0).get("TOTAL");
             return total != null && Integer.parseInt(total) > 0;
         }
-        
         return false;
     }
-    
-    // ==================== GETTERS I SETTERS ====================
-    
-    public Connection getConexion() {
-        return conexion;
-    }
-    
-    public void setConexion(Connection conexion) {
-        this.conexion = conexion;
-    }
-    
-    public String getUrlBBDD() {
-        return urlBBDD;
-    }
-    
-    public void setUrlBBDD(String urlBBDD) {
-        this.urlBBDD = urlBBDD;
-    }
-    
-    public String getUsername() {
-        return username;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
+
+    // ==================== GETTERS / SETTERS ====================
+
+    public Connection getConexion()               { return conexion; }
+    public void setConexion(Connection conexion)   { this.conexion = conexion; }
+    public String getUrlBBDD()                     { return urlBBDD; }
+    public void setUrlBBDD(String urlBBDD)         { this.urlBBDD = urlBBDD; }
+    public String getUsername()                    { return username; }
+    public void setUsername(String username)       { this.username = username; }
+    public String getPassword()                    { return password; }
+    public void setPassword(String password)       { this.password = password; }
 }
