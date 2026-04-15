@@ -7,9 +7,22 @@
 
 /* MENU */
 .menu-bar {
-    -fx-background-color: white;
-    -fx-border-color: #e6e7ee;
+    -fx-background-color: rgba(5, 10, 30, 0.92);
+    -fx-border-color: rgba(80, 140, 255, 0.45);
     -fx-border-width: 0 0 1 0;
+}
+/* 1. Texto del menú ("Opciones") visible en blanco */
+.menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+}
+.menu-bar > .container > .menu-button > .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+.menu-bar > .container > .menu-button:hover,
+.menu-bar > .container > .menu-button:focused {
+    -fx-background-color: rgba(47, 111, 237, 0.45);
 }
 
 /* TABLERO (Cristal Esmerilado para disimular los PNGs blancos) */
@@ -52,15 +65,19 @@
     -fx-text-fill: #99c2ff;
 }
 
+/* 4. Resultado del dado: texto grande y claro para Text nodes */
 .big-text {
     -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
+    -fx-fill: #facc15;        /* Text node: usa -fx-fill */
+    -fx-text-fill: #facc15;   /* Label node: usa -fx-text-fill */
 }
 
+/* 2. Objetos: nombre/cantidad visibles en blanco para Text nodes */
 .stat {
     -fx-font-size: 15px;
-    -fx-text-fill: #e2e8f0;
+    -fx-fill: #e2e8f0;        /* Text node */
+    -fx-text-fill: #e2e8f0;   /* Label node */
 }
 
 .events-area {
