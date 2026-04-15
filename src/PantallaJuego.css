@@ -111,6 +111,15 @@
     -fx-background-color: transparent;
 }
 
+/* ====================== */
+/*    PANEL DERECHO       */
+/* ====================== */
+
+/* Fondo semitransparente oscuro que contiene el iglu y los tres bloques */
+.right-panel {
+    -fx-background-color: rgba(5, 10, 25, 0.68);
+}
+
 /* ========================= */
 /*        JUGADORES          */
 /* ========================= */

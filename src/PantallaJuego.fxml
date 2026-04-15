@@ -82,8 +82,8 @@
                     <Insets top="20" right="20" bottom="20" left="20"/>
                 </padding>
 
-                <!-- Espacio superior transparente para ver el fondo (~25%) -->
-                <Region prefHeight="250" VBox.vgrow="NEVER" />
+                <!-- Espacio superior transparente para ver el iglú del fondo (~22% del panel) -->
+                <Region prefHeight="190" VBox.vgrow="NEVER" />
 
                 <!-- Tarjeta Dado -->
                 <VBox spacing="10" styleClass="card" prefWidth="310">

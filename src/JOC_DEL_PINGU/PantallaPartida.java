@@ -675,109 +675,179 @@ public class PantallaPartida {
     private boolean animando = false;
 
     private void inicializarColas() {
+        colasAnimacion.clear();
         for (Jugador j : partida.getJugadores()) {
             colasAnimacion.put(j, new java.util.LinkedList<>());
             posVisual.put(j, j.getPosicion());
         }
     }
 
-    private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
-        java.util.Queue<Integer> q = colasAnimacion.get((Jugador)j);
-        if (q == null) return;
+    /** Coloca inmediatamente la ficha visual en la celda correspondiente a la posición del jugador. */
+    private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
+        if (ficha == null) return;
+        int pos = j.getPosicion();
+        if (pos > 49) pos = 49;
+        if (pos < 0)  pos = 0;
+        int col = pos % 5;
+        int fil = 9 - (pos / 5);
+        GridPane.setColumnIndex(ficha, col);
+        GridPane.setRowIndex(ficha, fil);
+        posVisual.put(j, pos);
+    }
 
-        if (desde < hasta) {
-            for (int i = desde + 1; i <= hasta; i++) q.add(i);
-        } else if (desde > hasta) {
-            for (int i = desde - 1; i >= hasta; i--) q.add(i);
-        }
+    /** Encola cada casilla intermedia entre 'desde' y 'hasta' para la animación paso a paso. */
+    private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
+        java.util.Queue<Integer> q = colasAnimacion.get(j);
+        if (q == null) return;
+        int step = (desde < hasta) ? 1 : -1;
+        for (int pos = desde + step; pos != hasta + step; pos += step) q.add(pos);
     }
 
     private void setUIInteractuable(boolean interactuable) {
-        if (dado != null) dado.setDisable(!interactuable);
+        if (dado   != null) dado.setDisable(!interactuable);
         if (rapido != null) rapido.setDisable(!interactuable);
-        if (lento != null) lento.setDisable(!interactuable);
-        if (peces != null) peces.setDisable(!interactuable);
-        if (nieve != null) nieve.setDisable(!interactuable);
+        if (lento  != null) lento.setDisable(!interactuable);
+        if (peces  != null) peces.setDisable(!interactuable);
+        if (nieve  != null) nieve.setDisable(!interactuable);
     }
 
+    /**
+     * 1. Animacion fluida casilla a casilla con TranslateTransition (300ms EASE_BOTH por paso).
+     * Construye la lista de pasos y los encadena via setOnFinished uno tras otro.
+     * El boton "Tirar dado" permanece deshabilitado durante toda la animacion.
+     */
     private void dispararAnimadorVisual(Runnable onFinished) {
         if (animando) return;
         animando = true;
         setUIInteractuable(false);
 
-        javafx.animation.Timeline tl = new javafx.animation.Timeline();
-        tl.setCycleCount(javafx.animation.Animation.INDEFINITE);
-        javafx.animation.KeyFrame kf = new javafx.animation.KeyFrame(javafx.util.Duration.millis(350), e -> {
-            boolean qVacia = true;
-            for (Jugador j : partida.getJugadores()) {
-                java.util.Queue<Integer> q = colasAnimacion.get(j);
-                if (q != null && !q.isEmpty()) {
-                    qVacia = false;
-                    int next = q.poll();
-                    posVisual.put(j, next);
-                    
-                    // Colocar en el grid según el índice visual
-                    ImageView ficha = getFichaVisual(j);
-                    if (ficha != null) {
-                        int pos = next;
-                        if (pos > 49) pos = 49;
-                        int col = pos % 5;
-                        int fil = 9 - (pos / 5);
-                        GridPane.setColumnIndex(ficha, col);
-                        GridPane.setRowIndex(ficha, fil);
-                    }
-                }
+        // Lista plana de pasos: int[]{playerIdx, posOrigen, posDestino}
+        java.util.List<int[]> listaPasos = new java.util.ArrayList<>();
+        for (Jugador j : partida.getJugadores()) {
+            java.util.Queue<Integer> q = colasAnimacion.get(j);
+            if (q == null || q.isEmpty()) continue;
+            int idx  = partida.getJugadores().indexOf(j);
+            int prev = posVisual.getOrDefault(j, j.getPosicion());
+            for (int dest : q) {
+                listaPasos.add(new int[]{idx, prev, dest});
+                prev = dest;
             }
+            q.clear();
+        }
 
-            refrescarDistribucionVisual();
-
-            if (qVacia) {
-                tl.stop();
-                animando = false;
-                setUIInteractuable(true);
-                if (onFinished != null) javafx.application.Platform.runLater(onFinished);
-            }
-        });
-        tl.getKeyFrames().add(kf);
-        tl.play();
+        if (listaPasos.isEmpty()) {
+            animando = false;
+            setUIInteractuable(true);
+            if (onFinished != null) javafx.application.Platform.runLater(onFinished);
+            return;
+        }
+        ejecutarPasoSuave(listaPasos, 0, onFinished);
     }
 
+    /** Ejecuta recursivamente cada paso de la lista con TranslateTransition encadenado. */
+    private void ejecutarPasoSuave(java.util.List<int[]> pasos, int idx, Runnable onFinished) {
+        if (idx >= pasos.size()) {
+            animando = false;
+            setUIInteractuable(true);
+            refrescarDistribucionVisual();
+            if (onFinished != null) javafx.application.Platform.runLater(onFinished);
+            return;
+        }
+        int[] paso    = pasos.get(idx);
+        int playerIdx = paso[0], desde = paso[1], hasta = paso[2];
+        if (playerIdx < 0 || playerIdx >= partida.getJugadores().size()) {
+            ejecutarPasoSuave(pasos, idx + 1, onFinished);
+            return;
+        }
+        Jugador   j   = partida.getJugadores().get(playerIdx);
+        ImageView fic = getFichaVisual(j);
+        if (fic == null) {
+            posVisual.put(j, hasta);
+            ejecutarPasoSuave(pasos, idx + 1, onFinished);
+            return;
+        }
+        animarUnPaso(fic, j, desde, hasta, () -> ejecutarPasoSuave(pasos, idx + 1, onFinished));
+    }
+
+    /**
+     * Desliza la ficha de la casilla 'desde' a 'hasta' en 300ms.
+     * Parte de translateX/Y=0 en la celda actual; al terminar hace snap a la nueva
+     * celda y resetea translate a 0. Para casilla 49 conserva el offset del iglu.
+     */
+    private void animarUnPaso(ImageView ficha, Jugador j, int desde, int hasta, Runnable onDone) {
+        double cellW = tablero.getWidth()  / 5.0;
+        double cellH = tablero.getHeight() / 10.0;
+        int colA = desde % 5, filA = 9 - (desde / 5);
+        int colB = hasta % 5, filB = 9 - (hasta / 5);
+        double dx = (colB - colA) * cellW;
+        double dy = (filB - filA) * cellH;
+        double extraX = 0, extraY = 0;
+        if (hasta == 49 && tablero.getScene() != null) {
+            extraX = computeIglooOffsetX(colB, cellW);
+            extraY = computeIglooOffsetY(filB, cellH);
+        }
+        final double fExtraX = extraX, fExtraY = extraY;
+        javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
+            javafx.util.Duration.millis(300), ficha);
+        tt.setFromX(0); tt.setFromY(0);
+        tt.setToX(dx + fExtraX);
+        tt.setToY(dy + fExtraY);
+        tt.setInterpolator(javafx.animation.Interpolator.EASE_BOTH);
+        tt.setOnFinished(e -> {
+            GridPane.setColumnIndex(ficha, colB);
+            GridPane.setRowIndex(ficha, filB);
+            ficha.setTranslateX(fExtraX);   // 0 en celdas normales; offset iglu en casilla 49
+            ficha.setTranslateY(fExtraY);
+            posVisual.put(j, hasta);
+            onDone.run();
+        });
+        tt.play();
+    }
+
+    /** Offset X en px para que la ficha en casilla 49 quede encima del iglu (~85.5% del ancho). */
+    private double computeIglooOffsetX(int colB, double cellW) {
+        double iglooSceneX = tablero.getScene().getWidth() * 0.855;
+        javafx.geometry.Point2D p = tablero.localToScene((colB + 0.5) * cellW, 0);
+        return iglooSceneX - p.getX();
+    }
+
+    /** Offset Y en px para que la ficha en casilla 49 quede encima del iglu (~13% del alto). */
+    private double computeIglooOffsetY(int filB, double cellH) {
+        double iglooSceneY = tablero.getScene().getHeight() * 0.13;
+        javafx.geometry.Point2D p = tablero.localToScene(0, (filB + 0.5) * cellH);
+        return iglooSceneY - p.getY();
+    }
+
+    /**
+     * 2. Varios personajes en la misma casilla:
+     * Distribuye en fila horizontal los personajes que comparten celda.
+     * Para jugador solo: solo resetea escala; NO toca translateX para preservar
+     * el offset del iglu si el jugador esta en casilla 49.
+     */
     private void refrescarDistribucionVisual() {
-        // Encontrar jugadores por celda visual
         java.util.Map<Integer, java.util.List<Jugador>> celdaJugadores = new java.util.HashMap<>();
         for (Jugador j : partida.getJugadores()) {
             int pos = posVisual.getOrDefault(j, j.getPosicion());
             celdaJugadores.computeIfAbsent(pos, k -> new java.util.ArrayList<>()).add(j);
         }
-
-        // Aplicar offset a jugadores compartiendo celda
         for (java.util.List<Jugador> lista : celdaJugadores.values()) {
             int total = lista.size();
             for (int i = 0; i < total; i++) {
                 ImageView ficha = getFichaVisual(lista.get(i));
                 if (ficha == null) continue;
-                
                 if (total == 1) {
-                    ficha.setTranslateX(0);
-                    ficha.setScaleX(1.0);
-                    ficha.setScaleY(1.0);
+                    // Solo escala; translate lo gestiona la animacion (iglu offset)
+                    ficha.setScaleX(1.0); ficha.setScaleY(1.0);
                 } else if (total == 2) {
-                    ficha.setScaleX(0.85);
-                    ficha.setScaleY(0.85);
+                    ficha.setScaleX(0.85); ficha.setScaleY(0.85);
                     ficha.setTranslateX(i == 0 ? -15 : 15);
                 } else if (total == 3) {
-                    ficha.setScaleX(0.70);
-                    ficha.setScaleY(0.70);
-                    if (i == 0) ficha.setTranslateX(-20);
-                    else if (i == 1) ficha.setTranslateX(0);
-                    else ficha.setTranslateX(20);
+                    ficha.setScaleX(0.70); ficha.setScaleY(0.70);
+                    ficha.setTranslateX(i == 0 ? -20 : (i == 1 ? 0 : 20));
                 } else {
-                    ficha.setScaleX(0.60);
-                    ficha.setScaleY(0.60);
-                    if (i == 0) ficha.setTranslateX(-22);
-                    else if (i == 1) ficha.setTranslateX(-7);
-                    else if (i == 2) ficha.setTranslateX(7);
-                    else ficha.setTranslateX(22);
+                    ficha.setScaleX(0.60); ficha.setScaleY(0.60);
+                    int[] offsets = {-22, -7, 7, 22};
+                    ficha.setTranslateX(i < offsets.length ? offsets[i] : 0);
                 }
             }
         }
