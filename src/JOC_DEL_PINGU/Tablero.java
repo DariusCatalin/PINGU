@@ -40,18 +40,21 @@ public class Tablero {
             while (intentos < 20) {
                 int roll = rand.nextInt(100); // 0-99
 
-                // Probabilidades: Normal 60%, Oso 10%, Trineo 10%, Agujero 10%, CasillaFragil 10%
+                // Probabilidades: Normal 30% (0-29), Oso ~11% (30-40), Trineo ~11% (41-51),
+                //                 Agujero ~12% (52-63), CasillaFragil ~12% (64-75), Evento ~24% (76-99)
                 String tipoCandidato;
-                if (roll < 60) {
+                if (roll < 30) {
                     tipoCandidato = "Normal";
-                } else if (roll < 70) {
+                } else if (roll < 41) {
                     tipoCandidato = "Oso";
-                } else if (roll < 80) {
+                } else if (roll < 52) {
                     tipoCandidato = "Trineo";
-                } else if (roll < 90) {
+                } else if (roll < 64) {
                     tipoCandidato = "Agujero";
-                } else {
+                } else if (roll < 76) {
                     tipoCandidato = "CasillaFragil";
+                } else {
+                    tipoCandidato = "Evento";
                 }
 
                 // Las casillas normales no tienen restricción de repetición
@@ -71,10 +74,11 @@ public class Tablero {
 
                 if (!bloqueada) {
                     switch (tipoCandidato) {
-                        case "Oso":          c = new Oso(i);          break;
-                        case "Trineo":       c = new Trineo(i);       break;
-                        case "Agujero":      c = new Agujero(i);      break;
+                        case "Oso":           c = new Oso(i);           break;
+                        case "Trineo":        c = new Trineo(i);        break;
+                        case "Agujero":       c = new Agujero(i);       break;
                         case "CasillaFragil": c = new CasillaFragil(i); break;
+                        case "Evento":        c = new Evento(i);        break;
                     }
                     break;
                 }
