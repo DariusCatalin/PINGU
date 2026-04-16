@@ -27,6 +27,8 @@ public class Main extends Application {
             primaryStage.setScene(scene);
             primaryStage.setResizable(true); // Permitir redimensionar y full screen
             primaryStage.setMaximized(true); // Empezar maximizado
+            primaryStage.setFullScreen(true);
+            primaryStage.setFullScreenExitHint("");
             primaryStage.show();
             
             System.out.println("✅ Aplicació iniciada correctament!");

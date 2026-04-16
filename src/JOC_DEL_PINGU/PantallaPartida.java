@@ -254,9 +254,10 @@ public class PantallaPartida {
             if (stage != null) {
                 stage.setScene(scene);
                 stage.setTitle("El Juego del Pingüino - Menú Principal");
+                stage.setMaximized(true);
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint("");
                 stage.show();
-                final Stage finalStage = stage; // necesario: stage no es effectively final
-                javafx.application.Platform.runLater(() -> finalStage.setMaximized(true));
             } else {
                 throw new Exception("No se pudo obtener la ventana principal (Stage).");
             }
@@ -577,9 +578,10 @@ public class PantallaPartida {
             if (stage != null) {
                 stage.setScene(scene);
                 stage.setTitle("El Juego del Pingüino - ¡Victoria!");
+                stage.setMaximized(true);
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint("");
                 stage.show();
-                final Stage finalStage = stage;
-                javafx.application.Platform.runLater(() -> finalStage.setMaximized(true));
             }
         } catch (Exception e) {
             System.err.println("Error al cargar PantallaVictoria: " + e.getMessage());
