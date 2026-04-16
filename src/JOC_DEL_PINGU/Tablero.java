@@ -27,47 +27,73 @@ public class Tablero {
      */
     private void generarCasillasAleatorias() {
         Random rand = new Random();
-        
+
         // Casilla 0 (Inicio): Siempre vacía/normal
         this.casillas.add(new CasillaNormal(0));
         System.out.println("Casilla 0 (Inicio) creada.");
-        
+
         // Bucle para añadir casillas aleatorias (posiciones 1-48)
         for (int i = 1; i < POSICION_META; i++) {
-            int tipo = rand.nextInt(7); // 7 posibilidades (0-6)
-            
-            Casilla c;
-            switch (tipo) {
-                case 0: 
-                    c = new Oso(i); 
-                    break;
-                case 1: 
-                    c = new Trineo(i); 
-                    break;
-                case 2: 
-                    c = new Agujero(i); 
-                    break;
-                case 3: 
-                    c = new Evento(i); 
-                    break;
-                case 4: 
-                    c = new CasillaFragil(i); // SueloQuebradizo para Nivel INTERMIG
-                    break;
-                case 5: 
-                case 6: 
-                    c = new CasillaNormal(i); // Más probabilidad de casillas normales
-                    break;
-                default: 
+            Casilla c = null;
+            int intentos = 0;
+
+            while (intentos < 20) {
+                int roll = rand.nextInt(100); // 0-99
+
+                // Probabilidades: Normal 60%, Oso 10%, Trineo 10%, Agujero 10%, CasillaFragil 10%
+                String tipoCandidato;
+                if (roll < 60) {
+                    tipoCandidato = "Normal";
+                } else if (roll < 70) {
+                    tipoCandidato = "Oso";
+                } else if (roll < 80) {
+                    tipoCandidato = "Trineo";
+                } else if (roll < 90) {
+                    tipoCandidato = "Agujero";
+                } else {
+                    tipoCandidato = "CasillaFragil";
+                }
+
+                // Las casillas normales no tienen restricción de repetición
+                if (tipoCandidato.equals("Normal")) {
                     c = new CasillaNormal(i);
+                    break;
+                }
+
+                // Comprobar que el mismo tipo especial no aparece en ninguna de las 3 casillas anteriores
+                boolean bloqueada = false;
+                for (int retro = 1; retro <= 3 && (i - retro) >= 0; retro++) {
+                    if (this.casillas.get(i - retro).getClass().getSimpleName().equals(tipoCandidato)) {
+                        bloqueada = true;
+                        break;
+                    }
+                }
+
+                if (!bloqueada) {
+                    switch (tipoCandidato) {
+                        case "Oso":          c = new Oso(i);          break;
+                        case "Trineo":       c = new Trineo(i);       break;
+                        case "Agujero":      c = new Agujero(i);      break;
+                        case "CasillaFragil": c = new CasillaFragil(i); break;
+                    }
+                    break;
+                }
+
+                intentos++;
             }
-            
+
+            // Fallback tras 20 intentos sin éxito: casilla normal
+            if (c == null) {
+                c = new CasillaNormal(i);
+            }
+
             this.casillas.add(c);
         }
-        
+
         // Casilla 49 (Meta): Siempre vacía/normal
         this.casillas.add(new CasillaNormal(POSICION_META));
         System.out.println("Casilla 49 (Meta) creada.");
-        
+
         System.out.println("Tablero generado con " + casillas.size() + " casillas.");
     }
     
