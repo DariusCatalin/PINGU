@@ -72,14 +72,10 @@ public class PantallaPrincipal {
                     System.out.println("Partida " + idPartida + " cargada. Abriendo el tablero...");
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
                     Parent root = loader.load();
-                    
-                    PantallaPartida controller = loader.getController();
-                    // Pasarle la partida directamente al controlador del tablero
-                    controller.setPartidaCargada(p);
 
                     Scene scene = new Scene(root);
                     try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
-                    
+
                     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     stage.setScene(scene);
                     stage.setTitle("El Juego del Pingüino - ID Partida: " + idPartida);
@@ -87,6 +83,12 @@ public class PantallaPrincipal {
                     stage.setFullScreen(true);
                     stage.setFullScreenExitHint("");
                     stage.show();
+                    stage.requestFocus(); // Asegura que el stage recibe el foco y los listeners de teclado/botones funcionan
+
+                    // Pasarle la partida DESPUÉS de que la escena ya está activa en el stage,
+                    // para que el listener de teclado (configurarEscapeMenu) pueda adjuntarse correctamente
+                    PantallaPartida controller = loader.getController();
+                    controller.setPartidaCargada(p);
                 } catch (Exception e) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error al Cargar");

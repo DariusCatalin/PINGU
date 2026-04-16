@@ -175,9 +175,6 @@ public class PantallaConfig {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
             Parent root = loader.load();
 
-            PantallaPartida controlador = loader.getController();
-            controlador.setJugadores(jugadores);
-
             Scene scene = new Scene(root);
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -187,6 +184,11 @@ public class PantallaConfig {
             stage.setFullScreen(true);
             stage.setFullScreenExitHint("");
             stage.show();
+            stage.requestFocus(); // Asegura foco y listeners de teclado/botones activos
+
+            // Pasar jugadores DESPUÉS de que la escena está activa en el stage
+            PantallaPartida controlador = loader.getController();
+            controlador.setJugadores(jugadores);
         } catch (Exception e) {
             mostrarError("Error al cargar el juego: " + e.getMessage());
             e.printStackTrace();
