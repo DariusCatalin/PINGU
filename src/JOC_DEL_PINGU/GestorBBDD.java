@@ -49,6 +49,7 @@ public class GestorBBDD {
 
     public void iniciarConexionGUI() {
         this.conexion = BBDD.conectarBaseDatosGUI();
+        inicializarTablaUsuarios(); // Crea la tabla si no existe
     }
 
     public void cerrarConexion() {
@@ -413,6 +414,122 @@ public class GestorBBDD {
         } catch (Exception e) {
             System.err.println("⚠️ Error deserializando jugador: " + e.getMessage());
             return null;
+        }
+    }
+
+    // ==================== GESTIÓ D'USUARIS ====================
+
+    /**
+     * Genera un hash SHA-256 de la contraseña (en hexadecimal, 64 chars).
+     * Es determinista: el mismo input → siempre el mismo hash → comparación posible en BBDD.
+     */
+    private String hashPassword(String password) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            System.err.println("❌ Error al hacer hash: " + e.getMessage());
+            return password;
+        }
+    }
+
+    /**
+     * Crea la tabla USUARIOS si no existe todavía.
+     * Se llama automáticamente desde iniciarConexionGUI().
+     */
+    private void inicializarTablaUsuarios() {
+        if (this.conexion == null) return;
+        String ddl = "CREATE TABLE USUARIOS (" +
+                "id_usuario   NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
+                "username     VARCHAR2(100) NOT NULL UNIQUE, " +
+                "password_enc VARCHAR2(500) NOT NULL, " +
+                "data_registre TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+        try (java.sql.Statement st = this.conexion.createStatement()) {
+            st.execute(ddl);
+            System.out.println("✅ Tabla USUARIOS creada.");
+        } catch (java.sql.SQLException e) {
+            if (e.getMessage() != null && e.getMessage().contains("ORA-00955")) {
+                System.out.println("ℹ️ Tabla USUARIOS ya existe.");
+            } else {
+                System.err.println("❌ Error creando tabla USUARIOS: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Registra un nuevo usuario usando SQL directo (sin stored procedure).
+     * La contraseña se guarda como hash SHA-256.
+     *
+     * @return null       → registro exitoso
+     *         "DUPLICATE" → el username ya existe
+     *         "ERROR:..." → otro error de BD
+     */
+    public String registrarUsuario(String username, String password) {
+        if (this.conexion == null) {
+            return "ERROR:Sin conexión a la base de datos.";
+        }
+
+        // 1. Comprobar si el username ya existe
+        String sqlCheck = "SELECT COUNT(*) FROM USUARIOS WHERE username = ?";
+        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlCheck)) {
+            ps.setString(1, username.trim());
+            java.sql.ResultSet rs = ps.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                System.out.println("❌ Usuario ya existe: " + username);
+                return "DUPLICATE";
+            }
+        } catch (java.sql.SQLException e) {
+            System.err.println("❌ Error al verificar usuario: " + e.getMessage());
+            return "ERROR:" + e.getMessage();
+        }
+
+        // 2. Insertar el nuevo usuario
+        String sqlInsert = "INSERT INTO USUARIOS (username, password_enc) VALUES (?, ?)";
+        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlInsert)) {
+            ps.setString(1, username.trim());
+            ps.setString(2, hashPassword(password));
+            ps.executeUpdate();
+            // No llamar a commit() — la conexión tiene auto-commit activado (Oracle JDBC por defecto)
+            System.out.println("✅ Usuario registrado: " + username);
+            return null; // null = éxito
+        } catch (java.sql.SQLException e) {
+            String msg = e.getMessage();
+            System.err.println("❌ Error al insertar usuario: " + msg);
+            // ORA-00001 = unique constraint violated (por si acaso)
+            if (msg != null && (msg.contains("ORA-00001") || msg.contains("unique"))) {
+                return "DUPLICATE";
+            }
+            return "ERROR:" + msg;
+        } catch (Exception e) {
+            return "ERROR:" + e.getMessage();
+        }
+    }
+
+    /**
+     * Valida login usando SQL directo (sin stored procedure).
+     * Compara el hash SHA-256 de la contraseña introducida con el almacenado.
+     *
+     * @return true si las credenciales son correctas.
+     */
+    public boolean validarLogin(String username, String password) {
+        if (this.conexion == null) {
+            System.out.println("❌ Sin conexión a la BBDD.");
+            return false;
+        }
+        String sql = "SELECT COUNT(*) FROM USUARIOS WHERE username = ? AND password_enc = ?";
+        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql)) {
+            ps.setString(1, username.trim());
+            ps.setString(2, hashPassword(password));
+            java.sql.ResultSet rs = ps.executeQuery();
+            boolean ok = rs.next() && rs.getInt(1) > 0;
+            System.out.println("Login '" + username + "': " + (ok ? "✅ Correcto" : "❌ Incorrecto"));
+            return ok;
+        } catch (Exception e) {
+            System.err.println("❌ Excepción al validar login: " + e.getMessage());
+            return false;
         }
     }
 

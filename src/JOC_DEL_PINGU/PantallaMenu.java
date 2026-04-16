@@ -1,7 +1,8 @@
-package JOC_DEL_PINGU; // Adaptado a tu paquete real
+package JOC_DEL_PINGU;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -21,15 +22,15 @@ public class PantallaMenu {
     @FXML private MenuItem quitGame;
 
     // --- Campos de texto del Login ---
-    @FXML private TextField userField;
+    @FXML private TextField     userField;
     @FXML private PasswordField passField;
 
     // --- Botones ---
     @FXML private Button loginButton;
     @FXML private Button registerButton;
 
-    // Si más adelante necesitas conectar a la base de datos para validar el login:
-    // private GestorBBDD gestorBBDD = new GestorBBDD();
+    // --- Label de error ---
+    @FXML private Label lblError;
 
     @FXML
     private void initialize() {
@@ -39,70 +40,97 @@ public class PantallaMenu {
     // ==========================================
     // ACCIONES DEL MENÚ SUPERIOR
     // ==========================================
-    @FXML
-    private void handleNewGame() {
-        System.out.println("Nueva partida seleccionada en el menú.");
-        // TODO: Lógica adicional si quieres que el menú superior también inicie juego
-    }
-
-    @FXML
-    private void handleSaveGame() {
-        System.out.println("Guardar partida...");
-    }
-
-    @FXML
-    private void handleLoadGame() {
-        System.out.println("Cargar partida...");
-    }
+    @FXML private void handleNewGame()  { System.out.println("Nueva partida seleccionada en el menú."); }
+    @FXML private void handleSaveGame() { System.out.println("Guardar partida..."); }
+    @FXML private void handleLoadGame() { System.out.println("Cargar partida..."); }
 
     @FXML
     private void handleQuitGame() {
         System.out.println("Saliendo del juego. ¡Nos vemos!");
-        System.exit(0);
+        javafx.application.Platform.exit();
     }
-    
+
     // ==========================================
-    // ACCIONES DE LOGIN Y REGISTRO
+    // ACCIONES DE LOGIN
     // ==========================================
     @FXML
     private void handleLogin(ActionEvent event) {
-        String username = userField.getText();
+        String username = userField.getText().trim();
         String password = passField.getText();
 
-        System.out.println("Intento de Login -> Usuario: " + username + " / Pass: " + password);
+        // Validación de campos vacíos
+        if (username.isEmpty() || password.isEmpty()) {
+            mostrarError("⚠ Por favor, introduce tu usuario y contraseña.");
+            return;
+        }
 
-        // Comprobación básica (Aquí en el futuro llamarás a gestorBBDD para validar)
-        if (username != null && !username.trim().isEmpty() && password != null && !password.trim().isEmpty()) {
-            try {
-                // Redirigir al Menú Principal después del Login
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
-                Parent root = loader.load();
-                Scene scene = new Scene(root);
-                try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
+        // Conexión y validación contra la BBDD
+        GestorBBDD gestor = new GestorBBDD();
+        gestor.iniciarConexionGUI();
 
-                // Capturamos la ventana actual a través del botón que acabamos de pulsar
-                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                
-                // Cambiamos a la pantalla principal
-                stage.setScene(scene);
-                stage.setTitle("El Juego del Pingüino - Menú Principal");
-                stage.setMaximized(true);
-                stage.setFullScreen(true);
-                stage.setFullScreenExitHint("");
-                stage.show();
-                
-            } catch (Exception e) {
-                System.out.println("¡Error al intentar cargar la vista del juego!");
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("Faltan datos: Por favor, introduce tu usuario y contraseña.");
+        boolean loginOk = gestor.validarLogin(username, password);
+        gestor.cerrarConexion();
+
+        if (!loginOk) {
+            mostrarError("❌ Usuario o contraseña incorrectos.");
+            passField.clear();
+            return;
+        }
+
+        // Credenciales correctas → ir al menú principal
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("El Juego del Pingüino - Menú Principal");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
+            stage.show();
+
+        } catch (Exception e) {
+            mostrarError("❌ Error al cargar el menú principal: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    // ==========================================
+    // ACCIÓN DE REGISTRO → abre pantalla de registro
+    // ==========================================
     @FXML
-    private void handleRegister() {
-        System.out.println("Botón de Registro pulsado.");
-        // TODO: Aquí recogerías userField y passField para hacer un INSERT en tu Base de Datos
+    private void handleRegister(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaRegistro.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("El Juego del Pingüino - Registro");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
+            stage.show();
+
+        } catch (Exception e) {
+            mostrarError("❌ Error al abrir la pantalla de registro: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ==========================================
+    // AUXILIAR
+    // ==========================================
+    private void mostrarError(String mensaje) {
+        if (lblError != null) {
+            lblError.setText(mensaje);
+            lblError.setVisible(true);
+            lblError.setManaged(true);
+        }
     }
 }

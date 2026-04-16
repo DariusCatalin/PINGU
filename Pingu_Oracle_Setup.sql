@@ -68,3 +68,64 @@ END EliminarPartida;
 -- Prueba rápida del funcionamiento (Opcional)
 -- EXEC GuardarPartidaSegura(1, 'ENCRYPTED_STATE_TEST', 'ENCRYPTED_USERS_TEST');
 -- SELECT * FROM PARTIDA;
+
+-- =====================================================================
+-- 4. TABLA DE USUARIOS (login / registro)
+-- =====================================================================
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE USUARIOS CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+CREATE TABLE USUARIOS (
+    id_usuario   NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    username     VARCHAR2(100) NOT NULL UNIQUE,
+    password_enc VARCHAR2(500) NOT NULL,  -- Contraseña cifrada AES-128/CBC en Base64
+    data_registre TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+/
+
+-- 5. PROCEDIMIENTO: REGISTRAR USUARIO
+--    Lanza error -20010 si el username ya existe.
+CREATE OR REPLACE PROCEDURE RegistrarUsuario (
+    p_username   IN VARCHAR2,
+    p_password   IN VARCHAR2   -- Llega ya cifrada desde Java
+) AS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM USUARIOS WHERE username = p_username;
+    IF v_count > 0 THEN
+        RAISE_APPLICATION_ERROR(-20010, 'El usuario ya existe: ' || p_username);
+    END IF;
+    INSERT INTO USUARIOS (username, password_enc) VALUES (p_username, p_password);
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END RegistrarUsuario;
+/
+
+-- 6. PROCEDIMIENTO: VALIDAR LOGIN
+--    Devuelve 1 en p_resultado si las credenciales son correctas, 0 si no.
+CREATE OR REPLACE PROCEDURE ValidarLogin (
+    p_username  IN  VARCHAR2,
+    p_password  IN  VARCHAR2,   -- Llega ya cifrada
+    p_resultado OUT NUMBER
+) AS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM USUARIOS
+    WHERE username    = p_username
+      AND password_enc = p_password;
+    p_resultado := v_count;
+END ValidarLogin;
+/
+
+-- Prueba de inserción manual (Opcional):
+-- EXEC RegistrarUsuario('admin', 'ENCRYPTED_PASS');
+-- SELECT * FROM USUARIOS;

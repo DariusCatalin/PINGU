@@ -75,3 +75,24 @@
     -fx-font-size: 12px;
     -fx-opacity: 0.6;
 }
+
+/* Error */
+.error-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #d32f2f;
+    -fx-font-weight: bold;
+    -fx-background-color: #fdecea;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+}
+
+/* Éxito (registro correcto) */
+.success-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #1b5e20;
+    -fx-font-weight: bold;
+    -fx-background-color: #e8f5e9;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+}
+

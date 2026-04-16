@@ -32,7 +32,7 @@
                         <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" />
                         <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" />
+                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" onAction="#handleQuitGame"/>
                     </items>
                 </Menu>
             </menus>
@@ -53,6 +53,7 @@
                 <!-- Cabecera -->
                 <VBox spacing="6" alignment="CENTER">
                     <Label text="EL JUEGO DEL PINGÜINO" styleClass="title" wrapText="true"/>
+                    <Label text="Inicia sesión para jugar" styleClass="subtitle" wrapText="true"/>
                 </VBox>
 
                 <Region prefHeight="8"/>
@@ -70,12 +71,15 @@
 
                 <!-- Botonera -->
                 <HBox spacing="10">
-                    <Button fx:id="loginButton" text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary"/>
-                    <Button fx:id="registerButton" text="Registro" onAction="#handleRegister" maxWidth="Infinity"/>
+                    <Button fx:id="loginButton" text="Iniciar sesión" onAction="#handleLogin"
+                            maxWidth="Infinity" styleClass="primary" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="registerButton" text="Registrarse" onAction="#handleRegister"
+                            maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
                 </HBox>
 
-                <Label text="Tip: para la demo, puedes entrar con cualquier usuario si aún no hay validación."
-                       styleClass="hint" wrapText="true"/>
+                <!-- Label de error (oculto por defecto) -->
+                <Label fx:id="lblError" text="" styleClass="error-label"
+                       wrapText="true" visible="false" managed="false"/>
             </VBox>
         </StackPane>
     </center>
