@@ -183,8 +183,10 @@ public class PantallaConfig {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Partida");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
             stage.show();
-            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             mostrarError("Error al cargar el juego: " + e.getMessage());
             e.printStackTrace();
@@ -202,8 +204,10 @@ public class PantallaConfig {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Menú Principal");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
             stage.show();
-            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             e.printStackTrace();
         }

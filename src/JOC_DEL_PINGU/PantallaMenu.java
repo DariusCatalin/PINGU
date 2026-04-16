@@ -86,8 +86,10 @@ public class PantallaMenu {
                 // Cambiamos a la pantalla principal
                 stage.setScene(scene);
                 stage.setTitle("El Juego del Pingüino - Menú Principal");
+                stage.setMaximized(true);
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint("");
                 stage.show();
-                javafx.application.Platform.runLater(() -> stage.setMaximized(true));
                 
             } catch (Exception e) {
                 System.out.println("¡Error al intentar cargar la vista del juego!");

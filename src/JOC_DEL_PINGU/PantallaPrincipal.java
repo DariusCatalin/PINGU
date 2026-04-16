@@ -31,8 +31,10 @@ public class PantallaPrincipal {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Nueva Partida");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
             stage.show();
-            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -81,8 +83,10 @@ public class PantallaPrincipal {
                     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                     stage.setScene(scene);
                     stage.setTitle("El Juego del Pingüino - ID Partida: " + idPartida);
+                    stage.setMaximized(true);
+                    stage.setFullScreen(true);
+                    stage.setFullScreenExitHint("");
                     stage.show();
-                    javafx.application.Platform.runLater(() -> stage.setMaximized(true));
                 } catch (Exception e) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error al Cargar");
@@ -114,8 +118,10 @@ public class PantallaPrincipal {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Login");
+            stage.setMaximized(true);
+            stage.setFullScreen(true);
+            stage.setFullScreenExitHint("");
             stage.show();
-            javafx.application.Platform.runLater(() -> stage.setMaximized(true));
         } catch (Exception e) {
             // Si el nombre es diferente, intentamos con el recurso correcto.
             // A veces el login se llama de otra forma en FXML.
