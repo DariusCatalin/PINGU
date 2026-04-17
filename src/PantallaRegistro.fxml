@@ -10,55 +10,80 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+    CREAR CUENTA
+    La imagen de fondo (registro_usu.png) tiene dibujados:
+      - Título "CREAR CUENTA" (zona superior del panel de hielo)
+      - 2 campos de entrada (usuario / contraseña)
+      - Etiqueta "REPETIR CONTRASEÑA:" pintada en la imagen
+      - 1 campo de confirmación de contraseña
+      - 2 botones: "CREAR CUENTA" (izquierda) y "VOLVER AL LOGIN" (derecha)
+
+    Los elementos JavaFX son TRANSPARENTES y se superponen exactamente
+    sobre los elementos pintados en la imagen.
+    Ajusta los valores de Region si tu resolución desplaza el panel.
+-->
 <StackPane
     xmlns="http://javafx.com/javafx/21.0.10"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="JOC_DEL_PINGU.PantallaRegistro"
     stylesheets="@PantallaMenu.css"
-    styleClass="root">
+    styleClass="register-bg">
 
-    <padding>
-        <Insets top="28" right="28" bottom="28" left="28"/>
-    </padding>
+    <!-- Contenedor centrado que cubre exactamente el panel de hielo de la imagen -->
+    <VBox alignment="CENTER"
+          maxWidth="680" maxHeight="560"
+          StackPane.alignment="CENTER">
 
-    <VBox spacing="16" styleClass="card" maxWidth="420">
-        <padding>
-            <Insets top="18" right="18" bottom="18" left="18"/>
-        </padding>
+        <!-- Espacio para el título "CREAR CUENTA" pintado en la imagen -->
+        <Region prefHeight="95"/>
 
-        <!-- Cabecera -->
-        <VBox spacing="6" alignment="CENTER">
-            <Label text="EL JUEGO DEL PINGÜINO" styleClass="title" wrapText="true"/>
-            <Label text="Crea tu cuenta nueva" styleClass="subtitle" wrapText="true"/>
-        </VBox>
+        <!-- CAMPO USUARIO -->
+        <TextField fx:id="userField"
+                   promptText="Usuario..."
+                   styleClass="transparent-field"
+                   prefHeight="48" maxWidth="390"/>
+
+        <Region prefHeight="18"/>
+
+        <!-- CAMPO CONTRASEÑA -->
+        <PasswordField fx:id="passField"
+                       promptText="Contraseña..."
+                       styleClass="transparent-field"
+                       prefHeight="48" maxWidth="390"/>
+
+        <!-- Espacio que ocupa la etiqueta "REPETIR CONTRASEÑA:" pintada en imagen -->
+        <Region prefHeight="52"/>
+
+        <!-- CAMPO CONFIRMAR CONTRASEÑA -->
+        <PasswordField fx:id="passConfirmField"
+                       promptText="Repetir contraseña..."
+                       styleClass="transparent-field"
+                       prefHeight="48" maxWidth="390"/>
+
+        <!-- Espacio hasta los botones de la imagen -->
+        <Region prefHeight="52"/>
+
+        <!-- BOTONES (transparentes, superpuestos sobre los de la imagen) -->
+        <HBox spacing="0" alignment="CENTER">
+            <Button fx:id="createAccountButton"
+                    text="" onAction="#handleRegistrar"
+                    styleClass="transparent-button"
+                    prefWidth="210" prefHeight="72"/>
+            <Region prefWidth="58"/>
+            <Button fx:id="backButton"
+                    text="" onAction="#handleVolver"
+                    styleClass="transparent-button"
+                    prefWidth="210" prefHeight="72"/>
+        </HBox>
 
         <Region prefHeight="8"/>
 
-        <!-- Formulario -->
-        <VBox spacing="10">
-            <Label text="Usuario" styleClass="field-label"/>
-            <TextField fx:id="userField" promptText="Elige un nombre de usuario..." styleClass="field"/>
-
-            <Label text="Contraseña" styleClass="field-label"/>
-            <PasswordField fx:id="passField" promptText="Crea una contraseña..." styleClass="field"/>
-
-            <Label text="Confirmar contraseña" styleClass="field-label"/>
-            <PasswordField fx:id="passConfirmField" promptText="Repite la contraseña..." styleClass="field"/>
-        </VBox>
-
-        <Region prefHeight="6"/>
-
-        <!-- Botonera -->
-        <HBox spacing="10">
-            <Button text="Crear cuenta" onAction="#handleRegistrar"
-                    maxWidth="Infinity" styleClass="primary" HBox.hgrow="ALWAYS"/>
-            <Button text="Volver al Login" onAction="#handleVolver"
-                    maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-        </HBox>
-
-        <!-- Label de error / éxito (oculto por defecto) -->
-        <Label fx:id="lblMensaje" text="" styleClass="error-label"
-               wrapText="true" visible="false" managed="false"/>
+        <!-- Mensaje de error / éxito (visible solo cuando hay feedback) -->
+        <Label fx:id="lblMensaje" text=""
+               styleClass="error-label"
+               wrapText="true"
+               visible="false" managed="false"/>
     </VBox>
 
 </StackPane>
