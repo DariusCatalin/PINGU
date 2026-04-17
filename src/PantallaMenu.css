@@ -3,6 +3,49 @@
     -fx-background-color: #f6f7fb;
 }
 
+/* CUSTOM BACKGROUNDS FOR NEW LOGIN/REGISTER */
+.login-bg {
+    -fx-background-image: url("resources/inicio_sesion.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-color: #0b1129; /* Fallback */
+}
+
+.register-bg {
+    -fx-background-image: url("resources/registro_usu.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-color: #0b1129; /* Fallback */
+}
+
+/* TRANSPARENT FIELDS OVERRIDE */
+.transparent-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #1f2330;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-padding: 0 15;
+}
+
+.transparent-field:focused {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 8;
+    -fx-prompt-text-fill: transparent;
+}
+
+.transparent-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: transparent;
+    -fx-cursor: hand;
+}
+
+.transparent-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 12;
+}
+
 /* MENU */
 .menu-bar {
     -fx-background-color: white;
@@ -10,17 +53,16 @@
     -fx-border-width: 0 0 1 0;
 }
 
-/* CARD */
+/* CARD (Legacy, kept just in case) */
 .card {
     -fx-background-color: white;
     -fx-background-radius: 16;
     -fx-border-color: #e6e7ee;
     -fx-border-radius: 16;
-
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 16, 0.15, 0, 2);
 }
 
-/* TITLES */
+/* TITLES (Legacy, kept just in case) */
 .title {
     -fx-font-size: 26px;
     -fx-font-weight: 800;
@@ -33,7 +75,7 @@
     -fx-opacity: 0.65;
 }
 
-/* FIELDS */
+/* FIELDS (Legacy, kept just in case) */
 .field-label {
     -fx-font-size: 12px;
     -fx-opacity: 0.75;
@@ -48,7 +90,7 @@
     -fx-padding: 10 12;
 }
 
-/* BUTTONS */
+/* BUTTONS (Legacy) */
 .button {
     -fx-background-radius: 10;
     -fx-padding: 10 14;
@@ -81,7 +123,7 @@
     -fx-font-size: 13px;
     -fx-text-fill: #d32f2f;
     -fx-font-weight: bold;
-    -fx-background-color: #fdecea;
+    -fx-background-color: rgba(253, 236, 234, 0.85); /* added alpha for image overlay */
     -fx-background-radius: 8;
     -fx-padding: 8 12;
 }
@@ -91,7 +133,7 @@
     -fx-font-size: 13px;
     -fx-text-fill: #1b5e20;
     -fx-font-weight: bold;
-    -fx-background-color: #e8f5e9;
+    -fx-background-color: rgba(232, 245, 233, 0.85); /* added alpha */
     -fx-background-radius: 8;
     -fx-padding: 8 12;
 }

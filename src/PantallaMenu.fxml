@@ -3,85 +3,76 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.PasswordField?>
-<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane
+<!--
+    INICIO DE SESIÓN
+    La imagen de fondo (inicio_sesion.png) tiene dibujados:
+      - Título "INICIO DE SESIÓN" (zona superior del panel de hielo)
+      - 2 campos de entrada (usuario / contraseña)
+      - 2 botones: "INICIAR SESIÓN" (izquierda) y "REGISTRARSE" (derecha)
+
+    Los elementos JavaFX son TRANSPARENTES y se superponen exactamente
+    sobre los elementos pintados en la imagen.
+    Ajusta los valores de Region si tu resolución desplaza el panel.
+-->
+<StackPane
     xmlns="http://javafx.com/javafx/21.0.10"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="JOC_DEL_PINGU.PantallaMenu"
     stylesheets="@PantallaMenu.css"
-    styleClass="root">
+    styleClass="login-bg">
 
-    <top>
-        <MenuBar>
-            <menus>
-                <Menu mnemonicParsing="false" text="Archivo">
-                    <items>
-                        <MenuItem fx:id="newGame" mnemonicParsing="false" text="Nuevo" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="saveGame" mnemonicParsing="false" text="Guardar" />
-                        <MenuItem fx:id="loadGame" mnemonicParsing="false" text="Cargar" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="quitGame" mnemonicParsing="false" text="Salir" onAction="#handleQuitGame"/>
-                    </items>
-                </Menu>
-            </menus>
-        </MenuBar>
-    </top>
+    <!-- Contenedor centrado que cubre exactamente el panel de hielo de la imagen -->
+    <VBox alignment="CENTER"
+          maxWidth="680" maxHeight="520"
+          StackPane.alignment="CENTER">
 
-    <center>
-        <StackPane>
-            <padding>
-                <Insets top="28" right="28" bottom="28" left="28"/>
-            </padding>
+        <!-- Espacio para el título "INICIO DE SESIÓN" pintado en la imagen -->
+        <Region prefHeight="105"/>
 
-            <VBox spacing="16" styleClass="card" maxWidth="420">
-                <padding>
-                    <Insets top="18" right="18" bottom="18" left="18"/>
-                </padding>
+        <!-- CAMPO USUARIO -->
+        <TextField fx:id="userField"
+                   promptText="Usuario..."
+                   styleClass="transparent-field"
+                   prefHeight="48" maxWidth="390"/>
 
-                <!-- Cabecera -->
-                <VBox spacing="6" alignment="CENTER">
-                    <Label text="EL JUEGO DEL PINGÜINO" styleClass="title" wrapText="true"/>
-                    <Label text="Inicia sesión para jugar" styleClass="subtitle" wrapText="true"/>
-                </VBox>
+        <Region prefHeight="22"/>
 
-                <Region prefHeight="8"/>
+        <!-- CAMPO CONTRASEÑA -->
+        <PasswordField fx:id="passField"
+                       promptText="Contraseña..."
+                       styleClass="transparent-field"
+                       prefHeight="48" maxWidth="390"/>
 
-                <!-- Formulario -->
-                <VBox spacing="10">
-                    <Label text="Usuario" styleClass="field-label"/>
-                    <TextField fx:id="userField" promptText="Usuario..." styleClass="field"/>
+        <!-- Espacio hasta los botones de la imagen -->
+        <Region prefHeight="68"/>
 
-                    <Label text="Contraseña" styleClass="field-label"/>
-                    <PasswordField fx:id="passField" promptText="Contraseña..." styleClass="field"/>
-                </VBox>
+        <!-- BOTONES (transparentes, superpuestos sobre los de la imagen) -->
+        <HBox spacing="0" alignment="CENTER">
+            <Button fx:id="loginButton"
+                    text="" onAction="#handleLogin"
+                    styleClass="transparent-button"
+                    prefWidth="210" prefHeight="72"/>
+            <Region prefWidth="58"/>
+            <Button fx:id="registerButton"
+                    text="" onAction="#handleRegister"
+                    styleClass="transparent-button"
+                    prefWidth="210" prefHeight="72"/>
+        </HBox>
 
-                <Region prefHeight="6"/>
+        <Region prefHeight="8"/>
 
-                <!-- Botonera -->
-                <HBox spacing="10">
-                    <Button fx:id="loginButton" text="Iniciar sesión" onAction="#handleLogin"
-                            maxWidth="Infinity" styleClass="primary" HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="registerButton" text="Registrarse" onAction="#handleRegister"
-                            maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                </HBox>
+        <!-- Mensaje de error (visible solo si hay error) -->
+        <Label fx:id="lblError" text=""
+               styleClass="error-label"
+               wrapText="true"
+               visible="false" managed="false"/>
+    </VBox>
 
-                <!-- Label de error (oculto por defecto) -->
-                <Label fx:id="lblError" text="" styleClass="error-label"
-                       wrapText="true" visible="false" managed="false"/>
-            </VBox>
-        </StackPane>
-    </center>
-
-</BorderPane>
+</StackPane>
