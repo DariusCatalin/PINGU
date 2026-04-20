@@ -79,15 +79,14 @@ public class PantallaMenu {
 
         // Credenciales correctas → ir al menú principal
         try {
+            // Ruta absoluta: busca en la raíz de bin/
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Menú Principal");
-            stage.setMaximized(true);
             stage.setFullScreen(true);
             stage.setFullScreenExitHint("");
             stage.show();
@@ -104,15 +103,14 @@ public class PantallaMenu {
     @FXML
     private void handleRegister(ActionEvent event) {
         try {
+            // Ruta absoluta: busca en la raíz de bin/
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaRegistro.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Registro");
-            stage.setMaximized(true);
             stage.setFullScreen(true);
             stage.setFullScreenExitHint("");
             stage.show();
