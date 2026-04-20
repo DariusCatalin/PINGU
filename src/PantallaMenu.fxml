@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -12,63 +13,66 @@
 
 <!--
     INICIO DE SESIÓN
-    La imagen de fondo (inicio_sesion.png) tiene dibujados:
-      - Título "INICIO DE SESIÓN" (zona superior del panel de hielo)
-      - 2 campos de entrada (usuario / contraseña)
-      - 2 botones: "INICIAR SESIÓN" (izquierda) y "REGISTRARSE" (derecha)
-
-    Los elementos JavaFX son TRANSPARENTES y se superponen exactamente
-    sobre los elementos pintados en la imagen.
-    Ajusta los valores de Region si tu resolución desplaza el panel.
+    Capas (de atrás hacia delante):
+      1. Fondo del paisaje (CSS .login-bg)
+      2. ImageView con el panel de hielo (centrado)
+      3. VBox con los campos y botones reales (centrado dentro del panel)
 -->
-<StackPane
-    xmlns="http://javafx.com/javafx/21.0.10"
+<StackPane fx:id="rootPane"
+    xmlns="http://javafx.com/javafx/21"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="JOC_DEL_PINGU.PantallaMenu"
     stylesheets="@PantallaMenu.css"
     styleClass="login-bg">
 
-    <!-- Contenedor centrado que cubre exactamente el panel de hielo de la imagen -->
-    <VBox alignment="CENTER"
-          maxWidth="680" maxHeight="520"
+    <!-- CAPA 1: Panel de hielo (centrado) -->
+    <ImageView fitWidth="1700" preserveRatio="true"
+               pickOnBounds="false" mouseTransparent="true"
+               StackPane.alignment="CENTER">
+        <image>
+            <Image url="@resources/inicio_sesion_plantilla.png"/>
+        </image>
+    </ImageView>
+
+    <!-- CAPA 2: Campos y botones reales -->
+    <VBox alignment="TOP_CENTER"
+          maxWidth="600" maxHeight="520"
           StackPane.alignment="CENTER">
 
-        <!-- Espacio para el título "INICIO DE SESIÓN" pintado en la imagen -->
-        <Region prefHeight="105"/>
+        <!-- Espacio para el título dibujado en la plantilla -->
+        <Region prefHeight="155"/>
 
         <!-- CAMPO USUARIO -->
         <TextField fx:id="userField"
-                   promptText="Usuario..."
-                   styleClass="transparent-field"
-                   prefHeight="48" maxWidth="390"/>
+                   promptText="Usuario"
+                   styleClass="login-field"
+                   prefHeight="50" maxWidth="480"/>
 
         <Region prefHeight="22"/>
 
         <!-- CAMPO CONTRASEÑA -->
         <PasswordField fx:id="passField"
-                       promptText="Contraseña..."
-                       styleClass="transparent-field"
-                       prefHeight="48" maxWidth="390"/>
+                       promptText="Contraseña"
+                       styleClass="login-field"
+                       prefHeight="50" maxWidth="480"/>
 
-        <!-- Espacio hasta los botones de la imagen -->
-        <Region prefHeight="68"/>
+        <Region prefHeight="35"/>
 
-        <!-- BOTONES (transparentes, superpuestos sobre los de la imagen) -->
-        <HBox spacing="0" alignment="CENTER">
+        <!-- BOTONES centrados y más grandes -->
+        <HBox spacing="60" alignment="CENTER">
             <Button fx:id="loginButton"
-                    text="" onAction="#handleLogin"
-                    styleClass="transparent-button"
-                    prefWidth="210" prefHeight="72"/>
-            <Region prefWidth="58"/>
+                    onAction="#handleLogin"
+                    styleClass="btn-login"
+                    prefWidth="260" prefHeight="110"/>
             <Button fx:id="registerButton"
-                    text="" onAction="#handleRegister"
-                    styleClass="transparent-button"
-                    prefWidth="210" prefHeight="72"/>
+                    onAction="#handleRegister"
+                    styleClass="btn-register"
+                    prefWidth="260" prefHeight="110"/>
         </HBox>
 
-        <Region prefHeight="8"/>
+        <Region prefHeight="15"/>
 
-        <!-- Mensaje de error (visible solo si hay error) -->
+        <!-- Mensaje de error -->
         <Label fx:id="lblError" text=""
                styleClass="error-label"
                wrapText="true"
