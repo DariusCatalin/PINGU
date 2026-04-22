@@ -4,8 +4,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -13,10 +11,9 @@
 
 <!--
     INICIO DE SESIÓN
-    Capas (de atrás hacia delante):
-      1. Fondo del paisaje (CSS .login-bg)
-      2. ImageView con el panel de hielo (centrado)
-      3. VBox con los campos y botones reales (centrado dentro del panel)
+    - inicio_sesion.png cubre toda la pantalla como fondo (CSS)
+    - VBox centrado superpone los campos sobre los recuadros del panel
+    - Botones con imagen usando CSS background-image
 -->
 <StackPane fx:id="rootPane"
     xmlns="http://javafx.com/javafx/21"
@@ -25,52 +22,46 @@
     stylesheets="@PantallaMenu.css"
     styleClass="login-bg">
 
-    <!-- CAPA 1: Panel de hielo (centrado) -->
-    <ImageView fitWidth="1700" preserveRatio="true"
-               pickOnBounds="false" mouseTransparent="true"
-               StackPane.alignment="CENTER">
-        <image>
-            <Image url="@resources/inicio_sesion_plantilla.png"/>
-        </image>
-    </ImageView>
-
-    <!-- CAPA 2: Campos y botones reales -->
+    <!-- VBox centrado sobre el panel del fondo -->
     <VBox alignment="TOP_CENTER"
-          maxWidth="600" maxHeight="520"
-          StackPane.alignment="CENTER">
+          maxWidth="490"
+          StackPane.alignment="CENTER"
+          translateY="-35">
 
-        <!-- Espacio para el título dibujado en la plantilla -->
+        <!-- Espaciado hasta el primer campo (ocupa título + margen) -->
         <Region prefHeight="155"/>
 
         <!-- CAMPO USUARIO -->
         <TextField fx:id="userField"
                    promptText="Usuario"
                    styleClass="login-field"
-                   prefHeight="50" maxWidth="480"/>
+                   prefHeight="52" maxWidth="390"/>
 
-        <Region prefHeight="22"/>
+        <!-- Separación entre los dos campos -->
+        <Region prefHeight="58"/>
 
         <!-- CAMPO CONTRASEÑA -->
         <PasswordField fx:id="passField"
                        promptText="Contraseña"
                        styleClass="login-field"
-                       prefHeight="50" maxWidth="480"/>
+                       prefHeight="52" maxWidth="390"/>
 
-        <Region prefHeight="35"/>
+        <!-- Espacio antes de los botones -->
+        <Region prefHeight="48"/>
 
-        <!-- BOTONES centrados y más grandes -->
-        <HBox spacing="60" alignment="CENTER">
+        <!-- BOTONES con imagen -->
+        <HBox spacing="35" alignment="CENTER">
             <Button fx:id="loginButton"
                     onAction="#handleLogin"
                     styleClass="btn-login"
-                    prefWidth="260" prefHeight="110"/>
+                    prefWidth="190" prefHeight="78"/>
             <Button fx:id="registerButton"
                     onAction="#handleRegister"
                     styleClass="btn-register"
-                    prefWidth="260" prefHeight="110"/>
+                    prefWidth="190" prefHeight="78"/>
         </HBox>
 
-        <Region prefHeight="15"/>
+        <Region prefHeight="12"/>
 
         <!-- Mensaje de error -->
         <Label fx:id="lblError" text=""
