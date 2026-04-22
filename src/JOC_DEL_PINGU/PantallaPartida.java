@@ -165,16 +165,17 @@ public class PantallaPartida {
             if (iv != null) iv.setVisible(false);
         }
  
-        // Asignar imagen según color y mostrar la ficha de cada jugador
+        // Asignar imagen según color, posicionar en casilla 0 y mostrar la ficha de cada jugador
         for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
                 ficha.setVisible(true);
+                actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
             }
         }
-        
+
         inicializarColas();
  
         // Actualizar inventario del primer pingüino
@@ -908,16 +909,21 @@ public class PantallaPartida {
             extraY = computeIglooOffsetY(filB, cellH);
         }
         final double fExtraX = extraX, fExtraY = extraY;
+        // Partimos del translate actual (puede incluir offset de distribución multi-jugador)
+        double currentTX = ficha.getTranslateX();
+        double currentTY = ficha.getTranslateY();
         javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
             javafx.util.Duration.millis(300), ficha);
-        tt.setFromX(0); tt.setFromY(0);
+        tt.setFromX(currentTX); tt.setFromY(currentTY);
         tt.setToX(dx + fExtraX);
         tt.setToY(dy + fExtraY);
         tt.setInterpolator(javafx.animation.Interpolator.EASE_BOTH);
         tt.setOnFinished(e -> {
             GridPane.setColumnIndex(ficha, colB);
             GridPane.setRowIndex(ficha, filB);
-            ficha.setTranslateX(fExtraX);   // 0 en celdas normales; offset iglu en casilla 49
+            // Resetear translate a 0 (normal) o al offset del iglu (casilla 49).
+            // La distribución multi-jugador se aplicará en refrescarDistribucionVisual al final.
+            ficha.setTranslateX(fExtraX);
             ficha.setTranslateY(fExtraY);
             posVisual.put(j, hasta);
             onDone.run();
