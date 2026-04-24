@@ -1,0 +1,69 @@
+/* =========================================
+   PANTALLA DE LOGIN — JOC D'EN PINGU
+   ========================================= */
+
+/* -----------------------------------------
+   CAMPOS DE TEXTO
+   ----------------------------------------- */
+.login-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #0a2540;
+    -fx-prompt-text-fill: rgba(10, 37, 64, 0.30);
+    -fx-font-family: "Courier New";
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 15 0 15;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.login-field:focused {
+    -fx-background-color: rgba(255, 255, 255, 0.20);
+    -fx-background-radius: 8;
+}
+
+/* -----------------------------------------
+   BOTONES CON IMAGEN
+   ----------------------------------------- */
+.btn-login,
+.btn-register {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+/* Hover: brillo azul ártico */
+.btn-login:hover,
+.btn-register:hover {
+    -fx-effect: dropshadow(gaussian, rgba(91, 192, 222, 0.9), 18, 0.4, 0, 0);
+    -fx-opacity: 0.95;
+}
+
+/* Pulsado: se hunde ligeramente */
+.btn-login:pressed,
+.btn-register:pressed {
+    -fx-translate-y: 2;
+    -fx-opacity: 0.80;
+}
+
+/* -----------------------------------------
+   MENSAJES DE ERROR / ÉXITO
+   ----------------------------------------- */
+.error-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #b71c1c;
+    -fx-font-weight: bold;
+    -fx-background-color: rgba(253, 236, 234, 0.9);
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+}
+
+.success-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #1b5e20;
+    -fx-font-weight: bold;
+    -fx-background-color: rgba(232, 245, 233, 0.9);
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+}
