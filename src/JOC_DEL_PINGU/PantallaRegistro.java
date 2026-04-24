@@ -89,7 +89,7 @@ public class PantallaRegistro {
     /** Después del registro exitoso va directamente al menú principal (auto-login). */
     private void irAlMenuPrincipal(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaPrincipal.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
@@ -110,7 +110,7 @@ public class PantallaRegistro {
 
     private void irAlLogin(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaMenu.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}

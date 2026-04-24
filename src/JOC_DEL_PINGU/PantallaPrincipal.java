@@ -17,7 +17,7 @@ public class PantallaPrincipal {
 
     @FXML private Button btnNuevaPartida;
     @FXML private Button btnCargarPartida;
-    @FXML private Button btnSalir;
+    @FXML private Button btnVolverLogin;
 
     @FXML
     private void handleNuevaPartida(ActionEvent event) {
@@ -109,10 +109,10 @@ public class PantallaPrincipal {
     }
 
     @FXML
-    private void handleCerrarSesion(ActionEvent event) {
+    private void handleVolverLogin(ActionEvent event) {
         try {
             System.out.println("Cerrando sesión...");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml")); // Asumiendo este nombre para el login
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaMenu.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
