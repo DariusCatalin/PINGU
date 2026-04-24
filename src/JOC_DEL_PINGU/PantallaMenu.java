@@ -3,7 +3,6 @@ package JOC_DEL_PINGU;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.fxml.FXMLLoader;
@@ -14,12 +13,6 @@ import javafx.event.ActionEvent;
 import javafx.scene.Node;
 
 public class PantallaMenu {
-
-    // --- Opciones del menú superior ---
-    @FXML private MenuItem newGame;
-    @FXML private MenuItem saveGame;
-    @FXML private MenuItem loadGame;
-    @FXML private MenuItem quitGame;
 
     // --- Campos de texto del Login ---
     @FXML private TextField     userField;
@@ -38,33 +31,18 @@ public class PantallaMenu {
     }
 
     // ==========================================
-    // ACCIONES DEL MENÚ SUPERIOR
-    // ==========================================
-    @FXML private void handleNewGame()  { System.out.println("Nueva partida seleccionada en el menú."); }
-    @FXML private void handleSaveGame() { System.out.println("Guardar partida..."); }
-    @FXML private void handleLoadGame() { System.out.println("Cargar partida..."); }
-
-    @FXML
-    private void handleQuitGame() {
-        System.out.println("Saliendo del juego. ¡Nos vemos!");
-        javafx.application.Platform.exit();
-    }
-
-    // ==========================================
-    // ACCIONES DE LOGIN
+    // ACCIÓN: INICIAR SESIÓN
     // ==========================================
     @FXML
     private void handleLogin(ActionEvent event) {
         String username = userField.getText().trim();
         String password = passField.getText();
 
-        // Validación de campos vacíos
         if (username.isEmpty() || password.isEmpty()) {
             mostrarError("⚠ Por favor, introduce tu usuario y contraseña.");
             return;
         }
 
-        // Conexión y validación contra la BBDD
         GestorBBDD gestor = new GestorBBDD();
         gestor.iniciarConexionGUI();
 
@@ -79,8 +57,7 @@ public class PantallaMenu {
 
         // Credenciales correctas → ir al menú principal
         try {
-            // Ruta absoluta: busca en la raíz de bin/
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaPrincipal.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
 
@@ -98,12 +75,11 @@ public class PantallaMenu {
     }
 
     // ==========================================
-    // ACCIÓN DE REGISTRO → abre pantalla de registro
+    // ACCIÓN: IR A REGISTRO
     // ==========================================
     @FXML
     private void handleRegister(ActionEvent event) {
         try {
-            // Ruta absoluta: busca en la raíz de bin/
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaRegistro.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
