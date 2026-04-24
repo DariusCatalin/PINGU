@@ -1,70 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
 
-<AnchorPane prefHeight="658" prefWidth="1170"
-            stylesheets="@PantallaMenu.css"
-            styleClass="login-bg"
-            xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1">
+<StackPane styleClass="login-bg"
+           stylesheets="@PantallaMenu.css"
+           fx:controller="JOC_DEL_PINGU.PantallaMenu"
+           xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1">
 
-    <!-- Imagen de fondo -->
-    <ImageView fitHeight="658" fitWidth="1170" preserveRatio="false"
-               AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
+    <!-- Imagen de fondo centrada, tamaño fijo 1170x658 (sin deformar) -->
+    <ImageView fitWidth="1170" fitHeight="658" preserveRatio="true">
         <image>
-            <Image url="@inicio_sesion.png"/>
+            <Image url="@inicio_sesion.png" />
         </image>
     </ImageView>
 
-    <!-- Campo de Usuario -->
-    <TextField fx:id="txtUsuario"
-               promptText="Usuario"
-               styleClass="login-field"
-               layoutX="445" layoutY="269"
-               prefWidth="392" prefHeight="44"/>
+    <!-- Panel transparente 1170x658 centrado sobre la imagen, con los controles -->
+    <AnchorPane prefHeight="658" prefWidth="1170"
+                maxHeight="658" maxWidth="1170"
+                minHeight="658" minWidth="1170"
+                style="-fx-background-color: transparent;"
+                pickOnBounds="false">
 
-    <!-- Campo de Contraseña -->
-    <PasswordField fx:id="txtContrasena"
-                  promptText="Contraseña"
-                  styleClass="login-field"
-                  layoutX="445" layoutY="329"
-                  prefWidth="392" prefHeight="44"/>
+        <!-- Campo Usuario -->
+        <TextField fx:id="userField"
+                   layoutX="445" layoutY="269"
+                   prefHeight="44" prefWidth="392"
+                   promptText="Usuario"
+                   styleClass="login-field" />
 
-    <!-- Botón INICIAR SESIÓN -->
-    <Button fx:id="btnIniciarSesion"
-            styleClass="btn-login"
-            contentDisplay="GRAPHIC_ONLY"
-            layoutX="458" layoutY="390"
-            prefWidth="167" prefHeight="77"
-            onAction="#handleIniciarSesion">
-        <graphic>
-            <ImageView fitWidth="167" fitHeight="77" preserveRatio="false">
-                <image>
-                    <Image url="@iniciar_sesion_boton.png"/>
-                </image>
-            </ImageView>
-        </graphic>
-    </Button>
+        <!-- Campo Contraseña -->
+        <PasswordField fx:id="passField"
+                       layoutX="445" layoutY="329"
+                       prefHeight="44" prefWidth="392"
+                       promptText="Contraseña"
+                       styleClass="login-field" />
 
-    <!-- Botón REGISTRARSE -->
-    <Button fx:id="btnRegistrarse"
-            styleClass="btn-register"
-            contentDisplay="GRAPHIC_ONLY"
-            layoutX="656" layoutY="386"
-            prefWidth="193" prefHeight="77"
-            onAction="#handleRegistrarse">
-        <graphic>
-            <ImageView fitWidth="193" fitHeight="77" preserveRatio="false">
-                <image>
-                    <Image url="@registro_boton.png"/>
-                </image>
-            </ImageView>
-        </graphic>
-    </Button>
+        <!-- Botón INICIAR SESIÓN -->
+        <Button fx:id="loginButton"
+                contentDisplay="GRAPHIC_ONLY"
+                layoutX="451" layoutY="383"
+                prefHeight="77" prefWidth="170"
+                onAction="#handleLogin"
+                styleClass="btn-login">
+            <graphic>
+                <ImageView fitHeight="77" fitWidth="170" preserveRatio="false">
+                    <image>
+                        <Image url="@iniciar_sesion_boton.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
 
-</AnchorPane>
+        <!-- Botón REGISTRARSE -->
+        <Button fx:id="registerButton"
+                contentDisplay="GRAPHIC_ONLY"
+                layoutX="640" layoutY="383"
+                prefHeight="77" prefWidth="193"
+                onAction="#handleRegister"
+                styleClass="btn-register">
+            <graphic>
+                <ImageView fitHeight="77" fitWidth="193" preserveRatio="false">
+                    <image>
+                        <Image url="@registro_boton.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
+
+        <!-- Label de error -->
+        <Label fx:id="lblError"
+               layoutX="445" layoutY="480"
+               prefWidth="392"
+               styleClass="lbl-error"
+               visible="false"
+               managed="false"
+               alignment="CENTER"
+               wrapText="true" />
+
+    </AnchorPane>
+
+</StackPane>
