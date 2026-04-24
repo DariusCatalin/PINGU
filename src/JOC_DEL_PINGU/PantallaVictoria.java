@@ -20,10 +20,28 @@ public class PantallaVictoria {
     @FXML private Button    btnGuardar;
     @FXML private Button    btnMenu;
     @FXML private Button    btnSalir;
+    @FXML private javafx.scene.layout.VBox overlayBottom;
 
     // Datos pasados desde PantallaPartida
     private String nombreGanador;
     private String colorGanador;
+
+    @FXML
+    private void initialize() {
+        // Enlazar fitWidth/Height al tamaño de la escena para llenar siempre la pantalla
+        if (imgVictoria != null) {
+            imgVictoria.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    imgVictoria.fitWidthProperty().bind(newScene.widthProperty());
+                    imgVictoria.fitHeightProperty().bind(newScene.heightProperty());
+                    // El overlay también se extiende al ancho completo
+                    if (overlayBottom != null) {
+                        overlayBottom.prefWidthProperty().bind(newScene.widthProperty());
+                    }
+                }
+            });
+        }
+    }
 
     // ==========================================
     // INICIALIZACIÓN (llamada por PantallaPartida antes de mostrar)

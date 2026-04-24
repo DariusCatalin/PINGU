@@ -473,13 +473,13 @@ public class PantallaPartida {
             objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
-            actualizarPosicionVisual(objetivo, getFichaVisual(objetivo));
+            encolarSaltoDirecto(objetivo, objetivo.getPosicion());
         } else if (bolasObj > bolasActual) {
             int diff = bolasObj - bolasActual;
             actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
-            actualizarPosicionVisual(actual, getFichaVisual(actual));
+            encolarSaltoDirecto(actual, actual.getPosicion());
         } else {
             gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
                 + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
@@ -555,7 +555,8 @@ public class PantallaPartida {
         int posAntesCasilla = j.getPosicion();
         casillaActual.realizarAccion(partida, j);
         if (posAntesCasilla != j.getPosicion()) {
-            encolarCaminoPasoAPaso(j, posAntesCasilla, j.getPosicion());
+            // Salto directo para efectos de casilla (Oso, Trineo, etc.)
+            encolarSaltoDirecto(j, j.getPosicion());
         }
         
         // Comprobar colisiones
@@ -611,8 +612,8 @@ public class PantallaPartida {
                     } else {
                         // Sin pez: coletazo → solo retrocede al agujero anterior (NO pierde objetos)
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
-                        encolarCaminoPasoAPaso(pinguino, pinguino.getPosicion(), posHole);
                         pinguino.moverPosicion(posHole);
+                        encolarSaltoDirecto(pinguino, posHole);
                         gestorUI.registrar("¡La Foca da un coletazo a " + pinguino.getNombre()
                             + "! Es enviado al agujero anterior (casilla " + posHole + ").");
                     }
@@ -626,14 +627,14 @@ public class PantallaPartida {
                     if (bolasA > bolasO) {
                         int diff = bolasA - bolasO;
                         int dest = Math.max(0, otro.getPosicion() - diff);
-                        encolarCaminoPasoAPaso(otro, otro.getPosicion(), dest);
                         otro.moverPosicion(dest);
+                        encolarSaltoDirecto(otro, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
                     } else if (bolasO > bolasA) {
                         int diff = bolasO - bolasA;
                         int dest = Math.max(0, actual.getPosicion() - diff);
-                        encolarCaminoPasoAPaso(actual, actual.getPosicion(), dest);
                         actual.moverPosicion(dest);
+                        encolarSaltoDirecto(actual, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
                     } else {
                         gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
@@ -789,13 +790,11 @@ public class PantallaPartida {
         return "/resources/Casilla_Normal.png";
     }
  
-    // ==========================================
-    // SISTEMA DE ANIMACIÓN Y AGRUPACIÓN
-    // ==========================================
-    private java.util.Map<Jugador, java.util.Queue<Integer>> colasAnimacion = new java.util.HashMap<>();
+    // ======================================    // int[]{destinoPos, tipo}: tipo 0 = saltito normal, tipo 1 = salto directo (Oso, Foca, etc.)
+    private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
     private boolean animando = false;
- 
+
     private void inicializarColas() {
         colasAnimacion.clear();
         for (Jugador j : partida.getJugadores()) {
@@ -803,7 +802,7 @@ public class PantallaPartida {
             posVisual.put(j, j.getPosicion());
         }
     }
- 
+
     /** Coloca inmediatamente la ficha visual en la celda correspondiente a la posición del jugador. */
     private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
         if (ficha == null) return;
@@ -816,13 +815,20 @@ public class PantallaPartida {
         GridPane.setRowIndex(ficha, fil);
         posVisual.put(j, pos);
     }
- 
-    /** Encola cada casilla intermedia entre 'desde' y 'hasta' para la animación paso a paso. */
+
+    /** Encola cada casilla intermedia (saltito) entre 'desde' y 'hasta'. */
     private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
-        java.util.Queue<Integer> q = colasAnimacion.get(j);
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         int step = (desde < hasta) ? 1 : -1;
-        for (int pos = desde + step; pos != hasta + step; pos += step) q.add(pos);
+        for (int pos = desde + step; pos != hasta + step; pos += step) q.add(new int[]{pos, 0});
+    }
+
+    /** Encola un salto directo (sin pasar por casillas intermedias). Para Oso, Foca, bolas. */
+    private void encolarSaltoDirecto(Jugador j, int hasta) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        q.add(new int[]{hasta, 1});
     }
  
     private void setUIInteractuable(boolean interactuable) {
@@ -843,15 +849,16 @@ public class PantallaPartida {
         animando = true;
         setUIInteractuable(false);
  
-        // Lista plana de pasos: int[]{playerIdx, posOrigen, posDestino}
+        // Lista plana de pasos: int[]{playerIdx, posOrigen, posDestino, animType}
         java.util.List<int[]> listaPasos = new java.util.ArrayList<>();
         for (Jugador j : partida.getJugadores()) {
-            java.util.Queue<Integer> q = colasAnimacion.get(j);
+            java.util.Queue<int[]> q = colasAnimacion.get(j);
             if (q == null || q.isEmpty()) continue;
             int idx  = partida.getJugadores().indexOf(j);
             int prev = posVisual.getOrDefault(j, j.getPosicion());
-            for (int dest : q) {
-                listaPasos.add(new int[]{idx, prev, dest});
+            for (int[] entry : q) {
+                int dest = entry[0], tipo = entry[1];
+                listaPasos.add(new int[]{idx, prev, dest, tipo});
                 prev = dest;
             }
             q.clear();
@@ -865,8 +872,8 @@ public class PantallaPartida {
         }
         ejecutarPasoSuave(listaPasos, 0, onFinished);
     }
- 
-    /** Ejecuta recursivamente cada paso de la lista con TranslateTransition encadenado. */
+
+    /** Ejecuta recursivamente cada paso con la animación que corresponda. */
     private void ejecutarPasoSuave(java.util.List<int[]> pasos, int idx, Runnable onFinished) {
         if (idx >= pasos.size()) {
             animando = false;
@@ -876,7 +883,7 @@ public class PantallaPartida {
             return;
         }
         int[] paso    = pasos.get(idx);
-        int playerIdx = paso[0], desde = paso[1], hasta = paso[2];
+        int playerIdx = paso[0], desde = paso[1], hasta = paso[2], tipo = paso[3];
         if (playerIdx < 0 || playerIdx >= partida.getJugadores().size()) {
             ejecutarPasoSuave(pasos, idx + 1, onFinished);
             return;
@@ -888,15 +895,19 @@ public class PantallaPartida {
             ejecutarPasoSuave(pasos, idx + 1, onFinished);
             return;
         }
-        animarUnPaso(fic, j, desde, hasta, () -> ejecutarPasoSuave(pasos, idx + 1, onFinished));
+        Runnable next = () -> ejecutarPasoSuave(pasos, idx + 1, onFinished);
+        if (tipo == 1) {
+            animarSaltoDirecto(fic, j, hasta, next);
+        } else {
+            animarConSaltito(fic, j, desde, hasta, next);
+        }
     }
- 
+
     /**
-     * Desliza la ficha de la casilla 'desde' a 'hasta' en 300ms.
-     * Parte de translateX/Y=0 en la celda actual; al terminar hace snap a la nueva
-     * celda y resetea translate a 0. Para casilla 49 conserva el offset del iglu.
+     * Saltito: arco parabólico de una celda a la siguiente (300ms, 3 keyframes).
+     * El personaje sube ~25px a mitad del trayecto y baja en el destino.
      */
-    private void animarUnPaso(ImageView ficha, Jugador j, int desde, int hasta, Runnable onDone) {
+    private void animarConSaltito(ImageView ficha, Jugador j, int desde, int hasta, Runnable onDone) {
         double cellW = tablero.getWidth()  / 5.0;
         double cellH = tablero.getHeight() / 10.0;
         int colA = desde % 5, filA = 9 - (desde / 5);
@@ -909,26 +920,79 @@ public class PantallaPartida {
             extraY = computeIglooOffsetY(filB, cellH);
         }
         final double fExtraX = extraX, fExtraY = extraY;
-        // Partimos del translate actual (puede incluir offset de distribución multi-jugador)
-        double currentTX = ficha.getTranslateX();
-        double currentTY = ficha.getTranslateY();
-        javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
-            javafx.util.Duration.millis(300), ficha);
-        tt.setFromX(currentTX); tt.setFromY(currentTY);
-        tt.setToX(dx + fExtraX);
-        tt.setToY(dy + fExtraY);
-        tt.setInterpolator(javafx.animation.Interpolator.EASE_BOTH);
-        tt.setOnFinished(e -> {
+        double fromX = ficha.getTranslateX();
+        double fromY = ficha.getTranslateY();
+        double toX   = dx + fExtraX;
+        double toY   = dy + fExtraY;
+        double midX  = (fromX + toX) / 2.0;
+        double midY  = (fromY + toY) / 2.0 - 25.0; // arco hacia arriba
+        javafx.animation.Timeline tl = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.ZERO,
+                new javafx.animation.KeyValue(ficha.translateXProperty(), fromX),
+                new javafx.animation.KeyValue(ficha.translateYProperty(), fromY)
+            ),
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(150),
+                new javafx.animation.KeyValue(ficha.translateXProperty(), midX, javafx.animation.Interpolator.EASE_BOTH),
+                new javafx.animation.KeyValue(ficha.translateYProperty(), midY, javafx.animation.Interpolator.EASE_OUT)
+            ),
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(300),
+                new javafx.animation.KeyValue(ficha.translateXProperty(), toX, javafx.animation.Interpolator.EASE_BOTH),
+                new javafx.animation.KeyValue(ficha.translateYProperty(), toY, javafx.animation.Interpolator.EASE_IN)
+            )
+        );
+        tl.setOnFinished(e -> {
             GridPane.setColumnIndex(ficha, colB);
             GridPane.setRowIndex(ficha, filB);
-            // Resetear translate a 0 (normal) o al offset del iglu (casilla 49).
-            // La distribución multi-jugador se aplicará en refrescarDistribucionVisual al final.
             ficha.setTranslateX(fExtraX);
             ficha.setTranslateY(fExtraY);
             posVisual.put(j, hasta);
             onDone.run();
         });
-        tt.play();
+        tl.play();
+    }
+
+    /**
+     * Salto directo: se encoge, se teletransporta a la celda destino y reaparece.
+     * Para efectos de Oso, Foca, bolas de nieve (sin pasar casilla a casilla).
+     */
+    private void animarSaltoDirecto(ImageView ficha, Jugador j, int hasta, Runnable onDone) {
+        int colB = hasta % 5, filB = 9 - (hasta / 5);
+        double extraX = 0, extraY = 0;
+        if (hasta == 49 && tablero.getScene() != null) {
+            double cellW = tablero.getWidth()  / 5.0;
+            double cellH = tablero.getHeight() / 10.0;
+            extraX = computeIglooOffsetX(colB, cellW);
+            extraY = computeIglooOffsetY(filB, cellH);
+        }
+        final double fExtraX = extraX, fExtraY = extraY;
+        // Fase 1: encoger y desvanecer (200ms)
+        javafx.animation.ScaleTransition shrink = new javafx.animation.ScaleTransition(
+            javafx.util.Duration.millis(200), ficha);
+        shrink.setToX(0.1); shrink.setToY(0.1);
+        javafx.animation.FadeTransition fadeOut = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(200), ficha);
+        fadeOut.setToValue(0.0);
+        javafx.animation.ParallelTransition phase1 = new javafx.animation.ParallelTransition(shrink, fadeOut);
+        phase1.setOnFinished(e -> {
+            // Snap a destino
+            GridPane.setColumnIndex(ficha, colB);
+            GridPane.setRowIndex(ficha, filB);
+            ficha.setTranslateX(fExtraX);
+            ficha.setTranslateY(fExtraY);
+            posVisual.put(j, hasta);
+            // Fase 2: aparecer y crecer (200ms)
+            javafx.animation.ScaleTransition grow = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(200), ficha);
+            grow.setFromX(0.1); grow.setFromY(0.1);
+            grow.setToX(1.0);   grow.setToY(1.0);
+            javafx.animation.FadeTransition fadeIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(200), ficha);
+            fadeIn.setFromValue(0.0); fadeIn.setToValue(1.0);
+            javafx.animation.ParallelTransition phase2 = new javafx.animation.ParallelTransition(grow, fadeIn);
+            phase2.setOnFinished(e2 -> onDone.run());
+            phase2.play();
+        });
+        phase1.play();
     }
  
     /** Offset X en px para que la ficha en casilla 49 quede encima del iglu (~85.5% del ancho). */

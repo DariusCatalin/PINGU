@@ -15,7 +15,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         try {
             // Carreguem el disseny del menú des del fitxer FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaMenu.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaMenu.fxml"));
             Parent root = loader.load();
             
             // Creem l'escena amb el contingut carregat
