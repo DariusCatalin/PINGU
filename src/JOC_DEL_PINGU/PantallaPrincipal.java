@@ -1,54 +1,79 @@
 package JOC_DEL_PINGU;
-
+ 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.stage.Stage;
-import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceDialog;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+ 
 import java.util.ArrayList;
 import java.util.Optional;
-
+ 
 public class PantallaPrincipal {
-
+ 
     @FXML private Button btnNuevaPartida;
     @FXML private Button btnCargarPartida;
     @FXML private Button btnVolverLogin;
-
+ 
+    // ==========================================
+    // AUXILIAR: obtener pantalla y stage
+    // ==========================================
+    private Rectangle2D getScreen() {
+        return Screen.getPrimary().getBounds();
+    }
+ 
+    private Stage getStage(ActionEvent event) {
+        return (Stage) ((Node) event.getSource()).getScene().getWindow();
+    }
+ 
+    private void aplicarFullScreen(Stage stage, String title) {
+        stage.setTitle(title);
+        stage.setFullScreen(true);
+        stage.setFullScreenExitHint("");
+        stage.show();
+    }
+ 
+    // ==========================================
+    // ACCIÓN: NUEVA PARTIDA
+    // ==========================================
     @FXML
     private void handleNuevaPartida(ActionEvent event) {
         try {
             System.out.println("Abriendo configuración de nueva partida...");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaConfig.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root);
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
-            
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+ 
+            Rectangle2D screen = getScreen();
+            Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
+ 
+            Stage stage = getStage(event);
             stage.setScene(scene);
-            stage.setTitle("El Juego del Pingüino - Nueva Partida");
-            stage.setMaximized(true);
-            stage.setFullScreen(true);
-            stage.setFullScreenExitHint("");
-            stage.show();
+            aplicarFullScreen(stage, "El Juego del Pingüino - Nueva Partida");
+ 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
+ 
+    // ==========================================
+    // ACCIÓN: CARGAR PARTIDA
+    // ==========================================
     @FXML
     private void handleCargarPartida(ActionEvent event) {
         System.out.println("Buscando partidas en la BBDD...");
-        
+ 
         GestorBBDD gestor = new GestorBBDD();
         gestor.iniciarConexionGUI();
-        
         ArrayList<Integer> partidas = gestor.obtenerListaPartidas();
-        
+ 
         if (partidas == null || partidas.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Cargar Partida");
@@ -58,12 +83,12 @@ public class PantallaPrincipal {
             gestor.cerrarConexion();
             return;
         }
-
+ 
         ChoiceDialog<Integer> dialog = new ChoiceDialog<>(partidas.get(0), partidas);
         dialog.setTitle("Cargar Partida");
         dialog.setHeaderText("Selector de Partidas Guardadas");
         dialog.setContentText("Selecciona el ID de la partida que quieres cargar:");
-
+ 
         Optional<Integer> result = dialog.showAndWait();
         result.ifPresent(idPartida -> {
             Partida p = gestor.cargarBBDD(idPartida);
@@ -72,23 +97,19 @@ public class PantallaPrincipal {
                     System.out.println("Partida " + idPartida + " cargada. Abriendo el tablero...");
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
                     Parent root = loader.load();
-
-                    Scene scene = new Scene(root);
-                    try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
-
-                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+ 
+                    Rectangle2D screen = getScreen();
+                    Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
+                    try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
+ 
+                    Stage stage = getStage(event);
                     stage.setScene(scene);
-                    stage.setTitle("El Juego del Pingüino - ID Partida: " + idPartida);
-                    stage.setMaximized(true);
-                    stage.setFullScreen(true);
-                    stage.setFullScreenExitHint("");
-                    stage.show();
-                    stage.requestFocus(); // Asegura que el stage recibe el foco y los listeners de teclado/botones funcionan
-
-                    // Pasarle la partida DESPUÉS de que la escena ya está activa en el stage,
-                    // para que el listener de teclado (configurarEscapeMenu) pueda adjuntarse correctamente
+                    aplicarFullScreen(stage, "El Juego del Pingüino - ID Partida: " + idPartida);
+                    stage.requestFocus();
+ 
                     PantallaPartida controller = loader.getController();
                     controller.setPartidaCargada(p);
+ 
                 } catch (Exception e) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error al Cargar");
@@ -104,30 +125,38 @@ public class PantallaPrincipal {
                 alert.showAndWait();
             }
         });
-        
+ 
         gestor.cerrarConexion();
     }
-
+ 
+    // ==========================================
+    // ACCIÓN: VOLVER AL LOGIN
+    // ==========================================
     @FXML
     private void handleVolverLogin(ActionEvent event) {
         try {
             System.out.println("Cerrando sesión...");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaMenu.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root);
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
-            
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+ 
+            // Escalamos al tamaño de pantalla real
+            Rectangle2D screen = getScreen();
+            Main.escalar(root,
+                    Main.BASE_WIDTH_MENU,
+                    Main.BASE_HEIGHT_MENU,
+                    screen.getWidth(),
+                    screen.getHeight());
+ 
+            Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
+            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
+ 
+            Stage stage = getStage(event);
             stage.setScene(scene);
-            stage.setTitle("El Juego del Pingüino - Login");
-            stage.setMaximized(true);
-            stage.setFullScreen(true);
-            stage.setFullScreenExitHint("");
-            stage.show();
+            aplicarFullScreen(stage, "El Juego del Pingüino - Login");
+ 
         } catch (Exception e) {
-            // Si el nombre es diferente, intentamos con el recurso correcto.
-            // A veces el login se llama de otra forma en FXML.
             System.out.println("Error volviendo al login: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
