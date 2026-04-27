@@ -8,36 +8,49 @@
 
 <!--
     Pantalla principal del juego (1920x1080).
-    Coordenadas de los Buttons invisibles detectadas mediante análisis de píxeles
-    sobre la imagen FONDO_MENU.png para que cuadren EXACTAMENTE encima de los
-    botones dibujados dentro de la imagen.
-
-    Botones:
-      NUEVA PARTIDA   → X=770 Y=450 (365x105)
-      CARGAR PARTIDA  → X=770 Y=655 (365x105)
-      VOLVER AL LOGIN → X=770 Y=874 (365x105)
+    Los Buttons son TRANSPARENTES (gracias al CSS), no INVISIBLES.
+    Importante: NO usar visible="false" porque eso desactiva los clicks.
 -->
 
-<StackPane fx:id="rootPane" styleClass="menu-bg" stylesheets="@PantallaPrincipal.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JOC_DEL_PINGU.PantallaPrincipal">
+<StackPane fx:id="rootPane" styleClass="menu-bg" stylesheets="@PantallaPrincipal.css"
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="JOC_DEL_PINGU.PantallaPrincipal">
 
     <!-- Lienzo fijo de 1920x1080 (mismo tamaño que la imagen original) -->
-    <AnchorPane fx:id="contenedor" maxHeight="1080" maxWidth="1920" minHeight="1080" minWidth="1920" prefHeight="1080" prefWidth="1920" style="-fx-background-color: transparent;">
+    <AnchorPane fx:id="contenedor"
+                maxHeight="1080" maxWidth="1920"
+                minHeight="1080" minWidth="1920"
+                prefHeight="1080" prefWidth="1920"
+                style="-fx-background-color: transparent;">
 
         <!-- Imagen de fondo a tamaño nativo, sin deformar -->
-        <ImageView fitHeight="1080" fitWidth="1920" preserveRatio="true" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
+        <ImageView fitHeight="1080" fitWidth="1920" preserveRatio="true"
+                   AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
             <image>
                 <Image url="@FONDO_MENU.png" />
             </image>
         </ImageView>
 
-        <!-- Botón invisible sobre NUEVA PARTIDA -->
-        <Button fx:id="btnNuevaPartida" layoutX="795.0" layoutY="461.0" onAction="#handleNuevaPartida" prefHeight="115.0" prefWidth="330.0" styleClass="btn-invisible" visible="false" />
+        <!-- Botón transparente sobre NUEVA PARTIDA -->
+        <Button fx:id="btnNuevaPartida"
+                layoutX="795.0" layoutY="461.0"
+                prefHeight="115.0" prefWidth="330.0"
+                styleClass="btn-invisible"
+                onAction="#handleNuevaPartida" />
 
-        <!-- Botón invisible sobre CARGAR PARTIDA -->
-        <Button fx:id="btnCargarPartida" layoutX="790.0" layoutY="619.0" onAction="#handleCargarPartida" prefHeight="115.0" prefWidth="330.0" styleClass="btn-invisible" visible="false" />
+        <!-- Botón transparente sobre CARGAR PARTIDA -->
+        <Button fx:id="btnCargarPartida"
+                layoutX="790.0" layoutY="619.0"
+                prefHeight="115.0" prefWidth="330.0"
+                styleClass="btn-invisible"
+                onAction="#handleCargarPartida" />
 
-        <!-- Botón invisible sobre VOLVER AL LOGIN -->
-        <Button fx:id="btnVolverLogin" layoutX="789.0" layoutY="785.0" onAction="#handleVolverLogin" prefHeight="121.0" prefWidth="330.0" styleClass="btn-invisible" visible="false" />
+        <!-- Botón transparente sobre VOLVER AL LOGIN -->
+        <Button fx:id="btnVolverLogin"
+                layoutX="789.0" layoutY="785.0"
+                prefHeight="121.0" prefWidth="330.0"
+                styleClass="btn-invisible"
+                onAction="#handleVolverLogin" />
 
     </AnchorPane>
 
