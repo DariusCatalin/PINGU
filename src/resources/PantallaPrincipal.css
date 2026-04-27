@@ -1,27 +1,76 @@
-/* =========================================
-   PANTALLA PRINCIPAL — JOC D'EN PINGU
-   ========================================= */
+/* ============================================================
+   PantallaPrincipal.css
+   Estilos para el menú principal (1920x1080)
 
-/* -----------------------------------------
-   BOTÓN INVISIBLE (área clicable sobre la imagen)
-   ----------------------------------------- */
+   Clases:
+     - menu-bg       (StackPane raíz, fondo de los bordes)
+     - btn-invisible (Buttons clicables superpuestos sobre los botones
+                      dibujados dentro de FONDO_MENU.png)
+   ============================================================ */
+
+/* ---------- Fondo general ----------
+   Color que se ve en los bordes laterales si la ventana no tiene
+   exactamente la proporción 16:9 de la imagen.
+*/
+.menu-bg {
+    -fx-background-color: #0a1a2e;
+}
+
+/* ============================================================
+   ⚠️ MODO AJUSTE (los botones se ven en ROJO)
+   ============================================================
+   Mantén ACTIVO este bloque mientras compruebas que los Buttons
+   están bien colocados encima de los botones dibujados.
+   Cuando confirmes que están bien, COMENTA este bloque y
+   DESCOMENTA el bloque "MODO PRODUCCIÓN" de más abajo.
+*/
 .btn-invisible {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 0;
+    -fx-background-color: rgba(255, 0, 0, 0.4);
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(255, 0, 0, 0.9);
+    -fx-border-width: 2;
+    -fx-border-radius: 8;
     -fx-cursor: hand;
 }
 
-/* Hover: brillo suave para dar feedback al usuario */
 .btn-invisible:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.08);
-    -fx-background-radius: 8;
-    -fx-effect: dropshadow(gaussian, rgba(91, 192, 222, 0.6), 16, 0.3, 0, 0);
+    -fx-background-color: rgba(255, 255, 0, 0.5);
 }
 
-/* Pulsado */
 .btn-invisible:pressed {
-    -fx-background-color: rgba(0, 0, 0, 0.10);
-    -fx-background-radius: 8;
-    -fx-translate-y: 2;
+    -fx-background-color: rgba(0, 255, 0, 0.5);
 }
+
+.btn-invisible:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* ============================================================
+   ✅ MODO PRODUCCIÓN (los botones son invisibles)
+   ============================================================
+   Cuando termines de ajustar, BORRA o comenta el bloque de arriba
+   y DESCOMENTA este. Quita los slash-asterisco para activarlo:
+*/
+/*
+.btn-invisible {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+}
+
+.btn-invisible:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.7), 15, 0.4, 0, 0);
+}
+
+.btn-invisible:pressed {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 5, 0.2, 0, 1);
+}
+
+.btn-invisible:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+*/

@@ -9,39 +9,45 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane styleClass="login-bg"
+<!--
+    StackPane raíz: se estira a toda la ventana.
+    Dentro, un AnchorPane de 1170x658 que escala
+    automáticamente gracias al scaleX/scaleY del Main.
+-->
+<StackPane fx:id="rootPane"
+           style="-fx-background-color: #0a0a1a;"
            stylesheets="@PantallaMenu.css"
            fx:controller="JOC_DEL_PINGU.PantallaMenu"
            xmlns="http://javafx.com/javafx/17"
            xmlns:fx="http://javafx.com/fxml/1">
 
-    <!-- Imagen de fondo centrada, tamaño fijo 1170x658 (sin deformar) -->
-    <ImageView fitWidth="1170" fitHeight="658" preserveRatio="true">
-        <image>
-            <Image url="@inicio_sesion.png" />
-        </image>
-    </ImageView>
+    <!-- Contenedor de diseño fijo: 1170x658 (ratio de la imagen) -->
+    <AnchorPane fx:id="contenedor"
+                prefWidth="1170" prefHeight="658"
+                maxWidth="1170" maxHeight="658"
+                style="-fx-background-color: transparent;">
 
-    <!-- Panel transparente 1170x658 centrado sobre la imagen, con los controles -->
-    <AnchorPane prefHeight="658" prefWidth="1170"
-                maxHeight="658" maxWidth="1170"
-                minHeight="658" minWidth="1170"
-                style="-fx-background-color: transparent;"
-                pickOnBounds="false">
+        <!-- Imagen de fondo -->
+        <ImageView fitWidth="1170" fitHeight="658" preserveRatio="false"
+                   AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0">
+            <image>
+                <Image url="@inicio_sesion.png"/>
+            </image>
+        </ImageView>
 
         <!-- Campo Usuario -->
         <TextField fx:id="userField"
                    layoutX="445" layoutY="269"
                    prefHeight="44" prefWidth="392"
                    promptText="Usuario"
-                   styleClass="login-field" />
+                   styleClass="login-field"/>
 
         <!-- Campo Contraseña -->
         <PasswordField fx:id="passField"
                        layoutX="445" layoutY="329"
                        prefHeight="44" prefWidth="392"
                        promptText="Contraseña"
-                       styleClass="login-field" />
+                       styleClass="login-field"/>
 
         <!-- Botón INICIAR SESIÓN -->
         <Button fx:id="loginButton"
@@ -53,7 +59,7 @@
             <graphic>
                 <ImageView fitHeight="77" fitWidth="170" preserveRatio="false">
                     <image>
-                        <Image url="@iniciar_sesion_boton.png" />
+                        <Image url="@iniciar_sesion_boton.png"/>
                     </image>
                 </ImageView>
             </graphic>
@@ -69,7 +75,7 @@
             <graphic>
                 <ImageView fitHeight="77" fitWidth="193" preserveRatio="false">
                     <image>
-                        <Image url="@registro_boton.png" />
+                        <Image url="@registro_boton.png"/>
                     </image>
                 </ImageView>
             </graphic>
@@ -83,7 +89,7 @@
                visible="false"
                managed="false"
                alignment="CENTER"
-               wrapText="true" />
+               wrapText="true"/>
 
     </AnchorPane>
 
