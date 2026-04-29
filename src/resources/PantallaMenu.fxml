@@ -4,93 +4,25 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.StackPane?>
 
-<!--
-    StackPane raíz: se estira a toda la ventana.
-    Dentro, un AnchorPane de 1170x658 que escala
-    automáticamente gracias al scaleX/scaleY del Main.
--->
-<StackPane fx:id="rootPane"
-           style="-fx-background-color: #0a0a1a;"
-           stylesheets="@PantallaMenu.css"
-           fx:controller="JOC_DEL_PINGU.PantallaMenu"
-           xmlns="http://javafx.com/javafx/17"
-           xmlns:fx="http://javafx.com/fxml/1">
 
-    <!-- Contenedor de diseño fijo: 1170x658 (ratio de la imagen) -->
-    <AnchorPane fx:id="contenedor"
-                prefWidth="1170" prefHeight="658"
-                maxWidth="1170" maxHeight="658"
-                style="-fx-background-color: transparent;">
 
-        <!-- Imagen de fondo -->
-        <ImageView fitWidth="1170" fitHeight="658" preserveRatio="false"
-                   AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0">
-            <image>
-                <Image url="@inicio_sesion.png"/>
-            </image>
-        </ImageView>
+<AnchorPane prefHeight="1080" prefWidth="1920" styleClass="login-bg" stylesheets="@PantallaMenu.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JOC_DEL_PINGU.PantallaMenu">
 
-        <!-- Campo Usuario -->
-        <TextField fx:id="userField"
-                   layoutX="445" layoutY="269"
-                   prefHeight="44" prefWidth="392"
-                   promptText="Usuario"
-                   styleClass="login-field"/>
+    <!-- ============ CAMPO USUARIO ============ -->
+    <TextField fx:id="userField" layoutX="733.0" layoutY="411.0" prefHeight="95.0" prefWidth="646.0" promptText="Nombre de usuario" styleClass="transparent-field" />
 
-        <!-- Campo Contraseña -->
-        <PasswordField fx:id="passField"
-                       layoutX="445" layoutY="329"
-                       prefHeight="44" prefWidth="392"
-                       promptText="Contraseña"
-                       styleClass="login-field"/>
+    <!-- ============ CAMPO CONTRASEÑA ============ -->
+    <PasswordField fx:id="passField" layoutX="733.0" layoutY="540.0" prefHeight="95.0" prefWidth="646.0" promptText="Contraseña" styleClass="transparent-field" />
 
-        <!-- Botón INICIAR SESIÓN -->
-        <Button fx:id="loginButton"
-                contentDisplay="GRAPHIC_ONLY"
-                layoutX="451" layoutY="383"
-                prefHeight="77" prefWidth="170"
-                onAction="#handleLogin"
-                styleClass="btn-login">
-            <graphic>
-                <ImageView fitHeight="77" fitWidth="170" preserveRatio="false">
-                    <image>
-                        <Image url="@iniciar_sesion_boton.png"/>
-                    </image>
-                </ImageView>
-            </graphic>
-        </Button>
+    <!-- ============ BOTÓN INICIAR SESIÓN (invisible) ============ -->
+    <Button fx:id="loginButton" layoutX="727.0" layoutY="675.0" onAction="#handleLogin" prefHeight="147.0" prefWidth="316.0" styleClass="invisible-button" text="" />
 
-        <!-- Botón REGISTRARSE -->
-        <Button fx:id="registerButton"
-                contentDisplay="GRAPHIC_ONLY"
-                layoutX="640" layoutY="383"
-                prefHeight="77" prefWidth="193"
-                onAction="#handleRegister"
-                styleClass="btn-register">
-            <graphic>
-                <ImageView fitHeight="77" fitWidth="193" preserveRatio="false">
-                    <image>
-                        <Image url="@registro_boton.png"/>
-                    </image>
-                </ImageView>
-            </graphic>
-        </Button>
+    <!-- ============ BOTÓN REGISTRARSE (invisible) ============ -->
+    <Button fx:id="registerButton" layoutX="1075.0" layoutY="678.0" onAction="#handleRegister" prefHeight="141.0" prefWidth="316.0" styleClass="invisible-button" text="" />
 
-        <!-- Label de error -->
-        <Label fx:id="lblError"
-               layoutX="445" layoutY="480"
-               prefWidth="392"
-               styleClass="lbl-error"
-               visible="false"
-               managed="false"
-               alignment="CENTER"
-               wrapText="true"/>
+    <!-- ============ MENSAJE DE ERROR ============ -->
+    <Label fx:id="lblError" alignment="CENTER" layoutX="710" layoutY="850" managed="false" prefWidth="500" styleClass="lbl-error" text="" visible="false" wrapText="true" />
 
-    </AnchorPane>
-
-</StackPane>
+</AnchorPane>

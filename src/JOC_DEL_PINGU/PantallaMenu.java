@@ -86,7 +86,7 @@ public class PantallaMenu {
     @FXML
     private void handleRegister(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaRegistro.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaRegistro.fxml"));
             Parent root = loader.load();
  
             Rectangle2D screen = Screen.getPrimary().getBounds();

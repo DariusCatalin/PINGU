@@ -1,57 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.StackPane?>
 
 <!--
-    Pantalla principal del juego (1920x1080).
-    Los Buttons son TRANSPARENTES (gracias al CSS), no INVISIBLES.
-    Importante: NO usar visible="false" porque eso desactiva los clicks.
+    MENÚ PRINCIPAL - PantallaPrincipal
+    Diseñado a 1920x1080 (resolución nativa de la imagen).
+    La imagen de fondo (FONDO_MENÚ.png) ya contiene:
+      - Título "JUEGO DEL PINGU"
+      - Botón "NUEVA PARTIDA"
+      - Botón "CARGAR PARTIDA"
+      - Botón "VOLVER AL LOGIN"
+
+    Los 3 botones JavaFX son INVISIBLES y se superponen
+    exactamente sobre los botones pintados en la imagen.
+    En SceneBuilder puedes arrastrar cualquier botón donde quieras
+    y se actualizan automáticamente sus coordenadas.
 -->
 
-<StackPane fx:id="rootPane" styleClass="menu-bg" stylesheets="@PantallaPrincipal.css"
-           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="JOC_DEL_PINGU.PantallaPrincipal">
+<AnchorPane prefHeight="1080" prefWidth="1920" styleClass="menu-bg" stylesheets="@PantallaPrincipal.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JOC_DEL_PINGU.PantallaPrincipal">
 
-    <!-- Lienzo fijo de 1920x1080 (mismo tamaño que la imagen original) -->
-    <AnchorPane fx:id="contenedor"
-                maxHeight="1080" maxWidth="1920"
-                minHeight="1080" minWidth="1920"
-                prefHeight="1080" prefWidth="1920"
-                style="-fx-background-color: transparent;">
+    <!-- ============ BOTÓN NUEVA PARTIDA (invisible) ============ -->
+    <Button fx:id="btnNuevaPartida" layoutX="736.0" layoutY="418.0" onAction="#handleNuevaPartida" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
 
-        <!-- Imagen de fondo a tamaño nativo, sin deformar -->
-        <ImageView fitHeight="1080" fitWidth="1920" preserveRatio="true"
-                   AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
-            <image>
-                <Image url="@FONDO_MENU.png" />
-            </image>
-        </ImageView>
+    <!-- ============ BOTÓN CARGAR PARTIDA (invisible) ============ -->
+    <Button fx:id="btnCargarPartida" layoutX="739.0" layoutY="623.0" onAction="#handleCargarPartida" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
 
-        <!-- Botón transparente sobre NUEVA PARTIDA -->
-        <Button fx:id="btnNuevaPartida"
-                layoutX="795.0" layoutY="461.0"
-                prefHeight="115.0" prefWidth="330.0"
-                styleClass="btn-invisible"
-                onAction="#handleNuevaPartida" />
+    <!-- ============ BOTÓN VOLVER AL LOGIN (invisible) ============ -->
+    <Button fx:id="btnVolverLogin" layoutX="739.0" layoutY="842.0" onAction="#handleVolverLogin" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
 
-        <!-- Botón transparente sobre CARGAR PARTIDA -->
-        <Button fx:id="btnCargarPartida"
-                layoutX="790.0" layoutY="619.0"
-                prefHeight="115.0" prefWidth="330.0"
-                styleClass="btn-invisible"
-                onAction="#handleCargarPartida" />
-
-        <!-- Botón transparente sobre VOLVER AL LOGIN -->
-        <Button fx:id="btnVolverLogin"
-                layoutX="789.0" layoutY="785.0"
-                prefHeight="121.0" prefWidth="330.0"
-                styleClass="btn-invisible"
-                onAction="#handleVolverLogin" />
-
-    </AnchorPane>
-
-</StackPane>
+</AnchorPane>
