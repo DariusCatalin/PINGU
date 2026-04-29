@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<!--
+    CREAR CUENTA - PantallaRegistro
+    Diseñado a 1920x1080 (resolución nativa de la imagen).
+    Cada control tiene coordenadas absolutas (layoutX / layoutY).
+    En SceneBuilder puedes arrastrar cualquier elemento donde quieras
+    y se actualizan automáticamente sus coordenadas.
+-->
+
+<AnchorPane prefHeight="1080" prefWidth="1920" styleClass="register-bg" stylesheets="@PantallaRegistro.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JOC_DEL_PINGU.PantallaRegistro">
+
+    <!-- ============ CAMPO USUARIO ============ -->
+    <TextField fx:id="userField" layoutX="730.0" layoutY="419.0" prefHeight="92.0" prefWidth="642.0" promptText="Nombre de usuario" styleClass="transparent-field" />
+
+    <!-- ============ CAMPO CONTRASEÑA ============ -->
+    <PasswordField fx:id="passField" layoutX="730.0" layoutY="543.0" prefHeight="92.0" prefWidth="642.0" promptText="Contraseña" styleClass="transparent-field" />
+
+    <!-- ============ CAMPO REPETIR CONTRASEÑA ============ -->
+    <PasswordField fx:id="passConfirmField" layoutX="732.0" layoutY="732.0" prefHeight="92.0" prefWidth="642.0" promptText="Repetir contraseña" styleClass="transparent-field" />
+
+    <!-- ============ BOTÓN CREAR CUENTA (invisible) ============ -->
+    <Button fx:id="createAccountButton" layoutX="720.0" layoutY="850.0" onAction="#handleRegistrar" prefHeight="133.0" prefWidth="324.0" styleClass="invisible-button" text="" />
+
+    <!-- ============ BOTÓN VOLVER AL LOGIN (invisible) ============ -->
+    <Button fx:id="backButton" layoutX="1076.0" layoutY="851.0" onAction="#handleVolver" prefHeight="133.0" prefWidth="315.0" styleClass="invisible-button" text="" />
+
+    <!-- ============ MENSAJE DE ERROR / ÉXITO ============ -->
+    <Label fx:id="lblMensaje" layoutX="710" layoutY="990" managed="false" prefWidth="500" styleClass="error-label" text="" visible="false" wrapText="true" />
+
+</AnchorPane>

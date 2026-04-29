@@ -112,13 +112,20 @@ public class PantallaRegistro {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaMenu.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root);
+
+            javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getBounds();
+            Main.escalar(root,
+                    Main.BASE_WIDTH_MENU,
+                    Main.BASE_HEIGHT_MENU,
+                    screen.getWidth(),
+                    screen.getHeight());
+
+            Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("El Juego del Pingüino - Login");
-            stage.setMaximized(true);
             stage.setFullScreen(true);
             stage.setFullScreenExitHint("");
             stage.show();
