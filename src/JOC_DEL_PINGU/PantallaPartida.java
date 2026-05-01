@@ -309,12 +309,26 @@ public class PantallaPartida {
     /** Ejecuta una tirada normal de dado (1-6) y avanza el turno. */
     private void ejecutarTiradaNormal(Jugador actual) {
         int tirada = (int)(Math.random() * 6) + 1;
-        moverJugadorYAccion(actual, tirada, "tirada normal");
-        // 4. Resultado del dado visible: texto grande y claro
-        if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
-        actualizarTextosInventario(actual);
-        avanzarTurno();
-        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+
+        // Si el jugador es amarillo, mostrar la animación de turno antes de mover
+        if ("amarillo".equalsIgnoreCase(actual.getColor())) {
+            final int tiradaFinal = tirada;
+            setUIInteractuable(false);
+            mostrarAnimacionTurnoAmarillo(actual, tiradaFinal, () -> {
+                moverJugadorYAccion(actual, tiradaFinal, "tirada normal");
+                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal);
+                actualizarTextosInventario(actual);
+                avanzarTurno();
+                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+            });
+        } else {
+            moverJugadorYAccion(actual, tirada, "tirada normal");
+            // 4. Resultado del dado visible: texto grande y claro
+            if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
+            actualizarTextosInventario(actual);
+            avanzarTurno();
+            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+        }
     }
  
     /** Comprueba si el jugador tiene objetos que puede usar activamente (dados/bolas). */
@@ -408,13 +422,25 @@ public class PantallaPartida {
         if (actual instanceof Pinguino) {
             if (consumirObjeto(actual, nombreDado)) {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
-                moverJugadorYAccion(actual, tirada, nombreDado);
-                
-                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
-                
-                actualizarTextosInventario(actual);
-                avanzarTurno();
-                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+
+                // Si el jugador es amarillo, mostrar la animación antes de mover
+                if ("amarillo".equalsIgnoreCase(actual.getColor())) {
+                    final int tiradaFinal = tirada;
+                    setUIInteractuable(false);
+                    mostrarAnimacionTurnoAmarillo(actual, tiradaFinal, () -> {
+                        moverJugadorYAccion(actual, tiradaFinal, nombreDado);
+                        if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal + " (" + nombreDado + ")");
+                        actualizarTextosInventario(actual);
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    });
+                } else {
+                    moverJugadorYAccion(actual, tirada, nombreDado);
+                    if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
+                    actualizarTextosInventario(actual);
+                    avanzarTurno();
+                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                }
             } else {
                 gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
             }
@@ -1122,4 +1148,209 @@ public class PantallaPartida {
             System.err.println("Error aplicando skin: " + e.getMessage());
         }
     }
+
+    // ==========================================
+    // ANIMACIÓN DE TURNO – JUGADOR AMARILLO
+    // ==========================================
+
+    /**
+     * Muestra una secuencia animada cuando le toca el turno al jugador amarillo:
+     * 1. Overlay negro semitransparente que oscurece la pantalla (FadeIn 300ms).
+     * 2. Imagen del dado apareciendo con zoom y girando durante 2 segundos.
+     * 3. Texto con el resultado (FadeIn 400ms, pausa 1.5s, FadeOut 400ms).
+     * 4. Overlay desaparece (FadeOut 400ms) y se llama a onFinish.
+     *
+     * El overlay bloquea los clics del usuario durante toda la secuencia.
+     * El método debe llamarse desde el JavaFX Application Thread.
+     *
+     * @param actual       Jugador cuyo turno se está animando.
+     * @param resultadoDado Valor del dado (1-6) ya calculado.
+     * @param onFinish     Callback que se ejecuta al terminar la animación
+     *                     (aquí se realiza el movimiento del personaje).
+     */
+    private void mostrarAnimacionTurnoAmarillo(Jugador actual, int resultadoDado, Runnable onFinish) {
+        // --- Obtener dimensiones de la escena ---
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            // Fallback: ejecutar directamente si la escena no está disponible
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        // =======================================================
+        // CÁLCULO DE POSICIONES CENTRADAS EN PANTALLA
+        // Bloque visual: [lblTurno] + gap + [dado]
+        //   Texto "Turno de X" : ~50px alto
+        //   Gap                :  20px
+        //   Dado               : DADO_SIZE px
+        //   Total grupo        : DADO_SIZE + 70px
+        // Se centra el grupo entero verticalmente en H/2.
+        // =======================================================
+        final double DADO_SIZE   = 380;
+        final double TEXTO_H     = 50;       // altura estimada del label "Turno de X"
+        final double GAP         = 20;       // espacio entre texto y dado
+        final double GRUPO_H     = TEXTO_H + GAP + DADO_SIZE;  // 450px
+        final double GRUPO_TOP   = H / 2 - GRUPO_H / 2;       // Y inicio del bloque
+
+        // --- 1. Overlay semitransparente (solo fondo oscuro) ---
+        // El dado, lblTurno y lblResultado NO son hijos del overlay para evitar
+        // que hereden su opacidad y se vean transparentes.
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.setLayoutX(0);
+        overlayPane.setLayoutY(0);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        overlayPane.setMouseTransparent(false); // bloquea clics del usuario
+        rootPane.getChildren().add(overlayPane);
+
+        // --- 2. Text "Turno de X" ---
+        // Usamos Text (no Label) para que setFill() sea API Java directa,
+        // inmune a la regla CSS .label { -fx-text-fill: white } de style.css.
+        javafx.scene.text.Text lblTurno = new javafx.scene.text.Text("Turno de " + actual.getNombre());
+        lblTurno.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblTurno.setFill(javafx.scene.paint.Color.WHITE);
+        lblTurno.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblTurno.setWrappingWidth(W);   // ocupa todo el ancho → texto centrado
+        lblTurno.setEffect(new javafx.scene.effect.DropShadow(14, javafx.scene.paint.Color.BLACK));
+        lblTurno.setOpacity(0);
+        lblTurno.setManaged(false);
+        lblTurno.setLayoutX(0);
+        lblTurno.setLayoutY(GRUPO_TOP + 42); // +42 porque Y en Text es la línea base del texto
+        rootPane.getChildren().add(lblTurno);
+
+        // --- 3. ImageView del dado ---
+        javafx.scene.image.ImageView dadoView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/dado_amarillo.png");
+        if (recurso != null) {
+            dadoView.setImage(new Image(recurso));
+        } else {
+            System.err.println("[AnimAmarillo] No se encontró dado_amarillo.png");
+        }
+        dadoView.setFitWidth(DADO_SIZE);
+        dadoView.setFitHeight(DADO_SIZE);
+        dadoView.setPreserveRatio(true);
+        dadoView.setOpacity(0);
+        dadoView.setScaleX(0.5);
+        dadoView.setScaleY(0.5);
+        dadoView.setManaged(false);
+        dadoView.setLayoutX(W / 2 - DADO_SIZE / 2);          // centrado horizontalmente
+        dadoView.setLayoutY(GRUPO_TOP + TEXTO_H + GAP);       // justo debajo del texto
+        rootPane.getChildren().add(dadoView);
+
+        // --- 4. Text de resultado ("X ha sacado un N") ---
+        // Text con setFill(Color.GOLD): color garantizado sin interferencia de CSS.
+        // Añadido al final → z-index más alto → siempre visible encima del overlay.
+        javafx.scene.text.Text lblResultado = new javafx.scene.text.Text(
+            actual.getNombre() + " ha sacado un " + resultadoDado);
+        lblResultado.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 52));
+        lblResultado.setFill(javafx.scene.paint.Color.GOLD);   // amarillo dorado, API Java pura
+        lblResultado.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblResultado.setWrappingWidth(W);   // ocupa todo el ancho → texto centrado
+        lblResultado.setEffect(new javafx.scene.effect.DropShadow(18, javafx.scene.paint.Color.BLACK));
+        lblResultado.setOpacity(0);
+        lblResultado.setManaged(false);
+        lblResultado.setLayoutX(0);
+        lblResultado.setLayoutY(H / 2 + 26); // Y = línea base: H/2 centrado (~52px/2 offset)
+        rootPane.getChildren().add(lblResultado); // último hijo → z-index más alto
+
+        // ==============================================
+        // Construcción de la SequentialTransition
+        // ==============================================
+
+        // Paso 1 (300ms): overlay oscurece + dado crece + lblTurno aparecen juntos
+        javafx.animation.FadeTransition fadeInOverlay = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), overlayPane);
+        fadeInOverlay.setFromValue(0);
+        fadeInOverlay.setToValue(0.6);
+
+        javafx.animation.FadeTransition fadeInDado = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), dadoView);
+        fadeInDado.setFromValue(0);
+        fadeInDado.setToValue(1);
+
+        javafx.animation.ScaleTransition zoomDado = new javafx.animation.ScaleTransition(
+            javafx.util.Duration.millis(300), dadoView);
+        zoomDado.setFromX(0.5); zoomDado.setFromY(0.5);
+        zoomDado.setToX(1.0);   zoomDado.setToY(1.0);
+
+        javafx.animation.FadeTransition fadeInTurno = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), lblTurno);
+        fadeInTurno.setFromValue(0);
+        fadeInTurno.setToValue(1);
+
+        // Overlay + (dado zoom + fade + texto turno) todos a la vez
+        javafx.animation.ParallelTransition paso1 = new javafx.animation.ParallelTransition(
+            fadeInOverlay, fadeInDado, zoomDado, fadeInTurno);
+
+        // Paso 2 (2000ms): dado gira 3 vueltas mientras "Turno de X" permanece visible
+        javafx.animation.RotateTransition girarDado = new javafx.animation.RotateTransition(
+            javafx.util.Duration.millis(2000), dadoView);
+        girarDado.setFromAngle(0);
+        girarDado.setToAngle(360 * 3);
+        girarDado.setInterpolator(javafx.animation.Interpolator.LINEAR);
+
+        // Paso 3 (400ms): dado y lblTurno desaparecen juntos
+        javafx.animation.FadeTransition fadeOutDado = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(400), dadoView);
+        fadeOutDado.setFromValue(1);
+        fadeOutDado.setToValue(0);
+
+        javafx.animation.FadeTransition fadeOutTurno = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(400), lblTurno);
+        fadeOutTurno.setFromValue(1);
+        fadeOutTurno.setToValue(0);
+
+        javafx.animation.ParallelTransition paso3 =
+            new javafx.animation.ParallelTransition(fadeOutDado, fadeOutTurno);
+
+        // Paso 4 (300ms): mensaje de resultado aparece en el centro
+        javafx.animation.FadeTransition fadeInLabel = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), lblResultado);
+        fadeInLabel.setFromValue(0);
+        fadeInLabel.setToValue(1);
+
+        // Paso 5 (1500ms): pausa para que el jugador lea el resultado
+        javafx.animation.PauseTransition pausaResultado =
+            new javafx.animation.PauseTransition(javafx.util.Duration.millis(1500));
+
+        // Paso 6 (400ms): resultado y overlay desaparecen juntos
+        javafx.animation.FadeTransition fadeOutLabel = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(400), lblResultado);
+        fadeOutLabel.setFromValue(1);
+        fadeOutLabel.setToValue(0);
+
+        javafx.animation.FadeTransition fadeOutOverlay = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(400), overlayPane);
+        fadeOutOverlay.setFromValue(0.6);
+        fadeOutOverlay.setToValue(0);
+
+        javafx.animation.ParallelTransition paso6 =
+            new javafx.animation.ParallelTransition(fadeOutLabel, fadeOutOverlay);
+
+        // --- Secuencia completa encadenada ---
+        javafx.animation.SequentialTransition secuenciaCompleta =
+            new javafx.animation.SequentialTransition(
+                paso1,           // overlay + dado + "Turno de X" aparecen
+                girarDado,       // dado gira 3 vueltas
+                paso3,           // dado + "Turno de X" desaparecen
+                fadeInLabel,     // resultado aparece en el centro
+                pausaResultado,  // pausa 1.5s
+                paso6            // resultado + overlay desaparecen
+            );
+
+        secuenciaCompleta.setOnFinished(e -> {
+            // Eliminar todos los nodos del grafo de la escena
+            rootPane.getChildren().removeAll(overlayPane, lblTurno, dadoView, lblResultado);
+            // Ejecutar el movimiento del personaje amarillo
+            if (onFinish != null) onFinish.run();
+        });
+
+        secuenciaCompleta.play();
+    }
 }
+

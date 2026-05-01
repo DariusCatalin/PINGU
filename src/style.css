@@ -1,7 +1,7 @@
 /* style.css */
 
 .root {
-    -fx-background-image: url("resources/FONDO%20MEN%C3%9A.png");
+    -fx-background-image: url("resources/FONDO_MENU.png");
     -fx-background-size: cover;
     -fx-background-repeat: no-repeat;
     -fx-background-position: center center;
