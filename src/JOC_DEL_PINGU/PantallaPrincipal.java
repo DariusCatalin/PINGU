@@ -247,6 +247,7 @@ public class PantallaPrincipal {
 
                     PantallaPartida controller = loader.getController();
                     controller.setPartidaCargada(p);
+                    controller.setIdPartidaCargada(idPartida); // ⭐ Pasar el ID para que se actualice al guardar
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error de carga");

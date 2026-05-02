@@ -82,6 +82,18 @@ public class PantallaPartida {
     }
     
     /**
+     * Asigna el ID de la partida cargada desde BBDD.
+     * Esto es necesario para que cuando se vuelva a guardar (manualmente o al ganar)
+     * se ACTUALICE la misma partida en lugar de crear una nueva con otro ID.
+     */
+    public void setIdPartidaCargada(int idPartida) {
+        this.idPartidaActual = idPartida;
+        if (gestorUI != null) {
+            gestorUI.registrar("📂 Partida cargada con ID " + idPartida);
+        }
+    }
+    
+    /**
      * Llamado por PantallaPrincipal o GestorBBDD al cargar una partida existente.
      */
     public void setPartidaCargada(Partida pCargada) {
@@ -1905,9 +1917,21 @@ public class PantallaPartida {
             // PASO 3: Buscar id del ganador en tabla JUGADOR
             int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
             if (idGanador != -1) {
-                // PASO 4: Asignar ganador (dispara trigger incrementar_wins)
-                gestor.finalizarPartida(idPartidaActual, idGanador);
-                gestorUI.registrar("✅ Estadísticas actualizadas para " + ganador.getNombre());
+                // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
+                java.util.List<String> participantes = new java.util.ArrayList<>();
+                if (partida != null && partida.getJugadores() != null) {
+                    for (Jugador jug : partida.getJugadores()) {
+                        // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
+                        if (jug instanceof Pinguino) {
+                            participantes.add(jug.getNombre());
+                        }
+                    }
+                }
+
+                // PASO 5: Asignar ganador y actualizar num_partidas a todos
+                gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
+                                 + " jugadores. Ganador: " + ganador.getNombre());
             } else {
                 gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
             }
