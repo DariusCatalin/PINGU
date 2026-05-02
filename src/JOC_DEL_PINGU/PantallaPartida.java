@@ -45,6 +45,7 @@ public class PantallaPartida {
  
     // --- LÓGICA DEL JUEGO (EL CEREBRO) ---
     private Partida partida;
+    private int idPartidaActual = -1; // ID de la partida en BBDD (-1 = no guardada aún)
     private static final int COLUMNS = 5;
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
     /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
@@ -214,6 +215,7 @@ public class PantallaPartida {
                 gestor.cerrarConexion();
                 
                 if (extio) {
+                    this.idPartidaActual = idPartida; // ⭐ Guardar el ID para usarlo al finalizar
                     gestorUI.registrar("✅ Partida " + idPartida + " guardada en BBDD.");
                 } else {
                     gestorUI.registrar("❌ Error al guardar en BBDD.");
@@ -579,7 +581,12 @@ public class PantallaPartida {
         if (j.getPosicion() >= 49) {
             j.moverPosicion(49);
             partida.setFinalizada(true);
+            partida.setGanador(j); // ⭐ Guardar el ganador en el objeto Partida
             gestorUI.registrar("¡" + j.getNombre() + " HA LLEGADO A LA META Y GANA LA PARTIDA!");
+
+            // ⭐ NUEVO: Notificar a Oracle (dispara el trigger 'incrementar_wins')
+            notificarFinPartidaBBDD(j);
+
             // Navegar a la pantalla de victoria tras un breve retardo para que el log se vea
             javafx.application.Platform.runLater(() -> irAPantallaVictoria(j));
             return;
@@ -1747,6 +1754,32 @@ public class PantallaPartida {
         });
 
         secuenciaCompleta.play();
+    }
+
+    /**
+     * Notifica a Oracle que la partida ha finalizado y asigna el ganador.
+     * Esto dispara el trigger 'incrementar_wins' que actualiza partidas_ganadas.
+     * Solo funciona si el jugador ha guardado la partida al menos una vez.
+     */
+    private void notificarFinPartidaBBDD(Jugador ganador) {
+        if (idPartidaActual <= 0) {
+            gestorUI.registrar("ℹ️ Partida no guardada en BBDD, no se actualizan estadísticas.");
+            return;
+        }
+        try {
+            GestorBBDD gestor = new GestorBBDD();
+            gestor.iniciarConexionGUI();
+            int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
+            if (idGanador != -1) {
+                gestor.finalizarPartida(idPartidaActual, idGanador);
+                gestorUI.registrar("✅ Estadísticas actualizadas para " + ganador.getNombre());
+            } else {
+                gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
+            }
+            gestor.cerrarConexion();
+        } catch (Exception e) {
+            gestorUI.registrar("❌ Error al actualizar estadísticas: " + e.getMessage());
+        }
     }
 }
 

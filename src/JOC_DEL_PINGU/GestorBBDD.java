@@ -49,7 +49,7 @@ public class GestorBBDD {
 
     public void iniciarConexionGUI() {
         this.conexion = BBDD.conectarBaseDatosGUI();
-        inicializarTablaUsuarios(); // Crea la tabla si no existe
+        // La tabla USUARIOS ya existe en Oracle, no hace falta crearla.
     }
 
     public void cerrarConexion() {
@@ -493,6 +493,10 @@ public class GestorBBDD {
             ps.setString(2, hashPassword(password));
             ps.executeUpdate();
             // No llamar a commit() — la conexión tiene auto-commit activado (Oracle JDBC por defecto)
+
+            // ⭐ NUEVO: Sincronizar con tabla JUGADOR para llevar estadísticas
+            crearJugadorEstadisticas(username.trim(), hashPassword(password), "rojo");
+
             System.out.println("✅ Usuario registrado: " + username);
             return null; // null = éxito
         } catch (java.sql.SQLException e) {
@@ -582,4 +586,232 @@ public class GestorBBDD {
     public void setUsername(String username)       { this.username = username; }
     public String getPassword()                    { return password; }
     public void setPassword(String password)       { this.password = password; }
+
+    // ==================== SINCRONITZACIÓ USUARIOS ↔ JUGADOR ====================
+
+    /**
+     * Crea una entrada en la tabla JUGADOR cuando se registra un usuario.
+     * Llama al procedure SincronizarUsuarioJugador en Oracle.
+     * Si el procedure no existe, hace INSERT directo como fallback.
+     */
+    public boolean crearJugadorEstadisticas(String username, String passwordHash, String color) {
+        if (this.conexion == null) return false;
+
+        // Intento 1: usar el stored procedure
+        try (CallableStatement cs = this.conexion.prepareCall("{ call SincronizarUsuarioJugador(?, ?, ?) }")) {
+            cs.setString(1, username);
+            cs.setString(2, passwordHash);
+            cs.setString(3, color != null ? color : "rojo");
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            // Fallback: INSERT directo si el procedure no existe
+            return crearJugadorEstadisticasFallback(username, passwordHash, color);
+        }
+    }
+
+    /** Fallback: crea el jugador con SQL directo si el procedure no existe. */
+    private boolean crearJugadorEstadisticasFallback(String username, String passwordHash, String color) {
+        try {
+            // Comprobar si ya existe
+            String sqlCheck = "SELECT COUNT(*) FROM JUGADOR WHERE nombre_usuario = ?";
+            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlCheck)) {
+                ps.setString(1, username);
+                java.sql.ResultSet rs = ps.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) return true; // ya existe
+            }
+
+            // Generar id_jugador automáticamente
+            int nuevoId = 1;
+            try (java.sql.Statement st = this.conexion.createStatement();
+                 java.sql.ResultSet rs = st.executeQuery("SELECT NVL(MAX(id_jugador), 0) + 1 FROM JUGADOR")) {
+                if (rs.next()) nuevoId = rs.getInt(1);
+            }
+
+            // Insertar
+            String sqlInsert = "INSERT INTO JUGADOR (id_jugador, nombre_usuario, contrasenya, " +
+                               "color_personaje, num_partidas, partidas_ganadas) VALUES (?, ?, ?, ?, 0, 0)";
+            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlInsert)) {
+                ps.setInt(1, nuevoId);
+                ps.setString(2, username);
+                ps.setString(3, passwordHash);
+                ps.setString(4, color != null ? color : "rojo");
+                ps.executeUpdate();
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error en fallback de sincronización: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene el id_jugador a partir del username.
+     * Devuelve -1 si no existe.
+     */
+    public int obtenerIdJugador(String username) {
+        if (this.conexion == null) return -1;
+        String sql = "SELECT id_jugador FROM JUGADOR WHERE nombre_usuario = ?";
+        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql)) {
+            ps.setString(1, username);
+            java.sql.ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error al obtener id_jugador: " + e.getMessage());
+        }
+        return -1;
+    }
+
+    // ==================== FINALITZAR PARTIDA ====================
+
+    /**
+     * Marca la partida como finalizada asignando el ganador.
+     * El trigger 'incrementar_wins' incrementa automáticamente partidas_ganadas.
+     * También suma 1 a num_partidas del ganador.
+     */
+    public boolean finalizarPartida(int idPartida, int idGanador) {
+        if (this.conexion == null) return false;
+        try {
+            // 1. Asignar ganador en PARTIDA (dispara trigger incrementar_wins)
+            String sql1 = "UPDATE PARTIDA SET ganador = ?, data_modificacio = CURRENT_TIMESTAMP WHERE id_partida = ?";
+            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql1)) {
+                ps.setInt(1, idGanador);
+                ps.setInt(2, idPartida);
+                ps.executeUpdate();
+            }
+
+            // 2. Incrementar num_partidas del ganador
+            String sql2 = "UPDATE JUGADOR SET num_partidas = num_partidas + 1 WHERE id_jugador = ?";
+            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
+                ps.setInt(1, idGanador);
+                ps.executeUpdate();
+            }
+
+            System.out.println("✅ Partida " + idPartida + " finalizada. Ganador: " + idGanador);
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error al finalizar partida: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ==================== ESTADÍSTIQUES PER A LA GUI ====================
+
+    /**
+     * Récord de partidas ganadas (function max_wins).
+     */
+    public int obtenerRecord() {
+        if (this.conexion == null) return 0;
+        try (CallableStatement cs = this.conexion.prepareCall("{ ? = call max_wins() }")) {
+            cs.registerOutParameter(1, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getInt(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo récord: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Media de partidas ganadas (function media_de_wins).
+     */
+    public double obtenerMediaWins() {
+        if (this.conexion == null) return 0.0;
+        try (CallableStatement cs = this.conexion.prepareCall("{ ? = call media_de_wins() }")) {
+            cs.registerOutParameter(1, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getDouble(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo media: " + e.getMessage());
+            return 0.0;
+        }
+    }
+
+    /**
+     * % de jugadores con menos partidas ganadas (function menos_wins_porcentaje).
+     */
+    public double obtenerPorcentajeMenosWins(int numPartidas) {
+        if (this.conexion == null) return 0.0;
+        try (CallableStatement cs = this.conexion.prepareCall("{ ? = call menos_wins_porcentaje(?) }")) {
+            cs.registerOutParameter(1, java.sql.Types.NUMERIC);
+            cs.setInt(2, numPartidas);
+            cs.execute();
+            return cs.getDouble(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo porcentaje: " + e.getMessage());
+            return 0.0;
+        }
+    }
+
+    /**
+     * Lista de jugadores que tienen un récord concreto.
+     * Devuelve cada fila como String[] {nombre, partidas_ganadas} para usar en GUI.
+     */
+    public ArrayList<String[]> obtenerJugadoresConRecord(int record) {
+        ArrayList<String[]> lista = new ArrayList<>();
+        if (this.conexion == null) return lista;
+        String sql = "SELECT nombre_usuario, partidas_ganadas FROM JUGADOR WHERE partidas_ganadas = " + record;
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        for (java.util.LinkedHashMap<String, String> fila : resultados) {
+            lista.add(new String[] {
+                fila.get("NOMBRE_USUARIO"),
+                fila.get("PARTIDAS_GANADAS")
+            });
+        }
+        return lista;
+    }
+
+    /**
+     * Jugadores que han ganado más partidas que la media.
+     */
+    public ArrayList<String[]> obtenerJugadoresSobreMedia() {
+        ArrayList<String[]> lista = new ArrayList<>();
+        if (this.conexion == null) return lista;
+        String sql = "SELECT nombre_usuario, partidas_ganadas FROM JUGADOR " +
+                     "WHERE partidas_ganadas > (SELECT AVG(partidas_ganadas) FROM JUGADOR) " +
+                     "ORDER BY partidas_ganadas DESC";
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        for (java.util.LinkedHashMap<String, String> fila : resultados) {
+            lista.add(new String[] {
+                fila.get("NOMBRE_USUARIO"),
+                fila.get("PARTIDAS_GANADAS")
+            });
+        }
+        return lista;
+    }
+
+    /**
+     * Ranking completo de jugadores ordenado por num_partidas desc.
+     * Devuelve cada fila como {nombre, partidas_jugadas, partidas_ganadas}.
+     */
+    public ArrayList<String[]> obtenerRanking() {
+        ArrayList<String[]> lista = new ArrayList<>();
+        if (this.conexion == null) return lista;
+        String sql = "SELECT nombre_usuario, num_partidas, partidas_ganadas " +
+                     "FROM JUGADOR ORDER BY num_partidas DESC, partidas_ganadas DESC";
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        for (java.util.LinkedHashMap<String, String> fila : resultados) {
+            lista.add(new String[] {
+                fila.get("NOMBRE_USUARIO"),
+                fila.get("NUM_PARTIDAS"),
+                fila.get("PARTIDAS_GANADAS")
+            });
+        }
+        return lista;
+    }
+
+    /**
+     * Llama al procedure ranking_partidas_jugadas para validar errores.
+     * @return null si todo OK, o el mensaje de error (ORA-20001 / ORA-20002).
+     */
+    public String validarRanking(int idJugador) {
+        if (this.conexion == null) return "Sin conexión";
+        try (CallableStatement cs = this.conexion.prepareCall("{ call ranking_partidas_jugadas(?) }")) {
+            cs.setInt(1, idJugador);
+            cs.execute();
+            return null; // OK
+        } catch (java.sql.SQLException e) {
+            return e.getMessage();
+        }
+    }
 }
