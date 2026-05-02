@@ -310,17 +310,21 @@ public class PantallaPartida {
     private void ejecutarTiradaNormal(Jugador actual) {
         int tirada = (int)(Math.random() * 6) + 1;
 
-        // Si el jugador es amarillo, mostrar la animación de turno antes de mover
-        if ("amarillo".equalsIgnoreCase(actual.getColor())) {
+        // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
+        String[] config = obtenerConfigAnimacion(actual.getColor());
+        if (config != null) {
             final int tiradaFinal = tirada;
             setUIInteractuable(false);
-            mostrarAnimacionTurnoAmarillo(actual, tiradaFinal, () -> {
-                moverJugadorYAccion(actual, tiradaFinal, "tirada normal");
-                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal);
-                actualizarTextosInventario(actual);
-                avanzarTurno();
-                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-            });
+            mostrarAnimacionTurno(actual, tiradaFinal,
+                config[0],                                         // ruta imagen dado
+                javafx.scene.paint.Color.web(config[1]),           // color texto resultado
+                () -> {
+                    moverJugadorYAccion(actual, tiradaFinal, "tirada normal");
+                    if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal);
+                    actualizarTextosInventario(actual);
+                    avanzarTurno();
+                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                });
         } else {
             moverJugadorYAccion(actual, tirada, "tirada normal");
             // 4. Resultado del dado visible: texto grande y claro
@@ -423,17 +427,21 @@ public class PantallaPartida {
             if (consumirObjeto(actual, nombreDado)) {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
 
-                // Si el jugador es amarillo, mostrar la animación antes de mover
-                if ("amarillo".equalsIgnoreCase(actual.getColor())) {
+                // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
+                String[] config = obtenerConfigAnimacion(actual.getColor());
+                if (config != null) {
                     final int tiradaFinal = tirada;
                     setUIInteractuable(false);
-                    mostrarAnimacionTurnoAmarillo(actual, tiradaFinal, () -> {
-                        moverJugadorYAccion(actual, tiradaFinal, nombreDado);
-                        if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal + " (" + nombreDado + ")");
-                        actualizarTextosInventario(actual);
-                        avanzarTurno();
-                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-                    });
+                    mostrarAnimacionTurno(actual, tiradaFinal,
+                        config[0],
+                        javafx.scene.paint.Color.web(config[1]),
+                        () -> {
+                            moverJugadorYAccion(actual, tiradaFinal, nombreDado);
+                            if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal + " (" + nombreDado + ")");
+                            actualizarTextosInventario(actual);
+                            avanzarTurno();
+                            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                        });
                 } else {
                     moverJugadorYAccion(actual, tirada, nombreDado);
                     if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
@@ -1150,25 +1158,41 @@ public class PantallaPartida {
     }
 
     // ==========================================
-    // ANIMACIÓN DE TURNO – JUGADOR AMARILLO
+    // ANIMACIÓN DE TURNO – GENÉRICA POR COLOR
     // ==========================================
 
     /**
-     * Muestra una secuencia animada cuando le toca el turno al jugador amarillo:
-     * 1. Overlay negro semitransparente que oscurece la pantalla (FadeIn 300ms).
-     * 2. Imagen del dado apareciendo con zoom y girando durante 2 segundos.
-     * 3. Texto con el resultado (FadeIn 400ms, pausa 1.5s, FadeOut 400ms).
-     * 4. Overlay desaparece (FadeOut 400ms) y se llama a onFinish.
-     *
-     * El overlay bloquea los clics del usuario durante toda la secuencia.
-     * El método debe llamarse desde el JavaFX Application Thread.
-     *
-     * @param actual       Jugador cuyo turno se está animando.
-     * @param resultadoDado Valor del dado (1-6) ya calculado.
-     * @param onFinish     Callback que se ejecuta al terminar la animación
-     *                     (aquí se realiza el movimiento del personaje).
+     * Devuelve la configuración de animación para el color dado:
+     *   [0] = ruta de la imagen del dado  (/resources/dado_XXX.png)
+     *   [1] = color HEX del texto de resultado
+     * Devuelve null si ese color no tiene animación configurada.
+     * Para añadir un nuevo color, basta con añadir una línea aquí.
      */
-    private void mostrarAnimacionTurnoAmarillo(Jugador actual, int resultadoDado, Runnable onFinish) {
+    private String[] obtenerConfigAnimacion(String color) {
+        if (color == null) return null;
+        switch (color.toLowerCase()) {
+            case "amarillo": return new String[]{"/resources/dado_amarillo.png", "#FFD700"};
+            case "azul":     return new String[]{"/resources/dado_azul.png",     "#00BFFF"};
+            case "rojo":     return new String[]{"/resources/dado_rojo.png",      "#FF4444"};
+            case "verde":    return new String[]{"/resources/dado_verde.png",     "#00FF7F"};
+            default:         return null;
+        }
+    }
+
+    /**
+     * Muestra la secuencia animada de turno (overlay + dado girando + resultado).
+     * Reutilizable para cualquier color de jugador.
+     *
+     * @param actual        Jugador cuyo turno se anima.
+     * @param resultadoDado Valor del dado (1-6) ya calculado.
+     * @param rutaDado      Ruta del recurso imagen del dado (p.ej. /resources/dado_azul.png).
+     * @param colorTexto    Color del texto de resultado (API Java, inmune a CSS).
+     * @param onFinish      Callback ejecutado al terminar: aquí va el movimiento del personaje.
+     */
+    private void mostrarAnimacionTurno(Jugador actual, int resultadoDado,
+                                       String rutaDado,
+                                       javafx.scene.paint.Color colorTexto,
+                                       Runnable onFinish) {
         // --- Obtener dimensiones de la escena ---
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1209,23 +1233,22 @@ public class PantallaPartida {
         rootPane.getChildren().add(overlayPane);
 
         // --- 2. Text "Turno de X" ---
-        // Usamos Text (no Label) para que setFill() sea API Java directa,
-        // inmune a la regla CSS .label { -fx-text-fill: white } de style.css.
+        // Text.setFill() es API Java directa, inmune al CSS .label { -fx-text-fill: white }.
         javafx.scene.text.Text lblTurno = new javafx.scene.text.Text("Turno de " + actual.getNombre());
         lblTurno.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
         lblTurno.setFill(javafx.scene.paint.Color.WHITE);
         lblTurno.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblTurno.setWrappingWidth(W);   // ocupa todo el ancho → texto centrado
+        lblTurno.setWrappingWidth(W);
         lblTurno.setEffect(new javafx.scene.effect.DropShadow(14, javafx.scene.paint.Color.BLACK));
         lblTurno.setOpacity(0);
         lblTurno.setManaged(false);
         lblTurno.setLayoutX(0);
-        lblTurno.setLayoutY(GRUPO_TOP + 42); // +42 porque Y en Text es la línea base del texto
+        lblTurno.setLayoutY(GRUPO_TOP + 42);
         rootPane.getChildren().add(lblTurno);
 
-        // --- 3. ImageView del dado ---
+        // --- 3. ImageView del dado (imagen según rutaDado recibida) ---
         javafx.scene.image.ImageView dadoView = new javafx.scene.image.ImageView();
-        var recurso = getClass().getResourceAsStream("/resources/dado_amarillo.png");
+        var recurso = getClass().getResourceAsStream(rutaDado);  // imagen según color del jugador
         if (recurso != null) {
             dadoView.setImage(new Image(recurso));
         } else {
@@ -1243,19 +1266,18 @@ public class PantallaPartida {
         rootPane.getChildren().add(dadoView);
 
         // --- 4. Text de resultado ("X ha sacado un N") ---
-        // Text con setFill(Color.GOLD): color garantizado sin interferencia de CSS.
-        // Añadido al final → z-index más alto → siempre visible encima del overlay.
+        // setFill(colorTexto) garantiza el color del jugador sin interferencia de CSS.
         javafx.scene.text.Text lblResultado = new javafx.scene.text.Text(
             actual.getNombre() + " ha sacado un " + resultadoDado);
         lblResultado.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 52));
-        lblResultado.setFill(javafx.scene.paint.Color.GOLD);   // amarillo dorado, API Java pura
+        lblResultado.setFill(colorTexto);   // color del jugador, API Java pura
         lblResultado.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblResultado.setWrappingWidth(W);   // ocupa todo el ancho → texto centrado
+        lblResultado.setWrappingWidth(W);
         lblResultado.setEffect(new javafx.scene.effect.DropShadow(18, javafx.scene.paint.Color.BLACK));
         lblResultado.setOpacity(0);
         lblResultado.setManaged(false);
         lblResultado.setLayoutX(0);
-        lblResultado.setLayoutY(H / 2 + 26); // Y = línea base: H/2 centrado (~52px/2 offset)
+        lblResultado.setLayoutY(H / 2 + 26);
         rootPane.getChildren().add(lblResultado); // último hijo → z-index más alto
 
         // ==============================================
