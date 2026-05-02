@@ -665,14 +665,18 @@ public class GestorBBDD {
     // ==================== FINALITZAR PARTIDA ====================
 
     /**
-     * Marca la partida como finalizada asignando el ganador.
-     * El trigger 'incrementar_wins' incrementa automáticamente partidas_ganadas.
-     * También suma 1 a num_partidas del ganador.
+     * Marca la partida como finalizada y actualiza estadísticas.
+     * - Asigna el ganador (dispara trigger 'incrementar_wins')
+     * - Incrementa num_partidas a TODOS los participantes (no solo al ganador)
+     *
+     * @param idPartida ID de la partida en BBDD
+     * @param idGanador ID del jugador ganador
+     * @param nombresParticipantes Lista de nombres de TODOS los jugadores que han participado
      */
-    public boolean finalizarPartida(int idPartida, int idGanador) {
+    public boolean finalizarPartida(int idPartida, int idGanador, java.util.List<String> nombresParticipantes) {
         if (this.conexion == null) return false;
         try {
-            // 1. Asignar ganador en PARTIDA (dispara trigger incrementar_wins)
+            // 1. Asignar ganador (dispara trigger incrementar_wins)
             String sql1 = "UPDATE PARTIDA SET ganador = ?, data_modificacio = CURRENT_TIMESTAMP WHERE id_partida = ?";
             try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql1)) {
                 ps.setInt(1, idGanador);
@@ -680,19 +684,43 @@ public class GestorBBDD {
                 ps.executeUpdate();
             }
 
-            // 2. Incrementar num_partidas del ganador
-            String sql2 = "UPDATE JUGADOR SET num_partidas = num_partidas + 1 WHERE id_jugador = ?";
-            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
-                ps.setInt(1, idGanador);
-                ps.executeUpdate();
+            // 2. Incrementar num_partidas a TODOS los participantes registrados
+            String sql2 = "UPDATE JUGADOR SET num_partidas = num_partidas + 1 WHERE nombre_usuario = ?";
+            int actualizados = 0;
+            if (nombresParticipantes != null) {
+                try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
+                    for (String nombre : nombresParticipantes) {
+                        if (nombre == null || nombre.trim().isEmpty()) continue;
+                        ps.setString(1, nombre.trim());
+                        int n = ps.executeUpdate();
+                        if (n > 0) actualizados++;
+                    }
+                }
             }
 
-            System.out.println("✅ Partida " + idPartida + " finalizada. Ganador: " + idGanador);
+            System.out.println("✅ Partida " + idPartida + " finalizada. Ganador: " + idGanador 
+                             + " | num_partidas incrementado a " + actualizados + " participantes.");
             return true;
         } catch (Exception e) {
             System.err.println("❌ Error al finalizar partida: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Sobrecarga compatible con el método antiguo (solo ganador).
+     * Mantiene compatibilidad si en algún sitio se llama sin pasar la lista de participantes.
+     */
+    public boolean finalizarPartida(int idPartida, int idGanador) {
+        java.util.List<String> lista = new java.util.ArrayList<>();
+        // Buscar el nombre del ganador
+        String sql = "SELECT nombre_usuario FROM JUGADOR WHERE id_jugador = " + idGanador;
+        java.util.ArrayList<java.util.LinkedHashMap<String, String>> r = BBDD.select(this.conexion, sql);
+        if (r != null && !r.isEmpty()) {
+            String n = r.get(0).get("NOMBRE_USUARIO");
+            if (n != null) lista.add(n);
+        }
+        return finalizarPartida(idPartida, idGanador, lista);
     }
 
     // ==================== ESTADÍSTIQUES PER A LA GUI ====================

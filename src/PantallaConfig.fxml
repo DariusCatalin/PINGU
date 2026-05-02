@@ -48,28 +48,28 @@
         <!-- FILA JUGADOR 1 -->
         <HBox fx:id="filaJ1" spacing="12.0" alignment="CENTER_LEFT" styleClass="player-row">
             <Label text="Jugador 1" styleClass="player-label" prefWidth="80" />
-            <TextField fx:id="nombreJ1" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
+            <ComboBox fx:id="nombreJ1" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
             <ComboBox fx:id="colorJ1" promptText="Color" styleClass="config-combo" prefWidth="130" />
         </HBox>
 
         <!-- FILA JUGADOR 2 -->
         <HBox fx:id="filaJ2" spacing="12.0" alignment="CENTER_LEFT" styleClass="player-row">
             <Label text="Jugador 2" styleClass="player-label" prefWidth="80" />
-            <TextField fx:id="nombreJ2" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
+            <ComboBox fx:id="nombreJ2" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
             <ComboBox fx:id="colorJ2" promptText="Color" styleClass="config-combo" prefWidth="130" />
         </HBox>
 
         <!-- FILA JUGADOR 3 -->
         <HBox fx:id="filaJ3" spacing="12.0" alignment="CENTER_LEFT" styleClass="player-row">
             <Label text="Jugador 3" styleClass="player-label" prefWidth="80" />
-            <TextField fx:id="nombreJ3" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
+            <ComboBox fx:id="nombreJ3" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
             <ComboBox fx:id="colorJ3" promptText="Color" styleClass="config-combo" prefWidth="130" />
         </HBox>
 
         <!-- FILA JUGADOR 4 -->
         <HBox fx:id="filaJ4" spacing="12.0" alignment="CENTER_LEFT" styleClass="player-row">
             <Label text="Jugador 4" styleClass="player-label" prefWidth="80" />
-            <TextField fx:id="nombreJ4" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
+            <ComboBox fx:id="nombreJ4" promptText="Escribe tu nombre..." styleClass="config-field" prefWidth="200" />
             <ComboBox fx:id="colorJ4" promptText="Color" styleClass="config-combo" prefWidth="130" />
         </HBox>
 

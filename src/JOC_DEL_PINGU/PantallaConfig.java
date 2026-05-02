@@ -11,7 +11,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
@@ -28,10 +28,10 @@ public class PantallaConfig {
     @FXML private HBox filaJ3;
     @FXML private HBox filaJ4;
 
-    @FXML private TextField nombreJ1;
-    @FXML private TextField nombreJ2;
-    @FXML private TextField nombreJ3;
-    @FXML private TextField nombreJ4;
+    @FXML private ComboBox<String> nombreJ1;
+    @FXML private ComboBox<String> nombreJ2;
+    @FXML private ComboBox<String> nombreJ3;
+    @FXML private ComboBox<String> nombreJ4;
 
     @FXML private ComboBox<String> colorJ1;
     @FXML private ComboBox<String> colorJ2;
@@ -61,8 +61,58 @@ public class PantallaConfig {
         colorJ3.setValue("Verde");
         colorJ4.setValue("Amarillo");
 
+        // ⭐ NUEVO: Cargar la lista de usuarios registrados desde la BBDD
+        cargarUsuariosRegistrados();
+
         // Por defecto: 2 jugadores
         actualizarFilas();
+    }
+
+    /**
+     * Carga la lista de usuarios registrados desde la tabla JUGADOR
+     * y rellena los ComboBox de nombres de los 4 jugadores.
+     * Esto asegura que solo se puedan elegir usuarios existentes en BBDD,
+     * por lo que las estadísticas funcionarán correctamente.
+     */
+    private void cargarUsuariosRegistrados() {
+        GestorBBDD gestor = new GestorBBDD();
+        try {
+            gestor.iniciarConexionGUI();
+            if (gestor.getConexion() == null) {
+                System.err.println("⚠️ Sin conexión a BBDD, no se pueden cargar usuarios.");
+                return;
+            }
+
+            // Obtener todos los usuarios registrados
+            String sql = "SELECT nombre_usuario FROM JUGADOR ORDER BY nombre_usuario";
+            java.util.ArrayList<java.util.LinkedHashMap<String, String>> resultados =
+                BBDD.select(gestor.getConexion(), sql);
+
+            javafx.collections.ObservableList<String> usuarios =
+                javafx.collections.FXCollections.observableArrayList();
+
+            if (resultados != null) {
+                for (java.util.LinkedHashMap<String, String> fila : resultados) {
+                    String nombre = fila.get("NOMBRE_USUARIO");
+                    if (nombre != null && !nombre.isEmpty()) {
+                        usuarios.add(nombre);
+                    }
+                }
+            }
+
+            // Rellenar los ComboBox de nombres con la lista
+            nombreJ1.setItems(usuarios);
+            nombreJ2.setItems(usuarios);
+            nombreJ3.setItems(usuarios);
+            nombreJ4.setItems(usuarios);
+
+            gestor.cerrarConexion();
+            System.out.println("✅ Cargados " + usuarios.size() + " usuarios registrados.");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error cargando usuarios: " + e.getMessage());
+            try { gestor.cerrarConexion(); } catch (Exception ignored) {}
+        }
     }
 
     // ==================== SELECCIÓN Nº JUGADORES ====================
@@ -129,21 +179,32 @@ public class PantallaConfig {
     @FXML
     private void handleEmpezar(ActionEvent event) {
         // Recoger los datos
-        TextField[] nombres = {nombreJ1, nombreJ2, nombreJ3, nombreJ4};
+        ComboBox<String>[] nombres = new ComboBox[]{nombreJ1, nombreJ2, nombreJ3, nombreJ4};
         ComboBox<String>[] colores = new ComboBox[]{colorJ1, colorJ2, colorJ3, colorJ4};
 
-        // Validar que todos los jugadores activos tienen nombre y color
+        // Validar que todos los jugadores activos tienen usuario y color elegidos
         for (int i = 0; i < numJugadores; i++) {
-            String nombre = nombres[i].getText().trim();
+            String nombre = nombres[i].getValue();
             String color  = colores[i].getValue();
 
-            if (nombre.isEmpty()) {
-                mostrarError("El Jugador " + (i + 1) + " necesita un nombre.");
+            if (nombre == null || nombre.trim().isEmpty()) {
+                mostrarError("El Jugador " + (i + 1) + " necesita elegir un usuario.");
                 return;
             }
             if (color == null || color.isEmpty()) {
                 mostrarError("El Jugador " + (i + 1) + " necesita elegir un color.");
                 return;
+            }
+        }
+
+        // Validar nombres únicos (un mismo usuario no puede jugar 2 veces)
+        for (int i = 0; i < numJugadores; i++) {
+            for (int j = i + 1; j < numJugadores; j++) {
+                if (nombres[i].getValue().equals(nombres[j].getValue())) {
+                    mostrarError("El mismo usuario no puede jugar 2 veces (" 
+                                 + nombres[i].getValue() + ").");
+                    return;
+                }
             }
         }
 
@@ -160,7 +221,7 @@ public class PantallaConfig {
         // Construir la lista de jugadores
         ArrayList<Jugador> jugadores = new ArrayList<>();
         for (int i = 0; i < numJugadores; i++) {
-            String nombre = nombres[i].getText().trim();
+            String nombre = nombres[i].getValue().trim();
             String color  = colores[i].getValue();
             jugadores.add(new Pinguino(0, nombre, color));
         }
