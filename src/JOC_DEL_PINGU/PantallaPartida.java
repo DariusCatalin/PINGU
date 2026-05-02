@@ -82,6 +82,18 @@ public class PantallaPartida {
     }
     
     /**
+     * Asigna el ID de la partida cargada desde BBDD.
+     * Esto es necesario para que cuando se vuelva a guardar (manualmente o al ganar)
+     * se ACTUALICE la misma partida en lugar de crear una nueva con otro ID.
+     */
+    public void setIdPartidaCargada(int idPartida) {
+        this.idPartidaActual = idPartida;
+        if (gestorUI != null) {
+            gestorUI.registrar("📂 Partida cargada con ID " + idPartida);
+        }
+    }
+    
+    /**
      * Llamado por PantallaPrincipal o GestorBBDD al cargar una partida existente.
      */
     public void setPartidaCargada(Partida pCargada) {
