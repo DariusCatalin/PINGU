@@ -54,6 +54,7 @@ public class PantallaPartida {
     private GestorEventos gestorUI = new GestorEventos() {
         @Override
         public void registrar(String mensaje) {
+            super.registrar(mensaje);
             System.out.println(mensaje);
             if (eventos != null) {
                 eventos.appendText(mensaje + "\n");
@@ -587,7 +588,14 @@ public class PantallaPartida {
         // Ejecuta la casilla (Oso, Trineo, Evento...)
         Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
         int posAntesCasilla = j.getPosicion();
+
         casillaActual.realizarAccion(partida, j);
+
+        if (casillaActual instanceof Evento) {
+            String msg = partida.getGestorEventos().getUltimoMensaje();
+            ultimoEventoVisual.put(j, msg);
+            encolarAnimacionEvento(j);
+        }
         if (posAntesCasilla != j.getPosicion()) {
             if (casillaActual instanceof Oso && j.getPosicion() == 0) {
                 encolarAnimacionOso(j);
@@ -830,6 +838,7 @@ public class PantallaPartida {
     // ======================================    // int[]{destinoPos, tipo}: tipo 0 = saltito normal, tipo 1 = salto directo (Oso, Foca, etc.)
     private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
+    private java.util.Map<Jugador, String> ultimoEventoVisual = new java.util.HashMap<>();
     private boolean animando = false;
 
     private void inicializarColas() {
@@ -873,6 +882,13 @@ public class PantallaPartida {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{j.getPosicion(), 2}); // Destino no importa
+    }
+
+    /** Encola la animación del regalo. Tipo 3. */
+    private void encolarAnimacionEvento(Jugador j) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
     }
  
     private void setUIInteractuable(boolean interactuable) {
@@ -944,6 +960,8 @@ public class PantallaPartida {
             animarSaltoDirecto(fic, j, hasta, next);
         } else if (tipo == 2) {
             mostrarAnimacionOso(next);
+        } else if (tipo == 3) {
+            mostrarAnimacionEvento(j, next);
         } else {
             animarConSaltito(fic, j, desde, hasta, next);
         }
@@ -1117,6 +1135,187 @@ public class PantallaPartida {
         seq.setOnFinished(e -> {
             rootPane.getChildren().removeAll(overlayPane, osoView, lblMensaje);
             if (onFinish != null) onFinish.run();
+        });
+        seq.play();
+    }
+
+    /** Muestra la animación inicial del regalo temblando y luego el objeto obtenido. */
+    private void mostrarAnimacionEvento(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        javafx.scene.image.ImageView regaloView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/objeto_random.png");
+        if (recurso != null) {
+            regaloView.setImage(new Image(recurso));
+        }
+        double REGALO_SIZE = 300;
+        regaloView.setFitWidth(REGALO_SIZE);
+        regaloView.setFitHeight(REGALO_SIZE);
+        regaloView.setPreserveRatio(true);
+        regaloView.setOpacity(0);
+        regaloView.setScaleX(0.5);
+        regaloView.setScaleY(0.5);
+        regaloView.setManaged(false);
+        regaloView.setLayoutX(W / 2 - REGALO_SIZE / 2);
+        regaloView.setLayoutY(H / 2 - REGALO_SIZE / 2);
+        rootPane.getChildren().add(regaloView);
+
+        // Fase 1: Entrar (FadeIn + Scale)
+        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOver.setToValue(0.8);
+
+        javafx.animation.FadeTransition ftRegalo = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), regaloView);
+        ftRegalo.setToValue(1);
+        javafx.animation.ScaleTransition stRegalo = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), regaloView);
+        stRegalo.setToX(1.0);
+        stRegalo.setToY(1.0);
+
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftRegalo, stRegalo);
+
+        // Fase 2: Tiembla (Rotate) ~900ms
+        javafx.animation.RotateTransition rt1 = new javafx.animation.RotateTransition(javafx.util.Duration.millis(50), regaloView);
+        rt1.setByAngle(15);
+        
+        javafx.animation.RotateTransition rtLoop = new javafx.animation.RotateTransition(javafx.util.Duration.millis(100), regaloView);
+        rtLoop.setFromAngle(15);
+        rtLoop.setToAngle(-15);
+        rtLoop.setCycleCount(8);
+        rtLoop.setAutoReverse(true);
+
+        javafx.animation.RotateTransition rtEnd = new javafx.animation.RotateTransition(javafx.util.Duration.millis(50), regaloView);
+        rtEnd.setToAngle(0);
+
+        javafx.animation.SequentialTransition rtShake = new javafx.animation.SequentialTransition(rt1, rtLoop, rtEnd);
+
+        // Fase 3: Salir Regalo (FadeOut)
+        javafx.animation.FadeTransition ftRegaloOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), regaloView);
+        ftRegaloOut.setToValue(0);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, rtShake, ftRegaloOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().remove(regaloView);
+            
+            String msg = ultimoEventoVisual.getOrDefault(j, "");
+            String itemPath = null;
+            String itemNombre = "";
+            String msgLower = msg.toLowerCase();
+            
+            if (msgLower.contains("lento")) {
+                itemPath = "/resources/dado_lento.png";
+                itemNombre = "un Dado Lento";
+            } else if (msgLower.contains("rápido") || msgLower.contains("rapido")) {
+                itemPath = "/resources/dado_rapido.png";
+                itemNombre = "un Dado Rápido";
+            } else if ((msgLower.contains("bola") || msgLower.contains("nieve")) && !msgLower.contains("moto")) {
+                itemPath = "/resources/bola_nieve.png";
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)\\s+bolas? de nieve").matcher(msgLower);
+                if (m.find()) {
+                    String qty = m.group(1);
+                    itemNombre = qty + (qty.equals("1") ? " Bola de Nieve" : " Bolas de Nieve");
+                } else {
+                    itemNombre = "Bolas de Nieve";
+                }
+            } else if (msgLower.contains("pez")) {
+                itemPath = "/resources/pez.png";
+                itemNombre = "un Pez";
+            }
+            
+            if (itemPath != null) {
+                // Phase 4: Show Item
+                javafx.scene.image.ImageView itemView = new javafx.scene.image.ImageView();
+                var rec = getClass().getResourceAsStream(itemPath);
+                if (rec != null) itemView.setImage(new Image(rec));
+                itemView.setFitWidth(REGALO_SIZE);
+                itemView.setFitHeight(REGALO_SIZE);
+                itemView.setPreserveRatio(true);
+                itemView.setOpacity(0);
+                itemView.setScaleX(0.5);
+                itemView.setScaleY(0.5);
+                itemView.setLayoutX(W / 2 - REGALO_SIZE / 2);
+                itemView.setLayoutY(H / 2 - REGALO_SIZE / 2);
+                rootPane.getChildren().add(itemView);
+                
+                javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(j.getNombre() + " ha obtenido\n" + itemNombre);
+                lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+                lblMensaje.setFill(javafx.scene.paint.Color.WHITE); // blanco
+                lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                lblMensaje.setWrappingWidth(W);
+                lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+                lblMensaje.setOpacity(0);
+                lblMensaje.setLayoutX(0);
+                lblMensaje.setLayoutY(H / 2 + REGALO_SIZE / 2 + 20);
+                rootPane.getChildren().add(lblMensaje);
+
+                javafx.animation.FadeTransition ftItem = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), itemView);
+                ftItem.setToValue(1);
+                javafx.animation.ScaleTransition stItem = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), itemView);
+                stItem.setToX(1.0); stItem.setToY(1.0);
+                
+                javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+                ftText.setToValue(1);
+                
+                javafx.animation.ParallelTransition ptItemIn = new javafx.animation.ParallelTransition(ftItem, stItem, ftText);
+                
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(1500));
+                
+                javafx.animation.FadeTransition ftItemOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), itemView);
+                ftItemOut.setToValue(0);
+                javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+                ftTextOut.setToValue(0);
+                javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+                ftOverOut.setToValue(0);
+                
+                javafx.animation.ParallelTransition ptItemOut = new javafx.animation.ParallelTransition(ftItemOut, ftTextOut, ftOverOut);
+                
+                javafx.animation.SequentialTransition seqItem = new javafx.animation.SequentialTransition(ptItemIn, pause, ptItemOut);
+                seqItem.setOnFinished(e2 -> {
+                    rootPane.getChildren().removeAll(overlayPane, itemView, lblMensaje);
+                    if (onFinish != null) onFinish.run();
+                });
+                seqItem.play();
+            } else {
+                // Not an item event (e.g. moto, lose turn). Show the text from the event directly
+                javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(msg);
+                lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 30));
+                lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
+                lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                lblMensaje.setWrappingWidth(W);
+                lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+                lblMensaje.setOpacity(0);
+                lblMensaje.setLayoutX(0);
+                lblMensaje.setLayoutY(H / 2);
+                rootPane.getChildren().add(lblMensaje);
+                
+                javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+                ftText.setToValue(1);
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+                javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+                ftTextOut.setToValue(0);
+                javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+                ftOverOut.setToValue(0);
+                
+                javafx.animation.ParallelTransition ptOutFinal = new javafx.animation.ParallelTransition(ftTextOut, ftOverOut);
+                javafx.animation.SequentialTransition seqItem = new javafx.animation.SequentialTransition(ftText, pause, ptOutFinal);
+                seqItem.setOnFinished(e2 -> {
+                    rootPane.getChildren().removeAll(overlayPane, lblMensaje);
+                    if (onFinish != null) onFinish.run();
+                });
+                seqItem.play();
+            }
         });
         seq.play();
     }
@@ -1296,15 +1495,7 @@ public class PantallaPartida {
         double H = escena.getHeight();
         javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
-        // =======================================================
-        // CÁLCULO DE POSICIONES CENTRADAS EN PANTALLA
-        // Bloque visual: [lblTurno] + gap + [dado]
-        //   Texto "Turno de X" : ~50px alto
-        //   Gap                :  20px
-        //   Dado               : DADO_SIZE px
-        //   Total grupo        : DADO_SIZE + 70px
-        // Se centra el grupo entero verticalmente en H/2.
-        // =======================================================
+    
         final double DADO_SIZE   = 380;
         final double TEXTO_H     = 50;       // altura estimada del label "Turno de X"
         final double GAP         = 20;       // espacio entre texto y dado
