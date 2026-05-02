@@ -842,4 +842,42 @@ public class GestorBBDD {
         }
         return lista;
     }
+
+    /**
+     * Obtiene el siguiente ID disponible de la sequence seq_id_partidas en Oracle.
+     * Si la sequence no existe o falla, devuelve un ID basado en timestamp como fallback.
+     */
+    public int obtenerSiguienteIdPartida() {
+        if (this.conexion == null) return -1;
+        String sql = "SELECT seq_id_partidas.NEXTVAL FROM dual";
+        try (java.sql.Statement st = this.conexion.createStatement();
+             java.sql.ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ No se pudo obtener ID de la sequence: " + e.getMessage());
+        }
+        // Fallback: timestamp truncado
+        return (int) (System.currentTimeMillis() % 1000000);
+    }
+
+    /**
+     * Guarda la partida generando automáticamente el ID con la sequence Oracle.
+     * Devuelve el ID generado, o -1 si hay error.
+     *
+     * @param p La partida a guardar
+     * @return El ID asignado a la partida, o -1 si hubo error
+     */
+    public int guardarPartidaAuto(Partida p) {
+        if (this.conexion == null) return -1;
+
+        // Obtener nuevo ID de la sequence
+        int nuevoId = obtenerSiguienteIdPartida();
+        if (nuevoId == -1) return -1;
+
+        // Reutilizar el método de guardado existente
+        boolean exito = guardarBBDD(p, nuevoId);
+        return exito ? nuevoId : -1;
+    }
 }

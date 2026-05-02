@@ -200,30 +200,48 @@ public class PantallaPartida {
  
     @FXML
     private void handleSaveGame(ActionEvent event) {
-        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog("");
-        dialog.setTitle("Guardar Partida");
-        dialog.setHeaderText("Guardar el estado actual en la BBDD Oracle");
-        dialog.setContentText("Introduce el ID numérico de tu partida:");
- 
-        java.util.Optional<String> result = dialog.showAndWait();
-        result.ifPresent(idStr -> {
-            try {
-                int idPartida = Integer.parseInt(idStr);
-                GestorBBDD gestor = new GestorBBDD();
-                gestor.iniciarConexionGUI();
-                boolean extio = gestor.guardarBBDD(partida, idPartida);
-                gestor.cerrarConexion();
-                
-                if (extio) {
-                    this.idPartidaActual = idPartida; // ⭐ Guardar el ID para usarlo al finalizar
-                    gestorUI.registrar("✅ Partida " + idPartida + " guardada en BBDD.");
-                } else {
-                    gestorUI.registrar("❌ Error al guardar en BBDD.");
-                }
-            } catch (NumberFormatException e) {
-                gestorUI.registrar("❌ El ID introducido no es válido. Debe ser número.");
+        GestorBBDD gestor = new GestorBBDD();
+        gestor.iniciarConexionGUI();
+
+        if (gestor.getConexion() == null) {
+            gestorUI.registrar("❌ No hay conexión a la BBDD.");
+            return;
+        }
+
+        // Si ya tenemos un ID asignado a esta partida, sobrescribir.
+        // Si no, generar uno nuevo con la sequence Oracle.
+        int idAUsar;
+        boolean esActualizacion = (this.idPartidaActual > 0);
+
+        if (esActualizacion) {
+            idAUsar = this.idPartidaActual;
+            boolean exito = gestor.guardarBBDD(partida, idAUsar);
+            gestor.cerrarConexion();
+            if (exito) {
+                gestorUI.registrar("✅ Partida " + idAUsar + " actualizada en BBDD.");
+            } else {
+                gestorUI.registrar("❌ Error al actualizar en BBDD.");
             }
-        });
+        } else {
+            // Primera vez que guardamos: generar ID automático
+            idAUsar = gestor.guardarPartidaAuto(partida);
+            gestor.cerrarConexion();
+            if (idAUsar > 0) {
+                this.idPartidaActual = idAUsar;
+                gestorUI.registrar("✅ Partida creada con ID " + idAUsar + " (asignado automáticamente).");
+
+                // Mostrar al usuario el ID que se le ha asignado
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.INFORMATION);
+                alert.setTitle("Partida guardada");
+                alert.setHeaderText("ID asignado: " + idAUsar);
+                alert.setContentText("Apunta este ID si quieres cargar la partida más tarde.\n" +
+                                     "También puedes verlo en la pantalla 'Cargar Partida'.");
+                alert.showAndWait();
+            } else {
+                gestorUI.registrar("❌ Error al guardar en BBDD.");
+            }
+        }
     }
  
     @FXML
@@ -1848,25 +1866,52 @@ public class PantallaPartida {
     }
 
     /**
-     * Notifica a Oracle que la partida ha finalizado y asigna el ganador.
-     * Esto dispara el trigger 'incrementar_wins' que actualiza partidas_ganadas.
-     * Solo funciona si el jugador ha guardado la partida al menos una vez.
+     * Notifica a Oracle que la partida ha finalizado.
+     * 1. Si la partida no se había guardado antes, le asigna ID automático.
+     * 2. Guarda el estado FINAL de la partida (con el ganador en su posición de victoria).
+     * 3. Asigna el ganador en BBDD (dispara el trigger 'incrementar_wins').
      */
     private void notificarFinPartidaBBDD(Jugador ganador) {
-        if (idPartidaActual <= 0) {
-            gestorUI.registrar("ℹ️ Partida no guardada en BBDD, no se actualizan estadísticas.");
-            return;
-        }
         try {
             GestorBBDD gestor = new GestorBBDD();
             gestor.iniciarConexionGUI();
+
+            if (gestor.getConexion() == null) {
+                gestorUI.registrar("⚠️ Sin conexión a BBDD, no se actualizan estadísticas.");
+                return;
+            }
+
+            // PASO 1: Si la partida no se había guardado nunca, asignar ID automático
+            if (idPartidaActual <= 0) {
+                int nuevoId = gestor.obtenerSiguienteIdPartida();
+                if (nuevoId > 0) {
+                    this.idPartidaActual = nuevoId;
+                    gestorUI.registrar("ℹ️ Partida nueva creada con ID " + nuevoId);
+                } else {
+                    gestorUI.registrar("⚠️ No se pudo generar ID, no se guardará la partida.");
+                    gestor.cerrarConexion();
+                    return;
+                }
+            }
+
+            // PASO 2: Guardar el ESTADO FINAL de la partida (con el ganador en la meta)
+            boolean exitoGuardado = gestor.guardarBBDD(partida, idPartidaActual);
+            if (exitoGuardado) {
+                gestorUI.registrar("💾 Estado final de la partida guardado.");
+            } else {
+                gestorUI.registrar("⚠️ No se pudo guardar el estado final.");
+            }
+
+            // PASO 3: Buscar id del ganador en tabla JUGADOR
             int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
             if (idGanador != -1) {
+                // PASO 4: Asignar ganador (dispara trigger incrementar_wins)
                 gestor.finalizarPartida(idPartidaActual, idGanador);
                 gestorUI.registrar("✅ Estadísticas actualizadas para " + ganador.getNombre());
             } else {
                 gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
             }
+
             gestor.cerrarConexion();
         } catch (Exception e) {
             gestorUI.registrar("❌ Error al actualizar estadísticas: " + e.getMessage());
