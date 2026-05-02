@@ -814,4 +814,32 @@ public class GestorBBDD {
             return e.getMessage();
         }
     }
+
+    /**
+     * Obtiene la lista completa de partidas con datos detallados.
+     * Devuelve cada fila como String[] {id, fecha_creacion, fecha_modificacion, estado, ganador}.
+     */
+    public ArrayList<String[]> obtenerListaPartidasCompleta() {
+        ArrayList<String[]> lista = new ArrayList<>();
+        if (this.conexion == null) return lista;
+        String sql = "SELECT p.id_partida, " +
+                     "       TO_CHAR(p.data_creacio, 'DD/MM/YYYY HH24:MI') AS creacion, " +
+                     "       TO_CHAR(p.data_modificacio, 'DD/MM/YYYY HH24:MI') AS modificacion, " +
+                     "       CASE WHEN p.ganador IS NULL THEN 'En curso' ELSE 'Finalizada' END AS estado, " +
+                     "       NVL(j.nombre_usuario, '-') AS ganador_nombre " +
+                     "  FROM PARTIDA p " +
+                     "  LEFT JOIN JUGADOR j ON p.ganador = j.id_jugador " +
+                     " ORDER BY p.id_partida DESC";
+        ArrayList<java.util.LinkedHashMap<String, String>> resultados = BBDD.select(this.conexion, sql);
+        for (java.util.LinkedHashMap<String, String> fila : resultados) {
+            lista.add(new String[] {
+                fila.get("ID_PARTIDA"),
+                fila.get("CREACION"),
+                fila.get("MODIFICACION"),
+                fila.get("ESTADO"),
+                fila.get("GANADOR_NOMBRE")
+            });
+        }
+        return lista;
+    }
 }
