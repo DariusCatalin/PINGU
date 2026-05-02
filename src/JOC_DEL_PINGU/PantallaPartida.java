@@ -686,8 +686,8 @@ public class PantallaPartida {
     }
  
     private void avanzarTurno() {
-        int turnoActual = partida.getIndiceJugadorActual(); 
-        int siguienteTurno = (turnoActual + 1) % partida.getJugadores().size(); 
+        int turnoActual = partida.getIndiceJugadorActual();
+        int siguienteTurno = (turnoActual + 1) % partida.getJugadores().size();
         partida.setJugadorActual(siguienteTurno);
     }
  
