@@ -601,6 +601,8 @@ public class PantallaPartida {
                 encolarAnimacionOso(j);
             } else if (casillaActual instanceof Agujero) {
                 encolarAnimacionAgujero(j, j.getPosicion());
+            } else if (casillaActual instanceof Trineo) {
+                encolarAnimacionTrineo(j, j.getPosicion());
             }
             // Salto directo para efectos de casilla (Oso, Trineo, etc.)
             encolarSaltoDirecto(j, j.getPosicion());
@@ -899,6 +901,13 @@ public class PantallaPartida {
         if (q == null) return;
         q.add(new int[]{destino, 4}); 
     }
+
+    /** Encola la animación del Trineo. Tipo 5. */
+    private void encolarAnimacionTrineo(Jugador j, int destino) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        q.add(new int[]{destino, 5}); 
+    }
  
     private void setUIInteractuable(boolean interactuable) {
         if (dado   != null) dado.setDisable(!interactuable);
@@ -973,6 +982,8 @@ public class PantallaPartida {
             mostrarAnimacionEvento(j, next);
         } else if (tipo == 4) {
             mostrarAnimacionAgujero(j, hasta, next);
+        } else if (tipo == 5) {
+            mostrarAnimacionTrineo(j, hasta, next);
         } else {
             animarConSaltito(fic, j, desde, hasta, next);
         }
@@ -1367,6 +1378,86 @@ public class PantallaPartida {
         rootPane.getChildren().add(imgView);
 
         javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " se ha caído!\ncaes a la casilla " + destino);
+        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
+        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblMensaje.setWrappingWidth(W);
+        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblMensaje.setOpacity(0);
+        lblMensaje.setManaged(false);
+        lblMensaje.setLayoutX(0);
+        lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+        rootPane.getChildren().add(lblMensaje);
+
+        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOver.setToValue(0.8);
+
+        javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+        ftImg.setToValue(1);
+        javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+        stImg.setToX(1.2);
+        stImg.setToY(1.2);
+
+        javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftText.setToValue(1);
+
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOverOut.setToValue(0);
+        javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+        ftImgOut.setToValue(0);
+        javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftTextOut.setToValue(0);
+
+        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+            if (onFinish != null) onFinish.run();
+        });
+        seq.play();
+    }
+
+    /** Muestra la animación a pantalla completa del trineo. */
+    private void mostrarAnimacionTrineo(Jugador j, int destino, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/trineo_ani.png");
+        if (recurso != null) {
+            imgView.setImage(new Image(recurso));
+        }
+        double IMG_SIZE = 400;
+        imgView.setFitWidth(IMG_SIZE);
+        imgView.setFitHeight(IMG_SIZE);
+        imgView.setPreserveRatio(true);
+        imgView.setOpacity(0);
+        imgView.setScaleX(0.5);
+        imgView.setScaleY(0.5);
+        imgView.setManaged(false);
+        imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+        imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+        rootPane.getChildren().add(imgView);
+
+        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " ha montado en trineo!\navanzas a la casilla " + destino);
         lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
         lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
         lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
