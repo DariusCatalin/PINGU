@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="1080" prefWidth="1920" styleClass="menu-bg" 
+            stylesheets="@PantallaPrincipal.css" 
+            xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="JOC_DEL_PINGU.PantallaRanking">
+
+    <ScrollPane fitToWidth="true" prefHeight="1080" prefWidth="1920" 
+                style="-fx-background-color: transparent; -fx-background: transparent;"
+                AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" 
+                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <content>
+            <VBox alignment="TOP_CENTER" spacing="20" 
+                  style="-fx-background-color: rgba(0,0,0,0.55);">
+                <padding>
+                    <Insets top="40" right="80" bottom="40" left="80"/>
+                </padding>
+
+                <!-- TÍTULO -->
+                <Label text="🏆 ESTADÍSTICAS Y RANKING 🏆" 
+                       style="-fx-font-size: 48px; -fx-font-weight: bold; 
+                              -fx-text-fill: gold; -fx-effect: dropshadow(gaussian, black, 5, 0.5, 2, 2);"/>
+
+                <!-- SECCIÓN 1: RESUMEN GENERAL -->
+                <VBox spacing="8" alignment="CENTER" 
+                      style="-fx-background-color: rgba(0, 0, 0, 0.6); 
+                             -fx-background-radius: 15; 
+                             -fx-border-color: gold; -fx-border-width: 2; 
+                             -fx-border-radius: 15; -fx-padding: 20;">
+                    <Label text="📊 RESUMEN GENERAL" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: gold;"/>
+                    <Label fx:id="lblRecord" text="🥇 Récord global: -" 
+                           style="-fx-font-size: 18px; -fx-text-fill: white;"/>
+                    <Label fx:id="lblMedia" text="📈 Media de victorias: -" 
+                           style="-fx-font-size: 18px; -fx-text-fill: white;"/>
+                    <Label fx:id="lblTotalJugadores" text="👥 Jugadores registrados: -" 
+                           style="-fx-font-size: 18px; -fx-text-fill: white;"/>
+                </VBox>
+
+                <!-- SECCIÓN 2: RANKING -->
+                <VBox spacing="8" alignment="CENTER" 
+                      style="-fx-background-color: rgba(0, 0, 0, 0.6); 
+                             -fx-background-radius: 15; 
+                             -fx-border-color: gold; -fx-border-width: 2; 
+                             -fx-border-radius: 15; -fx-padding: 20;">
+                    <Label text="🏆 RANKING POR PARTIDAS JUGADAS" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: gold;"/>
+                    <TableView fx:id="tablaRanking" prefHeight="300" prefWidth="900">
+                        <columns>
+                            <TableColumn fx:id="colPosicion" text="#" prefWidth="80"/>
+                            <TableColumn fx:id="colNombre" text="Jugador" prefWidth="350"/>
+                            <TableColumn fx:id="colPartidas" text="Partidas Jugadas" prefWidth="220"/>
+                            <TableColumn fx:id="colGanadas" text="Partidas Ganadas" prefWidth="220"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+
+                <!-- SECCIÓN 3: JUGADORES CON RÉCORD -->
+                <VBox spacing="8" alignment="CENTER" 
+                      style="-fx-background-color: rgba(0, 0, 0, 0.6); 
+                             -fx-background-radius: 15; 
+                             -fx-border-color: gold; -fx-border-width: 2; 
+                             -fx-border-radius: 15; -fx-padding: 20;">
+                    <Label text="⭐ JUGADORES CON EL RÉCORD ACTUAL" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: gold;"/>
+                    <Label fx:id="lblRecordistas" text="-" 
+                           style="-fx-font-size: 18px; -fx-text-fill: white;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- SECCIÓN 4: SOBRE LA MEDIA -->
+                <VBox spacing="8" alignment="CENTER" 
+                      style="-fx-background-color: rgba(0, 0, 0, 0.6); 
+                             -fx-background-radius: 15; 
+                             -fx-border-color: gold; -fx-border-width: 2; 
+                             -fx-border-radius: 15; -fx-padding: 20;">
+                    <Label text="📈 JUGADORES SOBRE LA MEDIA" 
+                           style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: gold;"/>
+                    <Label fx:id="lblSobreMedia" text="-" 
+                           style="-fx-font-size: 18px; -fx-text-fill: white;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- BOTONES -->
+                <HBox spacing="20" alignment="CENTER">
+                    <Button fx:id="btnRefrescar" text="🔄 Actualizar" 
+                            onAction="#handleRefrescar"
+                            style="-fx-font-size: 18px; -fx-padding: 10 30; 
+                                   -fx-background-color: #2196F3; -fx-text-fill: white;
+                                   -fx-background-radius: 10; -fx-cursor: hand;"/>
+                    <Button fx:id="btnVolver" text="⬅️ Volver al menú" 
+                            onAction="#handleVolver"
+                            style="-fx-font-size: 18px; -fx-padding: 10 30; 
+                                   -fx-background-color: #757575; -fx-text-fill: white;
+                                   -fx-background-radius: 10; -fx-cursor: hand;"/>
+                </HBox>
+
+            </VBox>
+        </content>
+    </ScrollPane>
+</AnchorPane>

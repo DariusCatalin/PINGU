@@ -29,4 +29,16 @@
     <!-- ============ BOTÓN VOLVER AL LOGIN (invisible) ============ -->
     <Button fx:id="btnVolverLogin" layoutX="739.0" layoutY="842.0" onAction="#handleVolverLogin" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
 
+    <!-- ============ BOTÓN PODIO/RANKING (esquina inferior derecha) ============ -->
+    <Button fx:id="btnRanking" layoutX="1740.0" layoutY="900.0" 
+            onAction="#handleRanking" 
+            prefHeight="140.0" prefWidth="140.0"
+            style="-fx-background-color: transparent; 
+                   -fx-background-image: url('/resources/podio.png'); 
+                   -fx-background-size: contain; 
+                   -fx-background-repeat: no-repeat;
+                   -fx-cursor: hand;
+                   -fx-effect: dropshadow(gaussian, gold, 10, 0.5, 0, 0);"
+            text="" />
+
 </AnchorPane>

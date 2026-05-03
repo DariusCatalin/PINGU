@@ -34,6 +34,7 @@ public class PantallaPrincipal {
     @FXML private Button btnNuevaPartida;
     @FXML private Button btnCargarPartida;
     @FXML private Button btnVolverLogin;
+    @FXML private Button btnRanking; // ⭐ NUEVO
  
     // ==========================================
     // AUXILIAR: obtener pantalla y stage
@@ -294,6 +295,32 @@ public class PantallaPrincipal {
  
         } catch (Exception e) {
             System.out.println("Error volviendo al login: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ==========================================
+    // ACCIÓN: VER RANKING / ESTADÍSTICAS
+    // ==========================================
+    @FXML
+    private void handleRanking(ActionEvent event) {
+        try {
+            System.out.println("Abriendo pantalla de Ranking y Estadísticas...");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaRanking.fxml"));
+            Parent root = loader.load();
+
+            Rectangle2D screen = getScreen();
+            Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
+            try {
+                scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+            } catch (Exception ignored) {}
+
+            Stage stage = getStage(event);
+            stage.setScene(scene);
+            aplicarFullScreen(stage, "El Juego del Pingüino - Ranking y Estadísticas");
+
+        } catch (Exception e) {
+            System.err.println("Error abriendo pantalla de ranking: " + e.getMessage());
             e.printStackTrace();
         }
     }
