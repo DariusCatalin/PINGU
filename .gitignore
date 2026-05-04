@@ -23,3 +23,10 @@
 hs_err_pid*
 replay_pid*
 /bin/
+
+# Configuraciones locales de Eclipse (con rutas absolutas)
+*.launch
+
+# Configuración del workspace de Eclipse
+.metadata/
+.settings/
