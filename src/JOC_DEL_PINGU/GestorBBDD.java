@@ -680,7 +680,11 @@ public class GestorBBDD {
             // 1. Asignar ganador (dispara trigger incrementar_wins)
             String sql1 = "UPDATE PARTIDA SET ganador = ?, data_modificacio = CURRENT_TIMESTAMP WHERE id_partida = ?";
             try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql1)) {
-                ps.setInt(1, idGanador);
+                if (idGanador == -1) {
+                    ps.setNull(1, java.sql.Types.INTEGER);
+                } else {
+                    ps.setInt(1, idGanador);
+                }
                 ps.setInt(2, idPartida);
                 ps.executeUpdate();
             }
