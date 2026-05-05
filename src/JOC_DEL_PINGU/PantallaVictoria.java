@@ -189,22 +189,9 @@ public class PantallaVictoria {
             double mediaGlobal = gestor.obtenerMediaWins();
             int idJugador = gestor.obtenerIdJugador(nombreGanador);
 
-            int[] misVictoriasRef = {0};
-            if (idJugador != -1) {
-                String sql = "SELECT partidas_ganadas FROM JUGADOR WHERE id_jugador = " + idJugador;
-                java.util.ArrayList<java.util.LinkedHashMap<String, String>> r = BBDD.select(gestor.getConexion(), sql);
-                if (r != null && !r.isEmpty()) {
-                    String pg = r.get(0).get("PARTIDAS_GANADAS");
-                    if (pg != null && !pg.isEmpty()) {
-                        try {
-                            misVictoriasRef[0] = Integer.parseInt(pg);
-                        } catch (NumberFormatException nfe) {
-                            misVictoriasRef[0] = 0;
-                        }
-                    }
-                }
-            }
-            final int misVictorias = misVictoriasRef[0];
+            // Obtener partidas ganadas del jugador llamando a la function
+            // PARTIDAS_GANADAS_JUGADOR de Oracle (no SELECT directo)
+            final int misVictorias = (idJugador != -1) ? gestor.obtenerVictoriasJugador(idJugador) : 0;
 
             // % de jugadores con menos victorias que el ganador
             final double porcentaje = gestor.obtenerPorcentajeMenosWins(misVictorias);
