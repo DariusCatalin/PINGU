@@ -114,7 +114,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha);
             }
@@ -184,7 +184,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
             }
@@ -1760,10 +1760,18 @@ public class PantallaPartida {
         if (nieve_t != null) nieve_t.setText("Bolas: " + bolas);
     }
  
+    /** Devuelve la ruta del PNG según el tipo de jugador. */
+    private String obtenerRutaPersonaje(Jugador j) {
+        if (j instanceof Foca) return "/resources/foca.png";
+        return obtenerRutaPersonaje(j.getColor());
+    }
+
     /** Devuelve la ruta del PNG según el color del jugador. */
     private String obtenerRutaPersonaje(String color) {
         if (color == null) return "/resources/Personaje Amarillo.png";
         switch (color.toLowerCase()) {
+            case "gris":
+            case "foca":     return "/resources/foca.png";
             case "amarillo": return "/resources/Personaje Amarillo.png";
             case "rojo":     return "/resources/Personaje Rojo.png";
             case "verde":    return "/resources/Personaje Verde.png";
@@ -2041,24 +2049,26 @@ public class PantallaPartida {
 
             // PASO 3: Buscar id del ganador en tabla JUGADOR
             int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
-            if (idGanador != -1) {
-                // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
-                java.util.List<String> participantes = new java.util.ArrayList<>();
-                if (partida != null && partida.getJugadores() != null) {
-                    for (Jugador jug : partida.getJugadores()) {
-                        // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
-                        if (jug instanceof Pinguino) {
-                            participantes.add(jug.getNombre());
-                        }
+            
+            // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
+            java.util.List<String> participantes = new java.util.ArrayList<>();
+            if (partida != null && partida.getJugadores() != null) {
+                for (Jugador jug : partida.getJugadores()) {
+                    // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
+                    if (jug instanceof Pinguino) {
+                        participantes.add(jug.getNombre());
                     }
                 }
+            }
 
-                // PASO 5: Asignar ganador y actualizar num_partidas a todos
-                gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+            // PASO 5: Asignar ganador y actualizar num_partidas a todos
+            gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+            if (idGanador != -1) {
                 gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
                                  + " jugadores. Ganador: " + ganador.getNombre());
             } else {
-                gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
+                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
+                                 + " jugadores. ¡La IA ha ganado!");
             }
 
             gestor.cerrarConexion();
