@@ -39,6 +39,11 @@ public class GestorEventos {
         return sb.toString();
     }
     
+    public String getUltimoMensaje() {
+        if (log.isEmpty()) return "";
+        return log.get(log.size() - 1);
+    }
+    
    
     public void limpiar() {
         log.clear();

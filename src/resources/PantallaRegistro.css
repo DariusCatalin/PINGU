@@ -1,0 +1,108 @@
+/* ==========================================================
+   PantallaRegistro.css
+   Estilos para la pantalla "Crear cuenta" del Juego del Pingüino.
+   La imagen de fondo (registro_usu.png) ya contiene:
+     - Título "CREAR CUENTA"
+     - Etiqueta "REPETIR CONTRASEÑA:"
+     - Botones "CREAR CUENTA" y "VOLVER AL LOGIN"
+   Por eso los botones JavaFX son invisibles y los campos
+   son transparentes para no ocultar los recuadros pintados.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   FONDO DE PANTALLA
+   ---------------------------------------------------------- */
+.register-bg {
+    -fx-background-image: url("registro_usu.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+}
+
+
+/* ----------------------------------------------------------
+   CAMPOS DE TEXTO TRANSPARENTES
+   Se superponen sobre los recuadros pintados en la imagen.
+   ---------------------------------------------------------- */
+.transparent-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-padding: 0 14 0 14;
+
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a2a4a;
+    -fx-prompt-text-fill: #6b7a99;
+
+    -fx-alignment: CENTER;
+
+    -fx-highlight-fill: #88c4ff;
+    -fx-highlight-text-fill: #ffffff;
+}
+
+.transparent-field:focused {
+    -fx-background-color: rgba(255, 255, 255, 0.18);
+    -fx-border-color: rgba(120, 180, 255, 0.7);
+    -fx-border-width: 2;
+    -fx-border-radius: 6;
+    -fx-effect: dropshadow(gaussian, rgba(100, 180, 255, 0.45), 8, 0.3, 0, 0);
+}
+
+
+/* ----------------------------------------------------------
+   BOTONES INVISIBLES
+   ---------------------------------------------------------- */
+.invisible-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.invisible-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-background-radius: 12;
+}
+
+.invisible-button:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.10);
+    -fx-background-radius: 12;
+}
+
+.invisible-button:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+
+/* ----------------------------------------------------------
+   MENSAJES DE ERROR / ÉXITO
+   ---------------------------------------------------------- */
+.error-label {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ff5252;
+    -fx-background-color: rgba(0, 0, 0, 0.55);
+    -fx-padding: 6 14 6 14;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(255, 80, 80, 0.5), 6, 0.2, 0, 0);
+}
+
+.success-label {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6dffb0;
+    -fx-background-color: rgba(0, 0, 0, 0.55);
+    -fx-padding: 6 14 6 14;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(120, 255, 180, 0.5), 6, 0.2, 0, 0);
+}

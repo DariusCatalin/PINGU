@@ -2,27 +2,31 @@
    PantallaVictoria.css  –  Pantalla de victoria del Joc del Pinguí
    ============================================================ */
 
+/* Fondo negro base (visible antes de cargar la imagen) */
 .victoria-root {
-    -fx-background-color: #0a0a1a;
+    -fx-background-color: #000000;
 }
 
-/* Imagen central: ocupa todo el espacio disponible */
+/* Imagen: sin efectos que causen bordes o brillos */
 .victoria-img {
-    -fx-effect: dropshadow(gaussian, rgba(255, 215, 0, 0.6), 40, 0.4, 0, 0);
+    /* Sin dropshadow para evitar el contorno negro/dorado */
 }
 
-/* Barra inferior con degradado oscuro */
-.victoria-bottom {
-    -fx-background-color: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 100%);
-    -fx-padding: 20 40 30 40;
+/* Overlay inferior: gradiente oscuro para que el texto y botones sean legibles */
+.victoria-overlay {
+    -fx-background-color: linear-gradient(to top,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(0, 0, 0, 0.55) 60%,
+        rgba(0, 0, 0, 0.0) 100%);
+    -fx-min-height: 160;
 }
 
 /* Título del ganador */
 .victoria-title {
     -fx-text-fill: #FFD700;
-    -fx-font-size: 36px;
+    -fx-font-size: 34px;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.8), 20, 0.5, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.95), 8, 0.6, 0, 2);
     -fx-font-family: "Segoe UI", "Arial", sans-serif;
 }
 
@@ -35,15 +39,14 @@
     -fx-border-radius: 10;
     -fx-cursor: hand;
     -fx-text-fill: white;
-    -fx-background-color: #2a2a4a;
-    -fx-border-color: rgba(255,255,255,0.2);
+    -fx-background-color: rgba(30, 30, 70, 0.92);
+    -fx-border-color: rgba(255, 255, 255, 0.3);
     -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 8, 0, 0, 3);
-    -fx-transition: all 0.2s;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 3);
 }
 
 .victoria-btn:hover {
-    -fx-background-color: #3a3a6a;
+    -fx-background-color: rgba(50, 50, 100, 0.95);
     -fx-scale-x: 1.04;
     -fx-scale-y: 1.04;
 }

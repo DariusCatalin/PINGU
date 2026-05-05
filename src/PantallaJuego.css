@@ -25,6 +25,44 @@
     -fx-background-color: rgba(47, 111, 237, 0.45);
 }
 
+/* 2. Popup del menú desplegable */
+.context-menu {
+    -fx-background-color: rgba(5, 10, 30, 0.96);
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(80, 140, 255, 0.5);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 12, 0, 0, 4);
+    -fx-padding: 4;
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 8 16;
+}
+
+.menu-item .label {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 14px;
+}
+
+.menu-item:hover,
+.menu-item:focused {
+    -fx-background-color: rgba(47, 111, 237, 0.45);
+    -fx-background-radius: 6;
+}
+
+.menu-item:hover .label,
+.menu-item:focused .label {
+    -fx-text-fill: white;
+}
+
+/* Separador dentro del menú */
+.separator .line {
+    -fx-border-color: rgba(80, 140, 255, 0.3);
+    -fx-border-width: 1 0 0 0;
+}
+
 /* TABLERO (Cristal Esmerilado para disimular los PNGs blancos) */
 .board {
     -fx-background-color: transparent;

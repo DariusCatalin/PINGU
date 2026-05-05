@@ -1,0 +1,55 @@
+/* ============================================================
+   PantallaPrincipal.css
+   Estilos para el menú principal del Juego del Pingüino (1920x1080).
+   La imagen de fondo (FONDO_MENÚ.png) ya contiene:
+     - Título "JUEGO DEL PINGU"
+     - Botones "NUEVA PARTIDA", "CARGAR PARTIDA", "VOLVER AL LOGIN"
+   Por eso los botones JavaFX son invisibles y se superponen
+   sobre los pintados en la imagen.
+   ============================================================ */
+
+
+/* ---------- Fondo general ---------- */
+.menu-bg {
+    -fx-background-image: url("FONDO_MENU.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-color: #0a1a2e; /* fallback si la imagen no carga */
+}
+
+
+/* ---------- Botones invisibles pero clicables ---------- */
+.btn-invisible {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-text-fill: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+/* Al pasar el ratón: brillo blanco suave */
+.btn-invisible:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.6), 12, 0.3, 0, 0);
+}
+
+/* Al pulsar: ligero hundimiento */
+.btn-invisible:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.15);
+    -fx-background-radius: 14;
+    -fx-translate-y: 2;
+}
+
+/* Quitar el borde de foco azul de JavaFX */
+.btn-invisible:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+

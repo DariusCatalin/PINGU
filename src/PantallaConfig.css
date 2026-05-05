@@ -1,4 +1,15 @@
 /* ============================
+   FONDO DE PANTALLA
+   ============================ */
+
+.main-menu-bg {
+    -fx-background-image: url("resources/fondo.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+}
+
+/* ============================
    PANEL CENTRAL DE CONFIGURACIÓN
    ============================ */
 

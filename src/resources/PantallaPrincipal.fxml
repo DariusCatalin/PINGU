@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<!--
+    MENÚ PRINCIPAL - PantallaPrincipal
+    Diseñado a 1920x1080 (resolución nativa de la imagen).
+    La imagen de fondo (FONDO_MENÚ.png) ya contiene:
+      - Título "JUEGO DEL PINGU"
+      - Botón "NUEVA PARTIDA"
+      - Botón "CARGAR PARTIDA"
+      - Botón "VOLVER AL LOGIN"
+
+    Los 3 botones JavaFX son INVISIBLES y se superponen
+    exactamente sobre los botones pintados en la imagen.
+    En SceneBuilder puedes arrastrar cualquier botón donde quieras
+    y se actualizan automáticamente sus coordenadas.
+-->
+
+<AnchorPane prefHeight="1080" prefWidth="1920" styleClass="menu-bg" stylesheets="@PantallaPrincipal.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="JOC_DEL_PINGU.PantallaPrincipal">
+
+    <!-- ============ BOTÓN NUEVA PARTIDA (invisible) ============ -->
+    <Button fx:id="btnNuevaPartida" layoutX="736.0" layoutY="418.0" onAction="#handleNuevaPartida" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
+
+    <!-- ============ BOTÓN CARGAR PARTIDA (invisible) ============ -->
+    <Button fx:id="btnCargarPartida" layoutX="739.0" layoutY="623.0" onAction="#handleCargarPartida" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
+
+    <!-- ============ BOTÓN VOLVER AL LOGIN (invisible) ============ -->
+    <Button fx:id="btnVolverLogin" layoutX="739.0" layoutY="842.0" onAction="#handleVolverLogin" prefHeight="164.0" prefWidth="428.0" styleClass="btn-invisible" text="" />
+
+    <!-- ============ BOTÓN PODIO/RANKING (esquina inferior derecha) ============ -->
+    <Button fx:id="btnRanking" layoutX="1740.0" layoutY="900.0" 
+            onAction="#handleRanking" 
+            prefHeight="140.0" prefWidth="140.0"
+            style="-fx-background-color: transparent; 
+                   -fx-background-image: url('/resources/podio.png'); 
+                   -fx-background-size: contain; 
+                   -fx-background-repeat: no-repeat;
+                   -fx-cursor: hand;
+                   -fx-effect: dropshadow(gaussian, gold, 10, 0.5, 0, 0);"
+            text="" />
+
+</AnchorPane>
