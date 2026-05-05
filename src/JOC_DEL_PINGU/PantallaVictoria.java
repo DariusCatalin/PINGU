@@ -32,6 +32,7 @@ public class PantallaVictoria {
     // Datos pasados desde PantallaPartida
     private String nombreGanador;
     private String colorGanador;
+    private boolean esFoca;
 
     // Sonido de victoria
     private MediaPlayer mediaPlayer;
@@ -63,9 +64,10 @@ public class PantallaVictoria {
      * Recibe el nombre y color del jugador ganador.
      * Debe llamarse DESPUÉS de que el FXMLLoader haya procesado el FXML.
      */
-    public void setGanador(String nombre, String color) {
+    public void setGanador(String nombre, String color, boolean esFoca) {
         this.nombreGanador = nombre;
         this.colorGanador  = color;
+        this.esFoca = esFoca;
         aplicarDatosGanador();
         reproducirSonidoVictoria();
     }
@@ -120,6 +122,7 @@ public class PantallaVictoria {
 
     /** Mapea color del jugador → ruta del recurso de imagen de victoria. */
     private String obtenerRutaVictoria(String color) {
+        if (esFoca) return "/resources/victoria Foca.png";
         if (color == null) return "/resources/Victoria Azul.png";
         switch (color.toLowerCase()) {
             case "rojo":     return "/resources/Rojo Victoria.png";

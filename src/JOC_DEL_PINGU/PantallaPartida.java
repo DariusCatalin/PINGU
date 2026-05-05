@@ -660,7 +660,7 @@ public class PantallaPartida {
  
             // Pasar datos del ganador al controlador de victoria
             PantallaVictoria controlador = loader.getController();
-            controlador.setGanador(ganador.getNombre(), ganador.getColor());
+            controlador.setGanador(ganador.getNombre(), ganador.getColor(), ganador instanceof Foca);
  
             Scene scene = new Scene(root);
  
