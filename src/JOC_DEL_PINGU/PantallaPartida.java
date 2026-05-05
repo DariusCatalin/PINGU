@@ -114,7 +114,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha);
             }
@@ -184,7 +184,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
             }
@@ -1760,10 +1760,18 @@ public class PantallaPartida {
         if (nieve_t != null) nieve_t.setText("Bolas: " + bolas);
     }
  
+    /** Devuelve la ruta del PNG según el tipo de jugador. */
+    private String obtenerRutaPersonaje(Jugador j) {
+        if (j instanceof Foca) return "/resources/foca.png";
+        return obtenerRutaPersonaje(j.getColor());
+    }
+
     /** Devuelve la ruta del PNG según el color del jugador. */
     private String obtenerRutaPersonaje(String color) {
         if (color == null) return "/resources/Personaje Amarillo.png";
         switch (color.toLowerCase()) {
+            case "gris":
+            case "foca":     return "/resources/foca.png";
             case "amarillo": return "/resources/Personaje Amarillo.png";
             case "rojo":     return "/resources/Personaje Rojo.png";
             case "verde":    return "/resources/Personaje Verde.png";
