@@ -10,6 +10,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 
 public class PantallaVictoria {
@@ -25,6 +27,9 @@ public class PantallaVictoria {
     private String nombreGanador;
     private String colorGanador;
 
+    // Sonido de victoria
+    private MediaPlayer mediaPlayer;
+
     // ==========================================
     // INICIALIZACIÓN (llamada por PantallaPartida antes de mostrar)
     // ==========================================
@@ -37,6 +42,32 @@ public class PantallaVictoria {
         this.nombreGanador = nombre;
         this.colorGanador  = color;
         aplicarDatosGanador();
+        reproducirSonidoVictoria();
+    }
+
+    /** Reproduce el sonido de victoria de Clash Royale. */
+    private void reproducirSonidoVictoria() {
+        try {
+            var url = getClass().getResource("/resources/sonido de victoria clash royale.mp3");
+            if (url != null) {
+                Media media = new Media(url.toExternalForm());
+                mediaPlayer = new MediaPlayer(media);
+                mediaPlayer.play();
+            } else {
+                System.err.println("No se encontró el sonido de victoria.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al reproducir sonido de victoria: " + e.getMessage());
+        }
+    }
+
+    /** Detiene el sonido si está reproduciéndose. */
+    private void detenerSonido() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            mediaPlayer = null;
+        }
     }
 
     private void aplicarDatosGanador() {
@@ -79,6 +110,7 @@ public class PantallaVictoria {
 
     @FXML
     private void handleNuevaPartida(ActionEvent event) {
+        detenerSonido();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaConfig.fxml"));
             Parent root = loader.load();
@@ -108,6 +140,7 @@ public class PantallaVictoria {
 
     @FXML
     private void handleMenu(ActionEvent event) {
+        detenerSonido();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaPrincipal.fxml"));
             Parent root = loader.load();
@@ -128,6 +161,7 @@ public class PantallaVictoria {
 
     @FXML
     private void handleSalir(ActionEvent event) {
+        detenerSonido();
         System.out.println("Saliendo del juego desde pantalla de victoria. ¡Hasta luego!");
         javafx.application.Platform.exit();
     }
