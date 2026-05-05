@@ -540,16 +540,19 @@ public class PantallaPartida {
             objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            encolarAnimacionGuerra(actual, actual.getNombre() + ":" + objetivo.getNombre() + ":" + diff);
             encolarSaltoDirecto(objetivo, objetivo.getPosicion());
         } else if (bolasObj > bolasActual) {
             int diff = bolasObj - bolasActual;
             actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            encolarAnimacionGuerra(objetivo, objetivo.getNombre() + ":" + actual.getNombre() + ":" + diff);
             encolarSaltoDirecto(actual, actual.getPosicion());
         } else {
             gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
                 + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
+            encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + objetivo.getNombre() + ":0");
         }
  
         // Lanzar bolas ES la acción del turno (reemplaza tirar dado)
@@ -714,15 +717,18 @@ public class PantallaPartida {
                         int diff = bolasA - bolasO;
                         int dest = Math.max(0, otro.getPosicion() - diff);
                         otro.moverPosicion(dest);
+                        encolarAnimacionGuerra(actual, actual.getNombre() + ":" + otro.getNombre() + ":" + diff);
                         encolarSaltoDirecto(otro, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
                     } else if (bolasO > bolasA) {
                         int diff = bolasO - bolasA;
                         int dest = Math.max(0, actual.getPosicion() - diff);
                         actual.moverPosicion(dest);
+                        encolarAnimacionGuerra(otro, otro.getNombre() + ":" + actual.getNombre() + ":" + diff);
                         encolarSaltoDirecto(actual, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
                     } else {
+                        encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + otro.getNombre() + ":0");
                         gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
                     }
                 }
@@ -880,6 +886,7 @@ public class PantallaPartida {
     private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
     private java.util.Map<Jugador, String> ultimoEventoVisual = new java.util.HashMap<>();
+    private java.util.Map<Jugador, String> ultimoGuerraVisual = new java.util.HashMap<>();
     private boolean animando = false;
 
     private void inicializarColas() {
@@ -944,6 +951,14 @@ public class PantallaPartida {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{destino, 5}); 
+    }
+
+    /** Encola la animación de la Guerra de Bolas. Tipo 6. */
+    private void encolarAnimacionGuerra(Jugador j, String data) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        ultimoGuerraVisual.put(j, data);
+        q.add(new int[]{j.getPosicion(), 6}); // Destino no importa
     }
  
     private void setUIInteractuable(boolean interactuable) {
@@ -1021,6 +1036,8 @@ public class PantallaPartida {
             mostrarAnimacionAgujero(j, hasta, next);
         } else if (tipo == 5) {
             mostrarAnimacionTrineo(j, hasta, next);
+        } else if (tipo == 6) {
+            mostrarAnimacionGuerra(j, next);
         } else {
             animarConSaltito(fic, j, desde, hasta, next);
         }
@@ -1375,6 +1392,114 @@ public class PantallaPartida {
                 });
                 seqItem.play();
             }
+        });
+        seq.play();
+    }
+
+    /** Muestra la animación a pantalla completa de la Guerra de Bolas. */
+    private void mostrarAnimacionGuerra(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        javafx.scene.image.ImageView guerraView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/guerra_bolas.png");
+        if (recurso != null) {
+            guerraView.setImage(new Image(recurso));
+        }
+        double IMG_SIZE = 400;
+        guerraView.setFitWidth(IMG_SIZE);
+        guerraView.setFitHeight(IMG_SIZE);
+        guerraView.setPreserveRatio(true);
+        guerraView.setOpacity(0);
+        guerraView.setScaleX(0.5);
+        guerraView.setScaleY(0.5);
+        guerraView.setManaged(false);
+        guerraView.setLayoutX(W / 2 - IMG_SIZE / 2);
+        guerraView.setLayoutY(H / 2 - IMG_SIZE / 2);
+        rootPane.getChildren().add(guerraView);
+
+        String data = ultimoGuerraVisual.getOrDefault(j, "::0");
+        String[] parts = data.split(":");
+        String txtGanador = "";
+        String txtPerdedor = "";
+        if (parts[0].equals("EMPATE")) {
+            txtGanador = "¡Empate!";
+            txtPerdedor = "Nadie retrocede";
+        } else {
+            txtGanador = "Ha Ganado " + parts[0];
+            txtPerdedor = parts[1] + " retrocede " + parts[2] + " casilla/s";
+        }
+
+        javafx.scene.text.Text lblTitulo = new javafx.scene.text.Text("¡Guerra de bolas de nieve!");
+        lblTitulo.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblTitulo.setFill(javafx.scene.paint.Color.WHITE);
+        lblTitulo.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblTitulo.setWrappingWidth(W);
+        lblTitulo.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblTitulo.setOpacity(0);
+        lblTitulo.setManaged(false);
+        lblTitulo.setLayoutX(0);
+        lblTitulo.setLayoutY(H / 2 - IMG_SIZE / 2 - 20);
+        rootPane.getChildren().add(lblTitulo);
+
+        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(txtGanador + "\n" + txtPerdedor);
+        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblMensaje.setFill(javafx.scene.paint.Color.web("#44AAFF"));
+        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblMensaje.setWrappingWidth(W);
+        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblMensaje.setOpacity(0);
+        lblMensaje.setManaged(false);
+        lblMensaje.setLayoutX(0);
+        lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 60);
+        rootPane.getChildren().add(lblMensaje);
+
+        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOver.setToValue(0.8);
+
+        javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), guerraView);
+        ftImg.setToValue(1);
+        javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), guerraView);
+        stImg.setToX(1.2);
+        stImg.setToY(1.2);
+
+        javafx.animation.FadeTransition ftTitulo = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+        ftTitulo.setToValue(1);
+        javafx.animation.FadeTransition ftMensaje = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftMensaje.setToValue(1);
+
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftTitulo, ftMensaje);
+
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOverOut.setToValue(0);
+        javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), guerraView);
+        ftImgOut.setToValue(0);
+        javafx.animation.FadeTransition ftTituloOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+        ftTituloOut.setToValue(0);
+        javafx.animation.FadeTransition ftMensajeOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftMensajeOut.setToValue(0);
+
+        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTituloOut, ftMensajeOut);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().removeAll(overlayPane, guerraView, lblTitulo, lblMensaje);
+            if (onFinish != null) onFinish.run();
         });
         seq.play();
     }
