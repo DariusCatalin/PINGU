@@ -344,7 +344,7 @@ public class PantallaPartida {
         int tirada = (int)(Math.random() * 6) + 1;
 
         // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
-        String[] config = obtenerConfigAnimacion(actual.getColor());
+        String[] config = obtenerConfigAnimacion(actual, "normal");
         if (config != null) {
             final int tiradaFinal = tirada;
             setUIInteractuable(false);
@@ -461,7 +461,7 @@ public class PantallaPartida {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
 
                 // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
-                String[] config = obtenerConfigAnimacion(actual.getColor());
+                String[] config = obtenerConfigAnimacion(actual, nombreDado);
                 if (config != null) {
                     final int tiradaFinal = tirada;
                     setUIInteractuable(false);
@@ -564,18 +564,7 @@ public class PantallaPartida {
     // LÓGICA INTERNA DE TURNOS Y CASILLAS
     // ==========================================
  
-    private void jugarTurnoCPU_IA(Foca foca, ImageView fichaVisual) {
-        if (foca.estaPenalizado()) {
-            foca.decrementarPenalizacion();
-            gestorUI.registrar("La foca " + foca.getNombre() + " está entretenida comiendo. Pierde su turno.");
-        } else {
-            int tirada = (int)(Math.random() * 6) + 1;
-            moverJugadorYAccion(foca, tirada, "tirada CPU");
-        }
-        
-        actualizarPosicionVisual(foca, fichaVisual);
-        avanzarTurno(); // Devuelve el turno al jugador
-    }
+
  
     private void moverJugadorYAccion(Jugador j, int tirada, String contexto) {
         int posInicial = j.getPosicion();
@@ -757,13 +746,29 @@ public class PantallaPartida {
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
                 gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
+                avanzarTurno();
+                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
             } else {
                 int tirada = (int)(Math.random() * 6) + 1;
-                moverJugadorYAccion(actual, tirada, "tirada CPU");
+                
+                String[] config = obtenerConfigAnimacion(actual, "normal");
+                if (config != null) {
+                    final int tiradaFinal = tirada;
+                    setUIInteractuable(false);
+                    mostrarAnimacionTurno(actual, tiradaFinal,
+                        config[0],
+                        javafx.scene.paint.Color.web(config[1]),
+                        () -> {
+                            moverJugadorYAccion(actual, tiradaFinal, "tirada CPU");
+                            avanzarTurno();
+                            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                        });
+                } else {
+                    moverJugadorYAccion(actual, tirada, "tirada CPU");
+                    avanzarTurno();
+                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                }
             }
-            avanzarTurno();
-            // Animación y callback a la siguiente CPU
-            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
         } else {
             // 5. Turno humano: actualizar texto de turno + habilitar controles
             actualizarTextosTurno();
@@ -1809,15 +1814,23 @@ public class PantallaPartida {
      *   [0] = ruta de la imagen del dado  (/resources/dado_XXX.png)
      *   [1] = color HEX del texto de resultado
      * Devuelve null si ese color no tiene animación configurada.
-     * Para añadir un nuevo color, basta con añadir una línea aquí.
      */
-    private String[] obtenerConfigAnimacion(String color) {
+    private String[] obtenerConfigAnimacion(Jugador j, String tipoDado) {
+        if (tipoDado != null) {
+            if (tipoDado.equals("Dado Rápido")) return new String[]{"/resources/dado_rapido.png", "#FF4500"};
+            if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
+        }
+        
+        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"};
+
+        String color = j.getColor();
         if (color == null) return null;
         switch (color.toLowerCase()) {
             case "amarillo": return new String[]{"/resources/dado_amarillo.png", "#FFD700"};
             case "azul":     return new String[]{"/resources/dado_azul.png",     "#00BFFF"};
-            case "rojo":     return new String[]{"/resources/dado_rojo.png",      "#FF4444"};
-            case "verde":    return new String[]{"/resources/dado_verde.png",     "#00FF7F"};
+            case "rojo":     return new String[]{"/resources/dado_rojo.png",     "#FF4444"};
+            case "verde":    return new String[]{"/resources/dado_verde.png",    "#00FF7F"};
+            case "gris":     return new String[]{"/resources/dado_foca.png",     "#A9A9A9"};
             default:         return null;
         }
     }
