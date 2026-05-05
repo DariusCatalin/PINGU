@@ -75,15 +75,8 @@ public class PantallaRanking {
             double media = gestor.obtenerMediaWins();
             lblMedia.setText("📈 Media de victorias: " + media + " por jugador");
 
-            // 3. Total de jugadores registrados
-            String sql = "SELECT COUNT(*) AS total FROM JUGADOR";
-            java.util.ArrayList<java.util.LinkedHashMap<String, String>> r =
-                BBDD.select(gestor.getConexion(), sql);
-            int total = 0;
-            if (r != null && !r.isEmpty()) {
-                String t = r.get(0).get("TOTAL");
-                if (t != null) total = Integer.parseInt(t);
-            }
+            // 3. Total de jugadores registrados (llama a function TOTAL_JUGADORES de Oracle)
+            int total = gestor.obtenerTotalJugadores();
             lblTotalJugadores.setText("👥 Jugadores registrados: " + total);
 
             // 4. Ranking por partidas jugadas

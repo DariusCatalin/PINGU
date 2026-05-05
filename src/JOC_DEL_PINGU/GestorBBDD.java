@@ -646,20 +646,21 @@ public class GestorBBDD {
     }
 
     /**
-     * Obtiene el id_jugador a partir del username.
+     * Obtiene el id_jugador a partir del username llamando al procedure
+     * OBTENER_ID_JUGADOR de Oracle.
      * Devuelve -1 si no existe.
      */
     public int obtenerIdJugador(String username) {
         if (this.conexion == null) return -1;
-        String sql = "SELECT id_jugador FROM JUGADOR WHERE nombre_usuario = ?";
-        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql)) {
-            ps.setString(1, username);
-            java.sql.ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+        try (CallableStatement cs = this.conexion.prepareCall("{ call OBTENER_ID_JUGADOR(?, ?) }")) {
+            cs.setString(1, username);
+            cs.registerOutParameter(2, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getInt(2);
         } catch (Exception e) {
             System.err.println("❌ Error al obtener id_jugador: " + e.getMessage());
+            return -1;
         }
-        return -1;
     }
 
     // ==================== FINALITZAR PARTIDA ====================
@@ -907,5 +908,38 @@ public class GestorBBDD {
         // Reutilizar el método de guardado existente
         boolean exito = guardarBBDD(p, nuevoId);
         return exito ? nuevoId : -1;
+    }
+
+    /**
+     * Obtiene el número total de jugadores registrados llamando a la function
+     * TOTAL_JUGADORES de Oracle.
+     */
+    public int obtenerTotalJugadores() {
+        if (this.conexion == null) return 0;
+        try (CallableStatement cs = this.conexion.prepareCall("{ ? = call TOTAL_JUGADORES() }")) {
+            cs.registerOutParameter(1, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getInt(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo total de jugadores: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene cuántas partidas ha ganado un jugador concreto, llamando a la
+     * function PARTIDAS_GANADAS_JUGADOR de Oracle.
+     */
+    public int obtenerVictoriasJugador(int idJugador) {
+        if (this.conexion == null) return 0;
+        try (CallableStatement cs = this.conexion.prepareCall("{ ? = call PARTIDAS_GANADAS_JUGADOR(?) }")) {
+            cs.registerOutParameter(1, java.sql.Types.NUMERIC);
+            cs.setInt(2, idJugador);
+            cs.execute();
+            return cs.getInt(1);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo victorias del jugador: " + e.getMessage());
+            return 0;
+        }
     }
 }
