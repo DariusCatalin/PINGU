@@ -8,7 +8,10 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
  
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -50,6 +53,8 @@ public class PantallaPartida {
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
     /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
     private javafx.scene.control.ContextMenu ctxMenuEscape;
+    /** Reproductor del sonido de foca (suena 1 segundo al inicio de cada turno de Foca) */
+    private MediaPlayer mediaPlayerFoca;
  
     // Gestor de eventos simple para mostrar textos en la pantalla
     private GestorEventos gestorUI = new GestorEventos() {
@@ -742,8 +747,8 @@ public class PantallaPartida {
         if (partida.isFinalizada()) return;
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
-            // Sonido de foca al inicio de su turno (solo 3 segundos)
-           
+            // Sonido de foca al inicio de su turno (solo 1 segundo)
+            reproducirSonidoFoca();
             // Lógica CPU
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
@@ -779,12 +784,38 @@ public class PantallaPartida {
     }
 
     /**
-     * Reproduce el sonido de la foca durante exactamente 3 segundos    .
-     * Si ya estaba sonando, lo reinicia desde el principio.
+     * Reproduce el sonido de la foca durante exactamente 1 segundo.
+     * Si ya estaba sonando, lo detiene y lo reinicia desde el principio.
      */
-    
-    
-        
+    private void reproducirSonidoFoca() {
+        try {
+            if (mediaPlayerFoca != null) {
+                mediaPlayerFoca.stop();
+                mediaPlayerFoca.dispose();
+                mediaPlayerFoca = null;
+            }
+            var url = getClass().getResource("/resources/sonidoFoca.mp3");
+            if (url != null) {
+                Media media = new Media(url.toExternalForm());
+                mediaPlayerFoca = new MediaPlayer(media);
+                mediaPlayerFoca.play();
+                javafx.animation.PauseTransition pausa =
+                    new javafx.animation.PauseTransition(Duration.seconds(1));
+                pausa.setOnFinished(e -> {
+                    if (mediaPlayerFoca != null) {
+                        mediaPlayerFoca.stop();
+                        mediaPlayerFoca.dispose();
+                        mediaPlayerFoca = null;
+                    }
+                });
+                pausa.play();
+            } else {
+                System.err.println("No se encontró sonidoFoca.mp3 en /resources/");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al reproducir sonidoFoca: " + e.getMessage());
+        }
+    }
  
     /**
      * 1. Configura el listener global de teclado: Escape abre/cierra el menú de opciones
@@ -1831,7 +1862,7 @@ public class PantallaPartida {
             if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
         }
         
-        if (j instanceof Foca) return null; // La foca no tiene dado animado propio
+        if (j instanceof Foca) return new String[]{"/resources/dado_rojo.png", "#A9A9A9"}; // Dado de la foca
 
         String color = j.getColor();
         if (color == null) return null;
