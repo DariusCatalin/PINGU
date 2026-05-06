@@ -8,10 +8,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Text;
-import javafx.util.Duration;
  
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -53,8 +50,6 @@ public class PantallaPartida {
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
     /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
     private javafx.scene.control.ContextMenu ctxMenuEscape;
-    /** Reproductor del sonido de foca (suena 1 segundo al inicio de cada turno de Foca) */
-    private MediaPlayer mediaPlayerFoca;
  
     // Gestor de eventos simple para mostrar textos en la pantalla
     private GestorEventos gestorUI = new GestorEventos() {
@@ -119,7 +114,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha);
             }
@@ -189,7 +184,7 @@ public class PantallaPartida {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
-                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j.getColor()));
+                asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
                 actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
             }
@@ -349,7 +344,7 @@ public class PantallaPartida {
         int tirada = (int)(Math.random() * 6) + 1;
 
         // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
-        String[] config = obtenerConfigAnimacion(actual.getColor());
+        String[] config = obtenerConfigAnimacion(actual, "normal");
         if (config != null) {
             final int tiradaFinal = tirada;
             setUIInteractuable(false);
@@ -466,7 +461,7 @@ public class PantallaPartida {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
 
                 // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
-                String[] config = obtenerConfigAnimacion(actual.getColor());
+                String[] config = obtenerConfigAnimacion(actual, nombreDado);
                 if (config != null) {
                     final int tiradaFinal = tirada;
                     setUIInteractuable(false);
@@ -545,16 +540,19 @@ public class PantallaPartida {
             objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            encolarAnimacionGuerra(actual, actual.getNombre() + ":" + objetivo.getNombre() + ":" + diff);
             encolarSaltoDirecto(objetivo, objetivo.getPosicion());
         } else if (bolasObj > bolasActual) {
             int diff = bolasObj - bolasActual;
             actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
             gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
                 + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+            encolarAnimacionGuerra(objetivo, objetivo.getNombre() + ":" + actual.getNombre() + ":" + diff);
             encolarSaltoDirecto(actual, actual.getPosicion());
         } else {
             gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
                 + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
+            encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + objetivo.getNombre() + ":0");
         }
  
         // Lanzar bolas ES la acción del turno (reemplaza tirar dado)
@@ -566,18 +564,7 @@ public class PantallaPartida {
     // LÓGICA INTERNA DE TURNOS Y CASILLAS
     // ==========================================
  
-    private void jugarTurnoCPU_IA(Foca foca, ImageView fichaVisual) {
-        if (foca.estaPenalizado()) {
-            foca.decrementarPenalizacion();
-            gestorUI.registrar("La foca " + foca.getNombre() + " está entretenida comiendo. Pierde su turno.");
-        } else {
-            int tirada = (int)(Math.random() * 6) + 1;
-            moverJugadorYAccion(foca, tirada, "tirada CPU");
-        }
-        
-        actualizarPosicionVisual(foca, fichaVisual);
-        avanzarTurno(); // Devuelve el turno al jugador
-    }
+
  
     private void moverJugadorYAccion(Jugador j, int tirada, String contexto) {
         int posInicial = j.getPosicion();
@@ -662,7 +649,7 @@ public class PantallaPartida {
  
             // Pasar datos del ganador al controlador de victoria
             PantallaVictoria controlador = loader.getController();
-            controlador.setGanador(ganador.getNombre(), ganador.getColor());
+            controlador.setGanador(ganador.getNombre(), ganador.getColor(), ganador instanceof Foca);
  
             Scene scene = new Scene(root);
  
@@ -719,15 +706,18 @@ public class PantallaPartida {
                         int diff = bolasA - bolasO;
                         int dest = Math.max(0, otro.getPosicion() - diff);
                         otro.moverPosicion(dest);
+                        encolarAnimacionGuerra(actual, actual.getNombre() + ":" + otro.getNombre() + ":" + diff);
                         encolarSaltoDirecto(otro, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + actual.getNombre() + " gana a " + otro.getNombre() + " por " + diff + " bolas.");
                     } else if (bolasO > bolasA) {
                         int diff = bolasO - bolasA;
                         int dest = Math.max(0, actual.getPosicion() - diff);
                         actual.moverPosicion(dest);
+                        encolarAnimacionGuerra(otro, otro.getNombre() + ":" + actual.getNombre() + ":" + diff);
                         encolarSaltoDirecto(actual, dest);
                         gestorUI.registrar("¡Guerra de bolas! " + otro.getNombre() + " gana a " + actual.getNombre() + " por " + diff + " bolas.");
                     } else {
+                        encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + otro.getNombre() + ":0");
                         gestorUI.registrar("¡Guerra de bolas EMPATE entre " + actual.getNombre() + " y " + otro.getNombre() + "! Gastan todo pero nadie retrocede.");
                     }
                 }
@@ -758,13 +748,29 @@ public class PantallaPartida {
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
                 gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
+                avanzarTurno();
+                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
             } else {
                 int tirada = (int)(Math.random() * 6) + 1;
-                moverJugadorYAccion(actual, tirada, "tirada CPU");
+                
+                String[] config = obtenerConfigAnimacion(actual, "normal");
+                if (config != null) {
+                    final int tiradaFinal = tirada;
+                    setUIInteractuable(false);
+                    mostrarAnimacionTurno(actual, tiradaFinal,
+                        config[0],
+                        javafx.scene.paint.Color.web(config[1]),
+                        () -> {
+                            moverJugadorYAccion(actual, tiradaFinal, "tirada CPU");
+                            avanzarTurno();
+                            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                        });
+                } else {
+                    moverJugadorYAccion(actual, tirada, "tirada CPU");
+                    avanzarTurno();
+                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                }
             }
-            avanzarTurno();
-            // Animación y callback a la siguiente CPU
-            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
         } else {
             // 5. Turno humano: actualizar texto de turno + habilitar controles
             actualizarTextosTurno();
@@ -922,6 +928,7 @@ public class PantallaPartida {
     private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
     private java.util.Map<Jugador, String> ultimoEventoVisual = new java.util.HashMap<>();
+    private java.util.Map<Jugador, String> ultimoGuerraVisual = new java.util.HashMap<>();
     private boolean animando = false;
 
     private void inicializarColas() {
@@ -986,6 +993,14 @@ public class PantallaPartida {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{destino, 5}); 
+    }
+
+    /** Encola la animación de la Guerra de Bolas. Tipo 6. */
+    private void encolarAnimacionGuerra(Jugador j, String data) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        ultimoGuerraVisual.put(j, data);
+        q.add(new int[]{j.getPosicion(), 6}); // Destino no importa
     }
  
     private void setUIInteractuable(boolean interactuable) {
@@ -1063,6 +1078,8 @@ public class PantallaPartida {
             mostrarAnimacionAgujero(j, hasta, next);
         } else if (tipo == 5) {
             mostrarAnimacionTrineo(j, hasta, next);
+        } else if (tipo == 6) {
+            mostrarAnimacionGuerra(j, next);
         } else {
             animarConSaltito(fic, j, desde, hasta, next);
         }
@@ -1421,6 +1438,114 @@ public class PantallaPartida {
         seq.play();
     }
 
+    /** Muestra la animación a pantalla completa de la Guerra de Bolas. */
+    private void mostrarAnimacionGuerra(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        javafx.scene.image.ImageView guerraView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/guerra_bolas.png");
+        if (recurso != null) {
+            guerraView.setImage(new Image(recurso));
+        }
+        double IMG_SIZE = 400;
+        guerraView.setFitWidth(IMG_SIZE);
+        guerraView.setFitHeight(IMG_SIZE);
+        guerraView.setPreserveRatio(true);
+        guerraView.setOpacity(0);
+        guerraView.setScaleX(0.5);
+        guerraView.setScaleY(0.5);
+        guerraView.setManaged(false);
+        guerraView.setLayoutX(W / 2 - IMG_SIZE / 2);
+        guerraView.setLayoutY(H / 2 - IMG_SIZE / 2);
+        rootPane.getChildren().add(guerraView);
+
+        String data = ultimoGuerraVisual.getOrDefault(j, "::0");
+        String[] parts = data.split(":");
+        String txtGanador = "";
+        String txtPerdedor = "";
+        if (parts[0].equals("EMPATE")) {
+            txtGanador = "¡Empate!";
+            txtPerdedor = "Nadie retrocede";
+        } else {
+            txtGanador = "Ha Ganado " + parts[0];
+            txtPerdedor = parts[1] + " retrocede " + parts[2] + " casilla/s";
+        }
+
+        javafx.scene.text.Text lblTitulo = new javafx.scene.text.Text("¡Guerra de bolas de nieve!");
+        lblTitulo.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblTitulo.setFill(javafx.scene.paint.Color.WHITE);
+        lblTitulo.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblTitulo.setWrappingWidth(W);
+        lblTitulo.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblTitulo.setOpacity(0);
+        lblTitulo.setManaged(false);
+        lblTitulo.setLayoutX(0);
+        lblTitulo.setLayoutY(H / 2 - IMG_SIZE / 2 - 20);
+        rootPane.getChildren().add(lblTitulo);
+
+        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(txtGanador + "\n" + txtPerdedor);
+        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblMensaje.setFill(javafx.scene.paint.Color.web("#44AAFF"));
+        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblMensaje.setWrappingWidth(W);
+        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblMensaje.setOpacity(0);
+        lblMensaje.setManaged(false);
+        lblMensaje.setLayoutX(0);
+        lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 60);
+        rootPane.getChildren().add(lblMensaje);
+
+        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOver.setToValue(0.8);
+
+        javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), guerraView);
+        ftImg.setToValue(1);
+        javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), guerraView);
+        stImg.setToX(1.2);
+        stImg.setToY(1.2);
+
+        javafx.animation.FadeTransition ftTitulo = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+        ftTitulo.setToValue(1);
+        javafx.animation.FadeTransition ftMensaje = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftMensaje.setToValue(1);
+
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftTitulo, ftMensaje);
+
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOverOut.setToValue(0);
+        javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), guerraView);
+        ftImgOut.setToValue(0);
+        javafx.animation.FadeTransition ftTituloOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+        ftTituloOut.setToValue(0);
+        javafx.animation.FadeTransition ftMensajeOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftMensajeOut.setToValue(0);
+
+        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTituloOut, ftMensajeOut);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().removeAll(overlayPane, guerraView, lblTitulo, lblMensaje);
+            if (onFinish != null) onFinish.run();
+        });
+        seq.play();
+    }
+
     /** Muestra la animación a pantalla completa del agujero. */
     private void mostrarAnimacionAgujero(Jugador j, int destino, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
@@ -1677,10 +1802,18 @@ public class PantallaPartida {
         if (nieve_t != null) nieve_t.setText("Bolas: " + bolas);
     }
  
+    /** Devuelve la ruta del PNG según el tipo de jugador. */
+    private String obtenerRutaPersonaje(Jugador j) {
+        if (j instanceof Foca) return "/resources/foca.png";
+        return obtenerRutaPersonaje(j.getColor());
+    }
+
     /** Devuelve la ruta del PNG según el color del jugador. */
     private String obtenerRutaPersonaje(String color) {
         if (color == null) return "/resources/Personaje Amarillo.png";
         switch (color.toLowerCase()) {
+            case "gris":
+            case "foca":     return "/resources/foca.png";
             case "amarillo": return "/resources/Personaje Amarillo.png";
             case "rojo":     return "/resources/Personaje Rojo.png";
             case "verde":    return "/resources/Personaje Verde.png";
@@ -1718,15 +1851,23 @@ public class PantallaPartida {
      *   [0] = ruta de la imagen del dado  (/resources/dado_XXX.png)
      *   [1] = color HEX del texto de resultado
      * Devuelve null si ese color no tiene animación configurada.
-     * Para añadir un nuevo color, basta con añadir una línea aquí.
      */
-    private String[] obtenerConfigAnimacion(String color) {
+    private String[] obtenerConfigAnimacion(Jugador j, String tipoDado) {
+        if (tipoDado != null) {
+            if (tipoDado.equals("Dado Rápido")) return new String[]{"/resources/dado_rapido.png", "#FF4500"};
+            if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
+        }
+        
+        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"};
+
+        String color = j.getColor();
         if (color == null) return null;
         switch (color.toLowerCase()) {
             case "amarillo": return new String[]{"/resources/dado_amarillo.png", "#FFD700"};
             case "azul":     return new String[]{"/resources/dado_azul.png",     "#00BFFF"};
-            case "rojo":     return new String[]{"/resources/dado_rojo.png",      "#FF4444"};
-            case "verde":    return new String[]{"/resources/dado_verde.png",     "#00FF7F"};
+            case "rojo":     return new String[]{"/resources/dado_rojo.png",     "#FF4444"};
+            case "verde":    return new String[]{"/resources/dado_verde.png",    "#00FF7F"};
+            case "gris":     return new String[]{"/resources/dado_foca.png",     "#A9A9A9"};
             default:         return null;
         }
     }
@@ -1958,24 +2099,26 @@ public class PantallaPartida {
 
             // PASO 3: Buscar id del ganador en tabla JUGADOR
             int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
-            if (idGanador != -1) {
-                // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
-                java.util.List<String> participantes = new java.util.ArrayList<>();
-                if (partida != null && partida.getJugadores() != null) {
-                    for (Jugador jug : partida.getJugadores()) {
-                        // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
-                        if (jug instanceof Pinguino) {
-                            participantes.add(jug.getNombre());
-                        }
+            
+            // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
+            java.util.List<String> participantes = new java.util.ArrayList<>();
+            if (partida != null && partida.getJugadores() != null) {
+                for (Jugador jug : partida.getJugadores()) {
+                    // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
+                    if (jug instanceof Pinguino) {
+                        participantes.add(jug.getNombre());
                     }
                 }
+            }
 
-                // PASO 5: Asignar ganador y actualizar num_partidas a todos
-                gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+            // PASO 5: Asignar ganador y actualizar num_partidas a todos
+            gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+            if (idGanador != -1) {
                 gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
                                  + " jugadores. Ganador: " + ganador.getNombre());
             } else {
-                gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
+                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
+                                 + " jugadores. ¡La IA ha ganado!");
             }
 
             gestor.cerrarConexion();
