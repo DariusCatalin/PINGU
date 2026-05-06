@@ -11,8 +11,11 @@ public abstract class Casilla {
     public Casilla(int posicion) {
         // Validem que la posició sigui vàlida (0-49+)
         if (posicion < 0) {
+        	
             throw new IllegalArgumentException("La posició no pot ser negativa");
+            
         }
+        
         this.posicion = posicion;
         this.tipo = this.getClass().getSimpleName();
     }
@@ -25,24 +28,36 @@ public abstract class Casilla {
     // ==================== GETTERS I SETTERS ====================
     
     public int getPosicion() {
+    	
         return posicion;
+        
     }
     
     public void setPosicion(int posicion) {
+    	
         if (posicion < 0) {
+        	
             throw new IllegalArgumentException("La posició no pot ser negativa");
+            
         }
+        
         this.posicion = posicion;
+        
     }
     
+    
     public String getTipo() {
+    	
         return tipo;
+        
     }
     
     // ==================== MÈTODE AUXILIAR ====================
   
     @Override
     public String toString() {
+    	
         return tipo + " (Posició: " + posicion + ")";
+        
     }
 }
