@@ -743,7 +743,7 @@ public class PantallaPartida {
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
             // Sonido de foca al inicio de su turno (solo 3 segundos)
-            reproducirSonidoFoca();
+           
             // Lógica CPU
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
@@ -782,36 +782,9 @@ public class PantallaPartida {
      * Reproduce el sonido de la foca durante exactamente 3 segundos    .
      * Si ya estaba sonando, lo reinicia desde el principio.
      */
-    private void reproducirSonidoFoca() {
-        try {
-            // Detener y liberar el reproductor anterior si existía
-            if (mediaPlayerFoca != null) {
-                mediaPlayerFoca.stop();
-                mediaPlayerFoca.dispose();
-                mediaPlayerFoca = null;
-            }
-            var url = getClass().getResource("/resources/sonidoFoca.mp3");
-            if (url != null) {
-                Media media = new Media(url.toExternalForm());
-                mediaPlayerFoca = new MediaPlayer(media);
-                mediaPlayerFoca.play();
-                // Detener automáticamente al cabo de 3 segundos
-                javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(Duration.seconds(3));
-                pausa.setOnFinished(e -> {
-                    if (mediaPlayerFoca != null) {
-                        mediaPlayerFoca.stop();
-                        mediaPlayerFoca.dispose();
-                        mediaPlayerFoca = null;
-                    }
-                });
-                pausa.play();
-            } else {
-                System.err.println("No se encontró sonidoFoca.mp3 en /resources/");
-            }
-        } catch (Exception e) {
-            System.err.println("Error al reproducir sonidoFoca: " + e.getMessage());
-        }
-    }
+    
+    
+        
  
     /**
      * 1. Configura el listener global de teclado: Escape abre/cierra el menú de opciones
