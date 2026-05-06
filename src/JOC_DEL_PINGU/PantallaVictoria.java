@@ -83,8 +83,8 @@ public class PantallaVictoria {
             } else {
                 System.err.println("No se encontró el sonido de victoria.");
             }
-        } catch (Exception e) {
-            System.err.println("Error al reproducir sonido de victoria: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("⚠️ No se pudo reproducir sonido de victoria (posible falta de javafx-media): " + e.getMessage());
         }
     }
 

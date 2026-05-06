@@ -812,8 +812,8 @@ public class PantallaPartida {
             } else {
                 System.err.println("No se encontró sonidoFoca.mp3 en /resources/");
             }
-        } catch (Exception e) {
-            System.err.println("Error al reproducir sonidoFoca: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("⚠️ No se pudo reproducir sonido de foca (posible falta de javafx-media): " + e.getMessage());
         }
     }
  
@@ -923,7 +923,7 @@ public class PantallaPartida {
         if (c instanceof Oso)         return "/resources/Casilla_Oso.png";
         if (c instanceof Trineo)      return "/resources/Casilla_Trineo.png";
         if (c instanceof Evento)      return "/resources/Casilla_Interrogante.png";
-        if (c instanceof CasillaFragil) return "/resources/Casilla_Normal.png";
+        if (c instanceof CasillaFragil) return "/resources/casilla_fragil.png";
         
         return "/resources/Casilla_Normal.png";
     }
@@ -1862,7 +1862,7 @@ public class PantallaPartida {
             if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
         }
         
-        if (j instanceof Foca) return new String[]{"/resources/dado_rojo.png", "#A9A9A9"}; // Dado de la foca
+        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"}; // Dado de la foca
 
         String color = j.getColor();
         if (color == null) return null;
