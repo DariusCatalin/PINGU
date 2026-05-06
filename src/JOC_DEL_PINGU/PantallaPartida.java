@@ -618,10 +618,15 @@ public class PantallaPartida {
             ultimoEventoVisual.put(j, msg);
             encolarAnimacionEvento(j);
         }
-        if (posAntesCasilla != j.getPosicion()) {
-            if (casillaActual instanceof Oso && j.getPosicion() == 0) {
+        if (casillaActual instanceof Oso) {
+            if (posAntesCasilla == j.getPosicion()) {
+                encolarAnimacionSobornoOso(j);
+            } else {
                 encolarAnimacionOso(j);
-            } else if (casillaActual instanceof Agujero) {
+                encolarSaltoDirecto(j, j.getPosicion());
+            }
+        } else if (posAntesCasilla != j.getPosicion()) {
+            if (casillaActual instanceof Agujero) {
                 encolarAnimacionAgujero(j, j.getPosicion());
             } else if (casillaActual instanceof Trineo) {
                 encolarAnimacionTrineo(j, j.getPosicion());
@@ -963,12 +968,12 @@ public class PantallaPartida {
     }
 
     // ENCOLA LA ANIMACIÓN DEL REGALO / EVENTO (TIPO 3: CAJA TEMBLANDO CON OBJETO DENTRO)
-    private void encolarAnimacionEvento(Jugador j) {
+    /** Encola la animación de soborno a Oso. Tipo 7. */
+    private void encolarAnimacionSobornoOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
-        q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
+        q.add(new int[]{j.getPosicion(), 7});
     }
-
     // ENCOLA LA ANIMACIÓN DEL AGUJERO (TIPO 4: JUGADOR SE CAE Y APARECE EN LA CASILLA DESTINO)
     private void encolarAnimacionAgujero(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
@@ -1065,6 +1070,8 @@ public class PantallaPartida {
             mostrarAnimacionTrineo(j, hasta, next);
         } else if (tipo == 6) {
             mostrarAnimacionGuerra(j, next);
+        } else if (tipo == 7) {
+            mostrarAnimacionSobornoOso(j, next);
         } else {
             animarConSaltito(fic, j, desde, hasta, next);
         }
