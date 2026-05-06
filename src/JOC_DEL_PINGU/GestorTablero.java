@@ -3,7 +3,7 @@ package JOC_DEL_PINGU;
 public class GestorTablero {
     
     public GestorTablero() {
-        // No cal inicialitzacio addicional
+        // ESTA CLASE NO NECESITA INICIALIZACIÓN, ACTÚA COMO SERVICIO DE LÓGICA DE TABLERO
     }
     
     public void ejecutarCasilla(Partida partida, Jugador j, Casilla c) {
@@ -24,12 +24,12 @@ public class GestorTablero {
         GestorEventos ge = partida.getGestorEventos();
         int meta = 49;
         
-        // Obtenim la mida real del tauler
+        // CALCULAMOS LA POSICIÓN DE LA META REAL SEGÚN EL TAMAÑO DEL TABLERO ACTUAL
         if (partida.getTablero() != null && !partida.getTablero().getCasillas().isEmpty()) {
             meta = partida.getTablero().getCasillas().size() - 1;
         }
         
-        // Comprovar TOTS els jugadors
+        // RECORREMOS TODOS LOS JUGADORES PARA VER SI ALGUNO HA LLEGADO A LA META
         for (Jugador j : partida.getJugadores()) {
             if (j.getPosicion() >= meta) {
                 partida.setGanador(j);
