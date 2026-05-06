@@ -1831,7 +1831,7 @@ public class PantallaPartida {
             if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
         }
         
-        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"};
+        if (j instanceof Foca) return null; // La foca no tiene dado animado propio
 
         String color = j.getColor();
         if (color == null) return null;
