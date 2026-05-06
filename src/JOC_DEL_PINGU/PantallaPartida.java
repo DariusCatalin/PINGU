@@ -752,7 +752,7 @@ public class PantallaPartida {
         if (partida.isFinalizada()) return;
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
-            // Sonido de foca al inicio de su turno (solo 1 segundo)
+            // Sonido de foca al inicio de su turno (solo 3 segundos)
             reproducirSonidoFoca();
             // Lógica CPU
             if (actual.estaPenalizado()) {
@@ -773,7 +773,7 @@ public class PantallaPartida {
     }
 
     /**
-     * Reproduce el sonido de la foca durante exactamente 1 segundo.
+     * Reproduce el sonido de la foca durante exactamente 3 segundos    .
      * Si ya estaba sonando, lo reinicia desde el principio.
      */
     private void reproducirSonidoFoca() {
@@ -789,8 +789,8 @@ public class PantallaPartida {
                 Media media = new Media(url.toExternalForm());
                 mediaPlayerFoca = new MediaPlayer(media);
                 mediaPlayerFoca.play();
-                // Detener automáticamente al cabo de 1 segundo
-                javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(Duration.seconds(1));
+                // Detener automáticamente al cabo de 3 segundos
+                javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(Duration.seconds(3));
                 pausa.setOnFinished(e -> {
                     if (mediaPlayerFoca != null) {
                         mediaPlayerFoca.stop();
