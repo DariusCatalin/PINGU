@@ -812,8 +812,8 @@ public class PantallaPartida {
             } else {
                 System.err.println("No se encontró sonidoFoca.mp3 en /resources/");
             }
-        } catch (Exception e) {
-            System.err.println("Error al reproducir sonidoFoca: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("⚠️ No se pudo reproducir sonido de foca (posible falta de javafx-media): " + e.getMessage());
         }
     }
  

@@ -250,8 +250,14 @@ public class PantallaConfig {
             // Pasar jugadores DESPUÉS de que la escena está activa en el stage
             PantallaPartida controlador = loader.getController();
             controlador.setJugadores(jugadores);
-        } catch (Exception e) {
-            mostrarError("Error al cargar el juego: " + e.getMessage());
+        } catch (Throwable e) {
+            // ⭐ Capturamos Throwable para pillar también NoClassDefFoundError (Error, no Exception)
+            String msg = e.getMessage();
+            if (e instanceof NoClassDefFoundError || (msg != null && msg.contains("media"))) {
+                mostrarError("Error: Falta la librería 'javafx-media'. Asegúrate de añadirla al proyecto.");
+            } else {
+                mostrarError("Error al cargar el juego: " + (msg != null ? msg : e.toString()));
+            }
             e.printStackTrace();
         }
     }
