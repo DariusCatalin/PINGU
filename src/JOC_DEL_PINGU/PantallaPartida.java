@@ -20,7 +20,7 @@ import javafx.stage.Stage;
  
 public class PantallaPartida {
  
-    // --- INTERFAZ (FXML) ---
+    // --- ELEMENTOS DE LA INTERFAZ GRÁFICA VINCULADOS AL FXML ---
     @FXML private MenuItem newGame;
     @FXML private MenuItem saveGame;
     @FXML private MenuItem loadGame;
@@ -41,22 +41,22 @@ public class PantallaPartida {
     @FXML private javafx.scene.control.TextArea eventos;
  
     @FXML private GridPane tablero;
-    @FXML private ImageView P1; // Jugador 1
-    @FXML private ImageView P2; // Jugador 2
-    @FXML private ImageView P3; // Jugador 3
-    @FXML private ImageView P4; // Jugador 4
+    @FXML private ImageView P1; // FICHA VISUAL DEL JUGADOR 1
+    @FXML private ImageView P2; // FICHA VISUAL DEL JUGADOR 2
+    @FXML private ImageView P3; // FICHA VISUAL DEL JUGADOR 3
+    @FXML private ImageView P4; // FICHA VISUAL DEL JUGADOR 4
  
-    // --- LÓGICA DEL JUEGO (EL CEREBRO) ---
+    // --- VARIABLES INTERNAS DE LA LÓGICA DEL JUEGO ---
     private Partida partida;
-    private int idPartidaActual = -1; // ID de la partida en BBDD (-1 = no guardada aún)
+    private int idPartidaActual = -1; // ID DE LA PARTIDA EN BASE DE DATOS (-1 = AÚN NO GUARDADA)
     private static final int COLUMNS = 5;
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
-    /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
+    // MENÚ CONTEXTUAL QUE SE ABRE Y CIERRA AL PULSAR LA TECLA ESCAPE
     private javafx.scene.control.ContextMenu ctxMenuEscape;
-    /** Reproductor del sonido de foca (suena 1 segundo al inicio de cada turno de Foca) */
+    // REPRODUCTOR DE AUDIO DE LA FOCA (SUENA EXACTAMENTE 1 SEGUNDO AL INICIO DE SU TURNO)
     private MediaPlayer mediaPlayerFoca;
  
-    // Gestor de eventos simple para mostrar textos en la pantalla
+    // GESTOR DE EVENTOS: MUESTRA LOS MENSAJES DEL JUEGO EN EL ÁREA DE TEXTO DE LA UI
     private GestorEventos gestorUI = new GestorEventos() {
         @Override
         public void registrar(String mensaje) {
@@ -64,33 +64,27 @@ public class PantallaPartida {
             System.out.println(mensaje);
             if (eventos != null) {
                 eventos.appendText(mensaje + "\n");
-                // Auto-scroll the TextArea to bottom
+                // DESPLAZA EL ÁREA DE TEXTO HACIA ABAJO PARA SIEMPRE VER EL ÚLTIMO MENSAJE
                 eventos.setScrollTop(Double.MAX_VALUE);
             }
         }
     };
  
-    // Jugadores pre-configurados (recibidos desde PantallaConfig)
+    // LISTA DE JUGADORES CONFIGURADOS EN LA PANTALLA DE CONFIGURACIÓN
     private java.util.ArrayList<Jugador> jugadoresConfig = null;
  
  
-    /**
-     * Llamado por PantallaConfig antes de mostrar la pantalla,
-     * para pasar la lista de jugadores configurados.
-     */
+    // RECIBE LA LISTA DE JUGADORES DESDE PANTALLACONFIG ANTES DE MOSTRAR ESTA PANTALLA
     public void setJugadores(java.util.ArrayList<Jugador> jugadores) {
         this.jugadoresConfig = jugadores;
-        // Si initialize() ya se ejecutó, re-lanzamos la configuración
+        // SI initialize() YA SE EJECUTÓ ANTES, RECONFIGURAMOS LA PARTIDA CON LOS NUEVOS JUGADORES
         if (partida != null) {
             configurarPartida();
         }
     }
     
-    /**
-     * Asigna el ID de la partida cargada desde BBDD.
-     * Esto es necesario para que cuando se vuelva a guardar (manualmente o al ganar)
-     * se ACTUALICE la misma partida en lugar de crear una nueva con otro ID.
-     */
+    // GUARDA EL ID DE UNA PARTIDA CARGADA DESDE LA BASE DE DATOS
+    // MÉTODO PARA ASIGNAR EL ID DE UNA PARTIDA QUE VIENE DE LA BASE DE DATOS
     public void setIdPartidaCargada(int idPartida) {
         this.idPartidaActual = idPartida;
         if (gestorUI != null) {
@@ -98,16 +92,13 @@ public class PantallaPartida {
         }
     }
     
-    /**
-     * Llamado por PantallaPrincipal o GestorBBDD al cargar una partida existente.
-     */
+    // CARGA UNA PARTIDA EXISTENTE (LLAMADO DESDE PANTALLA PRINCIPAL O GESTOR BBDD)
     public void setPartidaCargada(Partida pCargada) {
         this.partida = pCargada;
         this.partida.setGestorEventos(gestorUI);
         this.jugadoresConfig = pCargada.getJugadores();
  
-        // CRÍTICO: inicializar las colas de animación para los jugadores cargados.
-        // Sin esto, colasAnimacion y posVisual están vacíos y el juego se congela.
+        // OBLIGATORIO: SIN ESTO LAS COLAS DE ANIMACIÓN ESTÁN VACÍAS Y EL JUEGO SE BLOQUEA
         inicializarColas();
  
         ImageView[] fichas = {P1, P2, P3, P4};
@@ -142,16 +133,15 @@ public class PantallaPartida {
         System.out.println("Cargando Pantalla Partida...");
         cargarSkins();
  
-        // 1. INICIALIZAMOS LA PARTIDA
+        // PASO 1: CREAR EL OBJETO PARTIDA Y ASIGNARLE EL GESTOR DE MENSAJES
         partida = new Partida();
         partida.setGestorEventos(gestorUI);
  
-        // 2. Si llegaron jugadores desde PantallaConfig, los usamos.
-        //    Si no, creamos uno por defecto (modo fallback / reinicio).
+        // PASO 2: SI HAY JUGADORES DE PANTALLACONFIG LOS USAMOS; SI NO, CREAMOS UNO POR DEFECTO
         if (jugadoresConfig != null) {
             configurarPartida();
         } else {
-            // Fallback: 1 Pingüino + 1 Foca CPU por defecto
+            // MODO DE EMERGENCIA: 1 PINGÜINO HUMANO + 1 FOCA CPU POR DEFECTO
             Pinguino jugador1 = new Pinguino(0, "Pingu", "Azul");
             Foca cpuFoca = new Foca(0, "Focabrón", "Rojo");
             partida.getJugadores().add(jugador1);
@@ -165,39 +155,39 @@ public class PantallaPartida {
             gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
         }
  
-        // 3. Configurar escucha de tecla Escape para el menú de opciones
+        // PASO 3: ACTIVAR EL MENÚ DE ESCAPE (SE ABRE AL PULSAR LA TECLA ESC)
         configurarEscapeMenu();
     }
  
-    /** Configura la partida usando los jugadores recibidos de PantallaConfig. */
+    // CONFIGURA LA PARTIDA CON LOS JUGADORES QUE VIENEN DE LA PANTALLA DE CONFIGURACIÓN
     private void configurarPartida() {
         partida.getJugadores().clear();
         for (Jugador j : jugadoresConfig) {
             partida.getJugadores().add(j);
         }
  
-        // Fichas visuales disponibles en el FXML
+        // ARRAY CON LAS 4 FICHAS VISUALES DISPONIBLES EN EL FXML
         ImageView[] fichas = {P1, P2, P3, P4};
  
-        // Ocultar todas primero
+        // PRIMERO OCULTAMOS TODAS LAS FICHAS PARA QUE NO SE VEAN LAS QUE NO SE USAN
         for (ImageView iv : fichas) {
             if (iv != null) iv.setVisible(false);
         }
  
-        // Asignar imagen según color, posicionar en casilla 0 y mostrar la ficha de cada jugador
+        // ASIGNAMOS IMAGEN, POSICIÓN INICIAL Y VISIBILIDAD A CADA JUGADOR
         for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
-                actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
+                actualizarPosicionVisual(j, ficha); // COLOCA LA FICHA EN LA CELDA CORRECTA DESDE EL INICIO
             }
         }
 
         inicializarColas();
  
-        // Actualizar inventario del primer pingüino
+        // ACTUALIZAMOS EL CONTADOR DEL INVENTARIO DEL PRIMER PINGÜINO HUMANO
         for (Jugador j : jugadoresConfig) {
             if (j instanceof Pinguino) {
                 actualizarTextosInventario(j);
