@@ -743,7 +743,7 @@ public class PantallaPartida {
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
             // Sonido de foca al inicio de su turno (solo 3 segundos)
-            reproducirSonidoFoca();
+           
             // Lógica CPU
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
