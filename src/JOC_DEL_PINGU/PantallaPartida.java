@@ -20,7 +20,7 @@ import javafx.stage.Stage;
  
 public class PantallaPartida {
  
-    // --- INTERFAZ (FXML) ---
+    // --- ELEMENTOS DE LA INTERFAZ GRÁFICA VINCULADOS AL FXML ---
     @FXML private MenuItem newGame;
     @FXML private MenuItem saveGame;
     @FXML private MenuItem loadGame;
@@ -41,22 +41,22 @@ public class PantallaPartida {
     @FXML private javafx.scene.control.TextArea eventos;
  
     @FXML private GridPane tablero;
-    @FXML private ImageView P1; // Jugador 1
-    @FXML private ImageView P2; // Jugador 2
-    @FXML private ImageView P3; // Jugador 3
-    @FXML private ImageView P4; // Jugador 4
+    @FXML private ImageView P1; // FICHA VISUAL DEL JUGADOR 1
+    @FXML private ImageView P2; // FICHA VISUAL DEL JUGADOR 2
+    @FXML private ImageView P3; // FICHA VISUAL DEL JUGADOR 3
+    @FXML private ImageView P4; // FICHA VISUAL DEL JUGADOR 4
  
-    // --- LÓGICA DEL JUEGO (EL CEREBRO) ---
+    // --- VARIABLES INTERNAS DE LA LÓGICA DEL JUEGO ---
     private Partida partida;
-    private int idPartidaActual = -1; // ID de la partida en BBDD (-1 = no guardada aún)
+    private int idPartidaActual = -1; // ID DE LA PARTIDA EN BASE DE DATOS (-1 = AÚN NO GUARDADA)
     private static final int COLUMNS = 5;
     private static final String TAG_CASILLA_TEXT = "CASILLA_TEXT";
-    /** Menú de escape: ContextMenu que se abre/cierra con la tecla Escape */
+    // MENÚ CONTEXTUAL QUE SE ABRE Y CIERRA AL PULSAR LA TECLA ESCAPE
     private javafx.scene.control.ContextMenu ctxMenuEscape;
-    /** Reproductor del sonido de foca (suena 1 segundo al inicio de cada turno de Foca) */
+    // REPRODUCTOR DE AUDIO DE LA FOCA (SUENA EXACTAMENTE 1 SEGUNDO AL INICIO DE SU TURNO)
     private MediaPlayer mediaPlayerFoca;
  
-    // Gestor de eventos simple para mostrar textos en la pantalla
+    // GESTOR DE EVENTOS: MUESTRA LOS MENSAJES DEL JUEGO EN EL ÁREA DE TEXTO DE LA UI
     private GestorEventos gestorUI = new GestorEventos() {
         @Override
         public void registrar(String mensaje) {
@@ -64,33 +64,27 @@ public class PantallaPartida {
             System.out.println(mensaje);
             if (eventos != null) {
                 eventos.appendText(mensaje + "\n");
-                // Auto-scroll the TextArea to bottom
+                // DESPLAZA EL ÁREA DE TEXTO HACIA ABAJO PARA SIEMPRE VER EL ÚLTIMO MENSAJE
                 eventos.setScrollTop(Double.MAX_VALUE);
             }
         }
     };
  
-    // Jugadores pre-configurados (recibidos desde PantallaConfig)
+    // LISTA DE JUGADORES CONFIGURADOS EN LA PANTALLA DE CONFIGURACIÓN
     private java.util.ArrayList<Jugador> jugadoresConfig = null;
  
  
-    /**
-     * Llamado por PantallaConfig antes de mostrar la pantalla,
-     * para pasar la lista de jugadores configurados.
-     */
+    // RECIBE LA LISTA DE JUGADORES DESDE PANTALLACONFIG ANTES DE MOSTRAR ESTA PANTALLA
     public void setJugadores(java.util.ArrayList<Jugador> jugadores) {
         this.jugadoresConfig = jugadores;
-        // Si initialize() ya se ejecutó, re-lanzamos la configuración
+        // SI initialize() YA SE EJECUTÓ ANTES, RECONFIGURAMOS LA PARTIDA CON LOS NUEVOS JUGADORES
         if (partida != null) {
             configurarPartida();
         }
     }
     
-    /**
-     * Asigna el ID de la partida cargada desde BBDD.
-     * Esto es necesario para que cuando se vuelva a guardar (manualmente o al ganar)
-     * se ACTUALICE la misma partida en lugar de crear una nueva con otro ID.
-     */
+    // GUARDA EL ID DE UNA PARTIDA CARGADA DESDE LA BASE DE DATOS
+    // MÉTODO PARA ASIGNAR EL ID DE UNA PARTIDA QUE VIENE DE LA BASE DE DATOS
     public void setIdPartidaCargada(int idPartida) {
         this.idPartidaActual = idPartida;
         if (gestorUI != null) {
@@ -98,16 +92,13 @@ public class PantallaPartida {
         }
     }
     
-    /**
-     * Llamado por PantallaPrincipal o GestorBBDD al cargar una partida existente.
-     */
+    // CARGA UNA PARTIDA EXISTENTE (LLAMADO DESDE PANTALLA PRINCIPAL O GESTOR BBDD)
     public void setPartidaCargada(Partida pCargada) {
         this.partida = pCargada;
         this.partida.setGestorEventos(gestorUI);
         this.jugadoresConfig = pCargada.getJugadores();
  
-        // CRÍTICO: inicializar las colas de animación para los jugadores cargados.
-        // Sin esto, colasAnimacion y posVisual están vacíos y el juego se congela.
+        // OBLIGATORIO: SIN ESTO LAS COLAS DE ANIMACIÓN ESTÁN VACÍAS Y EL JUEGO SE BLOQUEA
         inicializarColas();
  
         ImageView[] fichas = {P1, P2, P3, P4};
@@ -142,16 +133,15 @@ public class PantallaPartida {
         System.out.println("Cargando Pantalla Partida...");
         cargarSkins();
  
-        // 1. INICIALIZAMOS LA PARTIDA
+        // PASO 1: CREAR EL OBJETO PARTIDA Y ASIGNARLE EL GESTOR DE MENSAJES
         partida = new Partida();
         partida.setGestorEventos(gestorUI);
  
-        // 2. Si llegaron jugadores desde PantallaConfig, los usamos.
-        //    Si no, creamos uno por defecto (modo fallback / reinicio).
+        // PASO 2: SI HAY JUGADORES DE PANTALLACONFIG LOS USAMOS; SI NO, CREAMOS UNO POR DEFECTO
         if (jugadoresConfig != null) {
             configurarPartida();
         } else {
-            // Fallback: 1 Pingüino + 1 Foca CPU por defecto
+            // MODO DE EMERGENCIA: 1 PINGÜINO HUMANO + 1 FOCA CPU POR DEFECTO
             Pinguino jugador1 = new Pinguino(0, "Pingu", "Azul");
             Foca cpuFoca = new Foca(0, "Focabrón", "Rojo");
             partida.getJugadores().add(jugador1);
@@ -165,39 +155,39 @@ public class PantallaPartida {
             gestorUI.registrar("¡Partida iniciada! Tu turno, " + jugador1.getNombre());
         }
  
-        // 3. Configurar escucha de tecla Escape para el menú de opciones
+        // PASO 3: ACTIVAR EL MENÚ DE ESCAPE (SE ABRE AL PULSAR LA TECLA ESC)
         configurarEscapeMenu();
     }
  
-    /** Configura la partida usando los jugadores recibidos de PantallaConfig. */
+    // CONFIGURA LA PARTIDA CON LOS JUGADORES QUE VIENEN DE LA PANTALLA DE CONFIGURACIÓN
     private void configurarPartida() {
         partida.getJugadores().clear();
         for (Jugador j : jugadoresConfig) {
             partida.getJugadores().add(j);
         }
  
-        // Fichas visuales disponibles en el FXML
+        // ARRAY CON LAS 4 FICHAS VISUALES DISPONIBLES EN EL FXML
         ImageView[] fichas = {P1, P2, P3, P4};
  
-        // Ocultar todas primero
+        // PRIMERO OCULTAMOS TODAS LAS FICHAS PARA QUE NO SE VEAN LAS QUE NO SE USAN
         for (ImageView iv : fichas) {
             if (iv != null) iv.setVisible(false);
         }
  
-        // Asignar imagen según color, posicionar en casilla 0 y mostrar la ficha de cada jugador
+        // ASIGNAMOS IMAGEN, POSICIÓN INICIAL Y VISIBILIDAD A CADA JUGADOR
         for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
             Jugador j = jugadoresConfig.get(i);
             ImageView ficha = fichas[i];
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
-                actualizarPosicionVisual(j, ficha); // ← coloca la ficha en la fila/col correcta desde el inicio
+                actualizarPosicionVisual(j, ficha); // COLOCA LA FICHA EN LA CELDA CORRECTA DESDE EL INICIO
             }
         }
 
         inicializarColas();
  
-        // Actualizar inventario del primer pingüino
+        // ACTUALIZAMOS EL CONTADOR DEL INVENTARIO DEL PRIMER PINGÜINO HUMANO
         for (Jugador j : jugadoresConfig) {
             if (j instanceof Pinguino) {
                 actualizarTextosInventario(j);
@@ -212,7 +202,7 @@ public class PantallaPartida {
     }
  
     // ==========================================
-    // MENÚ OPCIONES (EVENTOS)
+    // MENÚ DE OPCIONES: GUARDAR, CARGAR Y SALIR
     // ==========================================
  
     @FXML
@@ -225,8 +215,8 @@ public class PantallaPartida {
             return;
         }
 
-        // Si ya tenemos un ID asignado a esta partida, sobrescribir.
-        // Si no, generar uno nuevo con la sequence Oracle.
+        // SI YA HAY UN ID ASIGNADO A ESTA PARTIDA, LA SOBRESCRIBIMOS EN LA BASE DE DATOS
+        // SI NO TIENE ID AÚN, GENERAMOS UNO NUEVO CON LA SEQUENCE DE ORACLE
         int idAUsar;
         boolean esActualizacion = (this.idPartidaActual > 0);
 
@@ -240,14 +230,14 @@ public class PantallaPartida {
                 gestorUI.registrar("❌ Error al actualizar en BBDD.");
             }
         } else {
-            // Primera vez que guardamos: generar ID automático
+            // PRIMERA VEZ QUE SE GUARDA: GENERAMOS UN ID AUTOMÁTICO CON LA SEQUENCE DE ORACLE
             idAUsar = gestor.guardarPartidaAuto(partida);
             gestor.cerrarConexion();
             if (idAUsar > 0) {
                 this.idPartidaActual = idAUsar;
                 gestorUI.registrar("✅ Partida creada con ID " + idAUsar + " (asignado automáticamente).");
 
-                // Mostrar al usuario el ID que se le ha asignado
+                // MOSTRAMOS UN DIALOGO INFORMANDO AL JUGADOR DEL ID ASIGNADO
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
                     javafx.scene.control.Alert.AlertType.INFORMATION);
                 alert.setTitle("Partida guardada");
@@ -282,11 +272,11 @@ public class PantallaPartida {
             try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
             Stage stage = null;
             
-            // Intento 1: A través del tablero
+            // INTENTO 1: OBTENEMOS LA VENTANA A TRAVÉS DEL TABLERO
             if (tablero != null && tablero.getScene() != null && tablero.getScene().getWindow() != null) {
                 stage = (Stage) tablero.getScene().getWindow();
             } 
-            // Intento 2: A través del evento (MenuItem -> MenuBar -> Stage)
+            // INTENTO 2: OBTENEMOS LA VENTANA A TRAVÉS DEL EVENTO (MENUITEM -> MENUBAR -> STAGE)
             else if (event.getSource() instanceof MenuItem) {
                 MenuItem mItem = (MenuItem) event.getSource();
                 if (mItem.getParentPopup() != null && mItem.getParentPopup().getOwnerWindow() != null) {
@@ -336,7 +326,7 @@ public class PantallaPartida {
             return;
         }
  
-        // 3. Popup si tiene objetos usables antes de tirar
+        // SI EL JUGADOR TIENE OBJETOS USABLES, LE PREGUNTAMOS SI QUIERE USARLOS ANTES DE TIRAR
         if (tieneObjetosUsables(actual)) {
             mostrarPopupObjetos(actual);
         } else {
@@ -344,18 +334,18 @@ public class PantallaPartida {
         }
     }
  
-    /** Ejecuta una tirada normal de dado (1-6) y avanza el turno. */
+    // EJECUTA UNA TIRADA NORMAL DE DADO (VALOR 1-6) Y HACE MOVER AL JUGADOR
     private void ejecutarTiradaNormal(Jugador actual) {
         int tirada = (int)(Math.random() * 6) + 1;
 
-        // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
+        // SI HAY ANIMACIÓN CONFIGURADA PARA ESTE JUGADOR, LA MOSTRAMOS ANTES DE MOVERLO
         String[] config = obtenerConfigAnimacion(actual, "normal");
         if (config != null) {
             final int tiradaFinal = tirada;
             setUIInteractuable(false);
             mostrarAnimacionTurno(actual, tiradaFinal,
-                config[0],                                         // ruta imagen dado
-                javafx.scene.paint.Color.web(config[1]),           // color texto resultado
+                config[0],                                         // RUTA DE LA IMAGEN DEL DADO
+                javafx.scene.paint.Color.web(config[1]),           // COLOR DEL TEXTO DEL RESULTADO
                 () -> {
                     moverJugadorYAccion(actual, tiradaFinal, "tirada normal");
                     if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal);
@@ -365,7 +355,7 @@ public class PantallaPartida {
                 });
         } else {
             moverJugadorYAccion(actual, tirada, "tirada normal");
-            // 4. Resultado del dado visible: texto grande y claro
+            // MOSTRAMOS EL RESULTADO DEL DADO EN EL TEXTO GRANDE DE LA UI
             if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada);
             actualizarTextosInventario(actual);
             avanzarTurno();
@@ -373,7 +363,7 @@ public class PantallaPartida {
         }
     }
  
-    /** Comprueba si el jugador tiene objetos que puede usar activamente (dados/bolas). */
+    // DEVUELVE TRUE SI EL JUGADOR TIENE DADOS ESPECIALES O BOLAS DE NIEVE EN SU INVENTARIO
     private boolean tieneObjetosUsables(Jugador j) {
         if (!(j instanceof Pinguino)) return false;
         for (Item item : j.getInventario().getLista()) {
@@ -384,10 +374,8 @@ public class PantallaPartida {
         return false;
     }
  
-    /**
-     * 3. Popup que aparece antes de tirar el dado si el jugador tiene objetos disponibles.
-     * Muestra un botón por objeto usable y un botón "No, tirar dado normal".
-     */
+    // MUESTRA UN POPUP ANTES DE TIRAR: PERMITE AL JUGADOR USAR UN OBJETO DE SU INVENTARIO
+    // CREA UN BOTÓN POR CADA OBJETO USABLE MÁS UN BOTÓN PARA TIRAR EL DADO NORMAL
     private void mostrarPopupObjetos(Jugador actual) {
         int nRapidos = contarItemPorNombre(actual, "rapido", "rápido");
         int nLentos  = contarItemPorNombre(actual, "lento");
@@ -424,7 +412,7 @@ public class PantallaPartida {
         });
     }
  
-    /** Cuenta items cuyo nombre contenga alguna de las palabras clave dadas. */
+    // CUENTA CUÁNTOS ITEMS DEL INVENTARIO CONTIENEN ALGUNA DE LAS PALABRAS CLAVE DADAS
     private int contarItemPorNombre(Jugador j, String... claves) {
         int n = 0;
         for (Item item : j.getInventario().getLista()) {
@@ -435,11 +423,11 @@ public class PantallaPartida {
     }
  
     // ==========================================
-    // USO DE OBJ ETOS DEL INVENTARIO
+    // USO DE OBJETOS DEL INVENTARIO (BOTONES UI)
     // ==========================================
     @FXML
     private void handleRapido(ActionEvent event) {
-        usarDadoEspecial("Dado Rápido", 5, 10); // Especificació: avança entre 5 i 10 caselles
+        usarDadoEspecial("Dado Rápido", 5, 10); // AVANZA ENTRE 5 Y 10 CASILLAS
     }
     
     @FXML
@@ -465,7 +453,7 @@ public class PantallaPartida {
             if (consumirObjeto(actual, nombreDado)) {
                 int tirada = (int)(Math.random() * (max - min + 1)) + min;
 
-                // Si el jugador tiene animación de dado registrada, mostrarla antes de mover
+                // SI HAY ANIMACIÓN CONFIGURADA PARA ESTE DADO, LA REPRODUCIMOS ANTES DE MOVER
                 String[] config = obtenerConfigAnimacion(actual, nombreDado);
                 if (config != null) {
                     final int tiradaFinal = tirada;
@@ -518,7 +506,7 @@ public class PantallaPartida {
             return;
         }
  
-        // Buscar objetivo: el pinguino humano que va más adelante
+        // BUSCAMOS AL PINGÜINO HUMANO QUE VA MÁS ADELANTE EN EL TABLERO (OBJETIVO DEL ATAQUE)
         Jugador objetivo = null;
         int maxPos = -1;
         for (Jugador j : partida.getJugadores()) {
@@ -560,7 +548,7 @@ public class PantallaPartida {
             encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + objetivo.getNombre() + ":0");
         }
  
-        // Lanzar bolas ES la acción del turno (reemplaza tirar dado)
+        // LANZAR BOLAS ES LA ACCIÓN DEL TURNO: NO SE TIRA EL DADO ESTE TURNO
         avanzarTurno();
         dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
     }
@@ -592,7 +580,7 @@ public class PantallaPartida {
             int maxRecorrido = Math.min(49, posInicial + tirada);
             for (Jugador p : partida.getJugadores()) {
                 if (!(p instanceof Foca) && p.getPosicion() > posInicial && p.getPosicion() <= maxRecorrido) {
-                    if (p.getPosicion() != nuevaPos) { // La posición final se procesa en el choque
+                    if (p.getPosicion() != nuevaPos) { // LA POSICIÓN FINAL SE PROCESA EN EL CHOQUE
                         p.perderMitadInventario();
                         gestorUI.registrar("¡La Foca le roba la mitad del equipaje a " + p.getNombre() + " al pasar por encima!");
                     }
@@ -608,18 +596,18 @@ public class PantallaPartida {
         if (j.getPosicion() >= 49) {
             j.moverPosicion(49);
             partida.setFinalizada(true);
-            partida.setGanador(j); // ⭐ Guardar el ganador en el objeto Partida
+            partida.setGanador(j); // GUARDAMOS EL GANADOR EN EL OBJETO PARTIDA
             gestorUI.registrar("¡" + j.getNombre() + " HA LLEGADO A LA META Y GANA LA PARTIDA!");
 
-            // ⭐ NUEVO: Notificar a Oracle (dispara el trigger 'incrementar_wins')
+            // NOTIFICAMOS A ORACLE PARA DISPARAR EL TRIGGER 'INCREMENTAR_WINS'
             notificarFinPartidaBBDD(j);
 
-            // Navegar a la pantalla de victoria tras un breve retardo para que el log se vea
+            // NAVEGAMOS A LA PANTALLA DE VICTORIA DESDE EL HILO DE UI
             javafx.application.Platform.runLater(() -> irAPantallaVictoria(j));
             return;
         }
         
-        // Ejecuta la casilla (Oso, Trineo, Evento...)
+        // EJECUTAMOS LA ACCION DE LA CASILLA EN LA QUE CAYÓ EL JUGADOR (OSO, TRINEO, EVENTO...)
         Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
         int posAntesCasilla = j.getPosicion();
 
@@ -643,27 +631,27 @@ public class PantallaPartida {
             } else if (casillaActual instanceof Trineo) {
                 encolarAnimacionTrineo(j, j.getPosicion());
             }
-            // Salto directo para efectos de casilla (Oso, Trineo, etc.)
+            // SI HUBO MOVIMIENTO EXTRA POR LA CASILLA, ENCOLAMOS UN SALTO DIRECTO VISUAL
             encolarSaltoDirecto(j, j.getPosicion());
         }
         
-        // Comprobar colisiones
+        // COMPROBAMOS SI ALGÚN JUGADOR ATERRIZÓ EN LA MISMA CASILLA QUE OTRO
         verificarColisionesLocal(j);
     }
  
-    /** Carga la pantalla de victoria y le pasa el nombre y color del ganador. */
+    // CARGA LA PANTALLA DE VICTORIA Y LE PASA EL NOMBRE Y COLOR DEL GANADOR
     private void irAPantallaVictoria(Jugador ganador) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaVictoria.fxml"));
             Parent root = loader.load();
  
-            // Pasar datos del ganador al controlador de victoria
+            // PASAMOS LOS DATOS DEL GANADOR AL CONTROLADOR DE LA PANTALLA DE VICTORIA
             PantallaVictoria controlador = loader.getController();
             controlador.setGanador(ganador.getNombre(), ganador.getColor(), ganador instanceof Foca);
  
             Scene scene = new Scene(root);
  
-            // Obtener la ventana actual
+            // OBTENEMOS EL STAGE ACTUAL PARA CAMBIAR DE ESCENA
             Stage stage = null;
             if (tablero != null && tablero.getScene() != null && tablero.getScene().getWindow() != null) {
                 stage = (Stage) tablero.getScene().getWindow();
@@ -687,18 +675,18 @@ public class PantallaPartida {
         for (Jugador otro : partida.getJugadores()) {
             if (otro != actual && actual.getPosicion() == otro.getPosicion() && actual.getPosicion() > 0) {
                 
-                // Si alguien choca contra la Foca
+                // DETECTAMOS SI ALGÚN JUGADOR CHOCÓ CON LA FOCA
                 if (actual instanceof Foca || otro instanceof Foca) {
                     Jugador pinguino = (actual instanceof Pinguino) ? actual : otro;
                     Foca foca = (actual instanceof Foca) ? (Foca) actual : (Foca) otro;
  
                     if (consumirObjeto(pinguino, "Pez")) {
-                        // El pingüino le da un pez: la Foca queda bloqueada 2 turnos
+                        // EL PINGÜINO USA UN PEZ: LA FOCA QUEDA BLOQUEADA 2 TURNOS
                         gestorUI.registrar("¡" + pinguino.getNombre() + " le lanza un Pez a la Foca! ¡La Foca queda bloqueada 2 turnos!");
                         foca.aplicarPenalizacion();
-                        foca.aplicarPenalizacion(); // 2 turnos según especificación
+                        foca.aplicarPenalizacion(); // SE LLAMA DOS VECES PORQUE SON 2 TURNOS DE PENALIZACIÓN
                     } else {
-                        // Sin pez: coletazo → solo retrocede al agujero anterior (NO pierde objetos)
+                        // SIN PEZ: LA FOCA DA UN COLETAZO Y EL PINGÜINO RETROCEDE AL AGUJERO ANTERIOR
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
                         pinguino.moverPosicion(posHole);
                         encolarSaltoDirecto(pinguino, posHole);
@@ -752,9 +740,9 @@ public class PantallaPartida {
         if (partida.isFinalizada()) return;
         Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
         if (actual instanceof Foca) {
-            // Sonido de foca al inicio de su turno (solo 1 segundo)
+            // REPRODUCIMOS EL SONIDO DE LA FOCA DURANTE 1 SEGUNDO AL INICIO DE SU TURNO
             reproducirSonidoFoca();
-            // Lógica CPU
+            // LÓGICA DEL TURNO DE LA FOCA (CPU)
             if (actual.estaPenalizado()) {
                 actual.decrementarPenalizacion();
                 gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
@@ -782,16 +770,14 @@ public class PantallaPartida {
                 }
             }
         } else {
-            // 5. Turno humano: actualizar texto de turno + habilitar controles
+            // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
             actualizarTextosTurno();
             setUIInteractuable(true);
         }
     }
 
-    /**
-     * Reproduce el sonido de la foca durante exactamente 1 segundo.
-     * Si ya estaba sonando, lo detiene y lo reinicia desde el principio.
-     */
+    // REPRODUCE EL SONIDO DE LA FOCA EXACTAMENTE 1 SEGUNDO
+    // SI YA HABÍA UN SONIDO REPRODUCIÉNDOSE, LO PARA Y LO REINICIA DESDE EL PRINCIPIO
     private void reproducirSonidoFoca() {
         try {
             if (mediaPlayerFoca != null) {
@@ -822,10 +808,8 @@ public class PantallaPartida {
         }
     }
  
-    /**
-     * 1. Configura el listener global de teclado: Escape abre/cierra el menú de opciones
-     * (implementado como ContextMenu anclado a la ventana).
-     */
+    // REGISTRA EL LISTENER DE TECLADO: ESCAPE ABRE Y CIERRA EL MENÚ DE OPCIONES
+    // EL MENÚ SE IMPLEMENTA COMO UN CONTEXTMENU ANCLADO A LA VENTANA
     private void configurarEscapeMenu() {
         ctxMenuEscape = new javafx.scene.control.ContextMenu();
  
@@ -838,7 +822,7 @@ public class PantallaPartida {
         miSalir.setOnAction(this::handleQuitWithoutSaving);
         ctxMenuEscape.getItems().addAll(miGuardar, miGuardarSalir, sep, miSalir);
  
-        // Adjuntar listener cuando la escena esté disponible
+        // ADJUNTAMOS EL LISTENER AL TABLERO PARA CAPTURAR LA TECLA ESCAPE EN CUALQUIER MOMENTO
         tablero.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
@@ -874,14 +858,13 @@ public class PantallaPartida {
  
     private void mostrarTiposDeCasillasEnTablero(Tablero t) {
         if (tablero == null) return;
-        // Eliminar imágenes de casillas anteriores
+        // BORRAMOS LAS IMÁGENES DE CASILLAS DEL TURNO ANTERIOR ANTES DE REDIBUJARLAS
         tablero.getChildren().removeIf(node -> TAG_CASILLA_TEXT.equals(node.getUserData()));
  
         for (int i = 0; i < t.getCasillas().size(); i++) {
             Casilla casilla = t.getCasillas().get(i);
  
-            // LA CASILLA 49 ES LA META (IGLÚ). Como ya viene dibujada en el fondo,
-            // no queremos poner una placa de hielo normal encima, dejando ver el fondo.
+            // LA CASILLA 49 ES EL IGLU (META): YA VIENE DIBUJADA EN EL FONDO, NO LA SOBREPONEMOS
             if (i == 49) {
                 continue;
             }
@@ -914,14 +897,14 @@ public class PantallaPartida {
             }
         }
         
-        // Z-Index fix: Ensure players are always drawn on top of the board cells
+        // ASEGURAMOS QUE LAS FICHAS DE LOS JUGADORES SIEMPRE SE DIBUJEN POR ENCIMA DE LAS CASILLAS
         if (P1 != null) P1.toFront();
         if (P2 != null) P2.toFront();
         if (P3 != null) P3.toFront();
         if (P4 != null) P4.toFront();
     }
  
-    /** Devuelve la ruta del recurso imagen para cada tipo de casilla. */
+    // DEVUELVE LA RUTA DEL ARCHIVO DE IMAGEN CORRESPONDIENTE A CADA TIPO DE CASILLA
     private String getRutaCasilla(Casilla c, int index, int total) {
  
         if (c instanceof Agujero)     return "/resources/Casilla_Agujero.png";
@@ -933,7 +916,8 @@ public class PantallaPartida {
         return "/resources/Casilla_Normal.png";
     }
  
-    // ======================================    // int[]{destinoPos, tipo}: tipo 0 = saltito normal, tipo 1 = salto directo (Oso, Foca, etc.)
+    // COLA DE PASOS DE ANIMACIÓN POR JUGADOR: int[]{destinoPos, tipo}
+    // TIPO 0 = SALTITO NORMAL, TIPO 1 = SALTO DIRECTO (OSO, FOCA, BOLAS, ETC.)
     private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
     private java.util.Map<Jugador, String> ultimoEventoVisual = new java.util.HashMap<>();
@@ -948,7 +932,7 @@ public class PantallaPartida {
         }
     }
 
-    /** Coloca inmediatamente la ficha visual en la celda correspondiente a la posición del jugador. */
+    // COLOCA INMEDIATAMENTE LA FICHA VISUAL EN LA CELDA CORRESPONDIENTE A LA POSICIÓN DEL JUGADOR
     private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
         if (ficha == null) return;
         int pos = j.getPosicion();
@@ -961,7 +945,7 @@ public class PantallaPartida {
         posVisual.put(j, pos);
     }
 
-    /** Encola cada casilla intermedia (saltito) entre 'desde' y 'hasta'. */
+    // ENCOLA CADA CASILLA INTERMEDIA (SALTITO) ENTRE 'DESDE' Y 'HASTA'
     private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
@@ -969,49 +953,42 @@ public class PantallaPartida {
         for (int pos = desde + step; pos != hasta + step; pos += step) q.add(new int[]{pos, 0});
     }
 
-    /** Encola un salto directo (sin pasar por casillas intermedias). Para Oso, Foca, bolas. */
+    // ENCOLA UN SALTO DIRECTO SIN PASAR POR CASILLAS INTERMEDIAS (USADO EN OSO, FOCA, BOLAS)
     private void encolarSaltoDirecto(Jugador j, int hasta) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{hasta, 1});
     }
 
-    /** Encola la animación de ataque de Oso. Tipo 2. */
+    // ENCOLA LA ANIMACIÓN DE ATAQUE DEL OSO (TIPO 2: OVERLAY ROJO A PANTALLA COMPLETA)
     private void encolarAnimacionOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{j.getPosicion(), 2}); // Destino no importa
     }
 
+    // ENCOLA LA ANIMACIÓN DEL REGALO / EVENTO (TIPO 3: CAJA TEMBLANDO CON OBJETO DENTRO)
     /** Encola la animación de soborno a Oso. Tipo 7. */
     private void encolarAnimacionSobornoOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{j.getPosicion(), 7});
     }
-
-    /** Encola la animación del regalo. Tipo 3. */
-    private void encolarAnimacionEvento(Jugador j) {
-        java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
-    }
-
-    /** Encola la animación del Agujero. Tipo 4. */
+    // ENCOLA LA ANIMACIÓN DEL AGUJERO (TIPO 4: JUGADOR SE CAE Y APARECE EN LA CASILLA DESTINO)
     private void encolarAnimacionAgujero(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{destino, 4}); 
     }
 
-    /** Encola la animación del Trineo. Tipo 5. */
+    // ENCOLA LA ANIMACIÓN DEL TRINEO (TIPO 5: JUGADOR SUBE AL TRINEO Y AVANZA DE GOLPE)
     private void encolarAnimacionTrineo(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
         q.add(new int[]{destino, 5}); 
     }
 
-    /** Encola la animación de la Guerra de Bolas. Tipo 6. */
+    // ENCOLA LA ANIMACIÓN DE GUERRA DE BOLAS (TIPO 6: OVERLAY CON EL RESULTADO DEL DUELO)
     private void encolarAnimacionGuerra(Jugador j, String data) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
@@ -1027,17 +1004,14 @@ public class PantallaPartida {
         if (nieve  != null) nieve.setDisable(!interactuable);
     }
  
-    /**
-     * 1. Animacion fluida casilla a casilla con TranslateTransition (300ms EASE_BOTH por paso).
-     * Construye la lista de pasos y los encadena via setOnFinished uno tras otro.
-     * El boton "Tirar dado" permanece deshabilitado durante toda la animacion.
-     */
+    // ANIMA CASILLA A CASILLA CON UN SALTITO PARABÓLICO (300ms POR PASO)
+    // EL BOTÓN DE TIRAR DADO PERMANECE DESHABILITADO DURANTE TODA LA ANIMACIÓN
     private void dispararAnimadorVisual(Runnable onFinished) {
         if (animando) return;
         animando = true;
         setUIInteractuable(false);
  
-        // Lista plana de pasos: int[]{playerIdx, posOrigen, posDestino, animType}
+        // LISTA PLANA DE TODOS LOS PASOS: int[]{playerIdx, posOrigen, posDestino, animType}
         java.util.List<int[]> listaPasos = new java.util.ArrayList<>();
         for (Jugador j : partida.getJugadores()) {
             java.util.Queue<int[]> q = colasAnimacion.get(j);
@@ -1061,7 +1035,7 @@ public class PantallaPartida {
         ejecutarPasoSuave(listaPasos, 0, onFinished);
     }
 
-    /** Ejecuta recursivamente cada paso con la animación que corresponda. */
+    // EJECUTA RECURSIVAMENTE CADA PASO CON LA ANIMACIÓN QUE LE CORRESPONDE
     private void ejecutarPasoSuave(java.util.List<int[]> pasos, int idx, Runnable onFinished) {
         if (idx >= pasos.size()) {
             animando = false;
@@ -1103,10 +1077,8 @@ public class PantallaPartida {
         }
     }
 
-    /**
-     * Saltito: arco parabólico de una celda a la siguiente (300ms, 3 keyframes).
-     * El personaje sube ~25px a mitad del trayecto y baja en el destino.
-     */
+    // SALTITO: ARCO PARABÓLICO DE UNA CELDA A LA SIGUIENTE (300ms, 3 KEYFRAMES)
+    // EL PERSONAJE SUBE ~25px A MITAD DEL TRAYECTO Y BAJA EN EL DESTINO
     private void animarConSaltito(ImageView ficha, Jugador j, int desde, int hasta, Runnable onDone) {
         double cellW = tablero.getWidth()  / 5.0;
         double cellH = tablero.getHeight() / 10.0;
@@ -1151,10 +1123,8 @@ public class PantallaPartida {
         tl.play();
     }
 
-    /**
-     * Salto directo: se encoge, se teletransporta a la celda destino y reaparece.
-     * Para efectos de Oso, Foca, bolas de nieve (sin pasar casilla a casilla).
-     */
+    // SALTO DIRECTO: EL PERSONAJE SE ENCOGE, SE TELETRANSPORTA A LA CELDA DESTINO Y REAPARECE
+    // SE USA PARA OSO, FOCA Y BOLAS DE NIEVE (SIN PASAR CASILLA A CASILLA)
     private void animarSaltoDirecto(ImageView ficha, Jugador j, int hasta, Runnable onDone) {
         int colB = hasta % 5, filB = 9 - (hasta / 5);
         double extraX = 0, extraY = 0;
@@ -1195,7 +1165,7 @@ public class PantallaPartida {
         phase1.play();
     }
 
-    /** Muestra una animación a pantalla completa de ataque de oso. */
+    // MUESTRA UNA ANIMACIÓN A PANTALLA COMPLETA DEL ATAQUE DEL OSO
     private void mostrarAnimacionOso(Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1275,87 +1245,7 @@ public class PantallaPartida {
         seq.play();
     }
 
-    /** Muestra la animación a pantalla completa de soborno a oso. */
-    private void mostrarAnimacionSobornoOso(Jugador j, Runnable onFinish) {
-        javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
-
-        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
-        overlayPane.setStyle("-fx-background-color: black;");
-        overlayPane.setManaged(false);
-        overlayPane.resize(W, H);
-        overlayPane.setOpacity(0);
-        rootPane.getChildren().add(overlayPane);
-
-        javafx.scene.image.ImageView osoView = new javafx.scene.image.ImageView();
-        var recurso = getClass().getResourceAsStream("/resources/soborno_oso.png");
-        if (recurso != null) {
-            osoView.setImage(new Image(recurso));
-        }
-        double OSO_SIZE = 400;
-        osoView.setFitWidth(OSO_SIZE);
-        osoView.setFitHeight(OSO_SIZE);
-        osoView.setPreserveRatio(true);
-        osoView.setOpacity(0);
-        osoView.setScaleX(0.5);
-        osoView.setScaleY(0.5);
-        osoView.setManaged(false);
-        osoView.setLayoutX(W / 2 - OSO_SIZE / 2);
-        osoView.setLayoutY(H / 2 - OSO_SIZE / 2 - 50);
-        rootPane.getChildren().add(osoView);
-
-        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(j.getNombre() + " soborna a un oso y se salva del ataque");
-        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
-        lblMensaje.setFill(javafx.scene.paint.Color.web("#00FF88"));
-        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblMensaje.setWrappingWidth(W);
-        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
-        lblMensaje.setOpacity(0);
-        lblMensaje.setManaged(false);
-        lblMensaje.setLayoutX(0);
-        lblMensaje.setLayoutY(H / 2 + OSO_SIZE / 2 + 20);
-        rootPane.getChildren().add(lblMensaje);
-
-        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOver.setToValue(0.8);
-
-        javafx.animation.FadeTransition ftOso = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), osoView);
-        ftOso.setToValue(1);
-        javafx.animation.ScaleTransition stOso = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), osoView);
-        stOso.setToX(1.2);
-        stOso.setToY(1.2);
-
-        javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftText.setToValue(1);
-
-        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftOso, stOso, ftText);
-
-        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
-
-        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOverOut.setToValue(0);
-        javafx.animation.FadeTransition ftOsoOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), osoView);
-        ftOsoOut.setToValue(0);
-        javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftTextOut.setToValue(0);
-
-        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftOsoOut, ftTextOut);
-
-        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
-        seq.setOnFinished(e -> {
-            rootPane.getChildren().removeAll(overlayPane, osoView, lblMensaje);
-            if (onFinish != null) onFinish.run();
-        });
-        seq.play();
-    }
-
-    /** Muestra la animación inicial del regalo temblando y luego el objeto obtenido. */
+    // MUESTRA LA ANIMACIÓN DEL REGALO: PRIMERO TIEMBLA Y LUEGO REVELA EL OBJETO OBTENIDO
     private void mostrarAnimacionEvento(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1536,7 +1426,7 @@ public class PantallaPartida {
         seq.play();
     }
 
-    /** Muestra la animación a pantalla completa de la Guerra de Bolas. */
+    // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DE LA GUERRA DE BOLAS DE NIEVE
     private void mostrarAnimacionGuerra(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1644,7 +1534,7 @@ public class PantallaPartida {
         seq.play();
     }
 
-    /** Muestra la animación a pantalla completa del agujero. */
+    // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DEL AGUJERO: EL JUGADOR SE CAE
     private void mostrarAnimacionAgujero(Jugador j, int destino, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1724,7 +1614,7 @@ public class PantallaPartida {
         seq.play();
     }
 
-    /** Muestra la animación a pantalla completa del trineo. */
+    // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DEL TRINEO: EL JUGADOR AVANZA RÁPIDO
     private void mostrarAnimacionTrineo(Jugador j, int destino, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
@@ -1804,26 +1694,22 @@ public class PantallaPartida {
         seq.play();
     }
  
-    /** Offset X en px para que la ficha en casilla 49 quede encima del iglu (~85.5% del ancho). */
+    // OFFSET X EN PIXELES PARA QUE LA FICHA EN CASILLA 49 QUEDE ENCIMA DEL IGLU (~85.5% DEL ANCHO)
     private double computeIglooOffsetX(int colB, double cellW) {
         double iglooSceneX = tablero.getScene().getWidth() * 0.855;
         javafx.geometry.Point2D p = tablero.localToScene((colB + 0.5) * cellW, 0);
         return iglooSceneX - p.getX();
     }
  
-    /** Offset Y en px para que la ficha en casilla 49 quede encima del iglu (~13% del alto). */
+    // OFFSET Y EN PIXELES PARA QUE LA FICHA EN CASILLA 49 QUEDE ENCIMA DEL IGLU (~13% DEL ALTO)
     private double computeIglooOffsetY(int filB, double cellH) {
         double iglooSceneY = tablero.getScene().getHeight() * 0.13;
         javafx.geometry.Point2D p = tablero.localToScene(0, (filB + 0.5) * cellH);
         return iglooSceneY - p.getY();
     }
  
-    /**
-     * 2. Varios personajes en la misma casilla:
-     * Distribuye en fila horizontal los personajes que comparten celda.
-     * Para jugador solo: solo resetea escala; NO toca translateX para preservar
-     * el offset del iglu si el jugador esta en casilla 49.
-     */
+    // REDISTRIBUYE LAS FICHAS HORIZONTALMENTE CUANDO HAY VARIOS JUGADORES EN LA MISMA CASILLA
+    // SI HAY UN SOLO JUGADOR EN LA CELDA, SOLO RESETEA LA ESCALA SIN TOCAR LA POSICIÓN
     private void refrescarDistribucionVisual() {
         java.util.Map<Integer, java.util.List<Jugador>> celdaJugadores = new java.util.HashMap<>();
         for (Jugador j : partida.getJugadores()) {
@@ -1836,7 +1722,7 @@ public class PantallaPartida {
                 ImageView ficha = getFichaVisual(lista.get(i));
                 if (ficha == null) continue;
                 if (total == 1) {
-                    // Solo escala; translate lo gestiona la animacion (iglu offset)
+                    // UN SOLO JUGADOR EN LA CELDA: SÓLO RESETEAMOS ESCALA, NO MOVEMOS
                     ficha.setScaleX(1.0); ficha.setScaleY(1.0);
                 } else if (total == 2) {
                     ficha.setScaleX(0.85); ficha.setScaleY(0.85);
@@ -1900,13 +1786,13 @@ public class PantallaPartida {
         if (nieve_t != null) nieve_t.setText("Bolas: " + bolas);
     }
  
-    /** Devuelve la ruta del PNG según el tipo de jugador. */
+    // DEVUELVE LA RUTA DEL PNG SEGÚN EL TIPO DE JUGADOR (PINGÜINO O FOCA)
     private String obtenerRutaPersonaje(Jugador j) {
         if (j instanceof Foca) return "/resources/foca.png";
         return obtenerRutaPersonaje(j.getColor());
     }
 
-    /** Devuelve la ruta del PNG según el color del jugador. */
+    // DEVUELVE LA RUTA DEL PNG SEGÚN EL COLOR DEL JUGADOR
     private String obtenerRutaPersonaje(String color) {
         if (color == null) return "/resources/Personaje Amarillo.png";
         switch (color.toLowerCase()) {
@@ -1921,7 +1807,7 @@ public class PantallaPartida {
     }
  
     private void cargarSkins() {
-        // En el modo fallback (sin PantallaConfig), asignar skins por defecto
+        // EN EL MODO SIN CONFIG (FALLBACK), ASIGNAMOS LAS SKINS POR DEFECTO A P1 Y P2
         asignarImagenAFicha(P1, obtenerRutaPersonaje("azul"));
         asignarImagenAFicha(P2, obtenerRutaPersonaje("rojo"));
     }
@@ -1944,19 +1830,15 @@ public class PantallaPartida {
     // ANIMACIÓN DE TURNO – GENÉRICA POR COLOR
     // ==========================================
 
-    /**
-     * Devuelve la configuración de animación para el color dado:
-     *   [0] = ruta de la imagen del dado  (/resources/dado_XXX.png)
-     *   [1] = color HEX del texto de resultado
-     * Devuelve null si ese color no tiene animación configurada.
-     */
+    // DEVUELVE [0]=RUTA IMAGEN DEL DADO  [1]=COLOR HEX DEL TEXTO DE RESULTADO
+    // DEVUELVE null SI ESE COLOR O TIPO DE DADO NO TIENE ANIMACIÓN CONFIGURADA
     private String[] obtenerConfigAnimacion(Jugador j, String tipoDado) {
         if (tipoDado != null) {
             if (tipoDado.equals("Dado Rápido")) return new String[]{"/resources/dado_rapido.png", "#FF4500"};
             if (tipoDado.equals("Dado Lento"))  return new String[]{"/resources/dado_lento.png",  "#8B4513"};
         }
         
-        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"}; // Dado de la foca
+        if (j instanceof Foca) return new String[]{"/resources/dado_foca.png", "#A9A9A9"}; // DADO DE LA FOCA (CPU)
 
         String color = j.getColor();
         if (color == null) return null;
@@ -1970,24 +1852,22 @@ public class PantallaPartida {
         }
     }
 
-    /**
-     * Muestra la secuencia animada de turno (overlay + dado girando + resultado).
-     * Reutilizable para cualquier color de jugador.
-     *
-     * @param actual        Jugador cuyo turno se anima.
-     * @param resultadoDado Valor del dado (1-6) ya calculado.
-     * @param rutaDado      Ruta del recurso imagen del dado (p.ej. /resources/dado_azul.png).
-     * @param colorTexto    Color del texto de resultado (API Java, inmune a CSS).
-     * @param onFinish      Callback ejecutado al terminar: aquí va el movimiento del personaje.
-     */
+    // MUESTRA LA SECUENCIA COMPLETA DE ANIMACIÓN DE TURNO: OVERLAY + DADO GIRANDO + RESULTADO
+    // ES REUTILIZABLE PARA CUALQUIER COLOR DE JUGADOR, RECIBE LA IMAGEN Y COLOR POR PARÁMETRO
+    //
+    // @param actual        JUGADOR CUYO TURNO SE ANIMA
+    // @param resultadoDado VALOR DEL DADO (1-6) YA CALCULADO
+    // @param rutaDado      RUTA DE LA IMAGEN DEL DADO (ej. /resources/dado_azul.png)
+    // @param colorTexto    COLOR DEL TEXTO DE RESULTADO (API JAVA, INMUNE A CSS)
+    // @param onFinish      CALLBACK QUE SE EJECUTA AL TERMINAR: AQUÍ VA EL MOVIMIENTO DEL PERSONAJE
     private void mostrarAnimacionTurno(Jugador actual, int resultadoDado,
                                        String rutaDado,
                                        javafx.scene.paint.Color colorTexto,
                                        Runnable onFinish) {
-        // --- Obtener dimensiones de la escena ---
+        // OBTENEMOS LAS DIMENSIONES DE LA ESCENA PARA CENTRAR LOS ELEMENTOS
         javafx.scene.Scene escena = tablero.getScene();
         if (escena == null) {
-            // Fallback: ejecutar directamente si la escena no está disponible
+            // SI LA ESCENA AÚN NO ESTÁ DISPONIBLE, EJECUTAMOS EL CALLBACK DIRECTAMENTE
             if (onFinish != null) onFinish.run();
             return;
         }
@@ -1997,14 +1877,13 @@ public class PantallaPartida {
 
     
         final double DADO_SIZE   = 380;
-        final double TEXTO_H     = 50;       // altura estimada del label "Turno de X"
-        final double GAP         = 20;       // espacio entre texto y dado
-        final double GRUPO_H     = TEXTO_H + GAP + DADO_SIZE;  // 450px
-        final double GRUPO_TOP   = H / 2 - GRUPO_H / 2;       // Y inicio del bloque
+        final double TEXTO_H     = 50;       // ALTURA ESTIMADA DEL LABEL "TURNO DE X"
+        final double GAP         = 20;       // ESPACIO ENTRE EL TEXTO Y EL DADO
+        final double GRUPO_H     = TEXTO_H + GAP + DADO_SIZE;  // ALTO TOTAL DEL BLOQUE
+        final double GRUPO_TOP   = H / 2 - GRUPO_H / 2;       // Y DESDE DONDE EMPIEZA EL BLOQUE
 
-        // --- 1. Overlay semitransparente (solo fondo oscuro) ---
-        // El dado, lblTurno y lblResultado NO son hijos del overlay para evitar
-        // que hereden su opacidad y se vean transparentes.
+        // OVERLAY 1: FONDO NEGRO SEMITRANSPARENTE (EL DADO Y LOS TEXTOS NO SON HIJOS SUYOS
+        // PARA EVITAR QUE HEREDEN SU OPACIDAD Y SE VEAN TRANSPARENTES)
         javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
         overlayPane.setStyle("-fx-background-color: black;");
         overlayPane.setManaged(false);
@@ -2012,11 +1891,10 @@ public class PantallaPartida {
         overlayPane.setLayoutY(0);
         overlayPane.resize(W, H);
         overlayPane.setOpacity(0);
-        overlayPane.setMouseTransparent(false); // bloquea clics del usuario
+        overlayPane.setMouseTransparent(false); // BLOQUEA LOS CLICS DEL USUARIO DURANTE LA ANIMACIÓN
         rootPane.getChildren().add(overlayPane);
 
-        // --- 2. Text "Turno de X" ---
-        // Text.setFill() es API Java directa, inmune al CSS .label { -fx-text-fill: white }.
+        // TEXTO 2: "TURNO DE X" - USAMOS setFill() (API JAVA) PARA QUE EL CSS NO LO SOBREESCRIBA
         javafx.scene.text.Text lblTurno = new javafx.scene.text.Text("Turno de " + actual.getNombre());
         lblTurno.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
         lblTurno.setFill(javafx.scene.paint.Color.WHITE);
@@ -2029,9 +1907,9 @@ public class PantallaPartida {
         lblTurno.setLayoutY(GRUPO_TOP + 42);
         rootPane.getChildren().add(lblTurno);
 
-        // --- 3. ImageView del dado (imagen según rutaDado recibida) ---
+        // IMAGEN 3: DADO DEL COLOR DEL JUGADOR (LA RUTA SE RECIBE COMO PARÁMETRO)
         javafx.scene.image.ImageView dadoView = new javafx.scene.image.ImageView();
-        var recurso = getClass().getResourceAsStream(rutaDado);  // imagen según color del jugador
+        var recurso = getClass().getResourceAsStream(rutaDado);  // IMAGEN DEL DADO SEGÚN EL COLOR DEL JUGADOR
         if (recurso != null) {
             dadoView.setImage(new Image(recurso));
         } else {
@@ -2044,16 +1922,15 @@ public class PantallaPartida {
         dadoView.setScaleX(0.5);
         dadoView.setScaleY(0.5);
         dadoView.setManaged(false);
-        dadoView.setLayoutX(W / 2 - DADO_SIZE / 2);          // centrado horizontalmente
-        dadoView.setLayoutY(GRUPO_TOP + TEXTO_H + GAP);       // justo debajo del texto
+        dadoView.setLayoutX(W / 2 - DADO_SIZE / 2);          // CENTRADO HORIZONTALMENTE EN PANTALLA
+        dadoView.setLayoutY(GRUPO_TOP + TEXTO_H + GAP);       // JUSTO DEBAJO DEL TEXTO DE TURNO
         rootPane.getChildren().add(dadoView);
 
-        // --- 4. Text de resultado ("X ha sacado un N") ---
-        // setFill(colorTexto) garantiza el color del jugador sin interferencia de CSS.
+        // TEXTO 4: RESULTADO DEL DADO - setFill() GARANTIZA EL COLOR DEL JUGADOR SIN CSS
         javafx.scene.text.Text lblResultado = new javafx.scene.text.Text(
             actual.getNombre() + " ha sacado un " + resultadoDado);
         lblResultado.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 52));
-        lblResultado.setFill(colorTexto);   // color del jugador, API Java pura
+        lblResultado.setFill(colorTexto);   // COLOR DEL JUGADOR, API JAVA DIRECTA
         lblResultado.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         lblResultado.setWrappingWidth(W);
         lblResultado.setEffect(new javafx.scene.effect.DropShadow(18, javafx.scene.paint.Color.BLACK));
@@ -2061,13 +1938,13 @@ public class PantallaPartida {
         lblResultado.setManaged(false);
         lblResultado.setLayoutX(0);
         lblResultado.setLayoutY(H / 2 + 26);
-        rootPane.getChildren().add(lblResultado); // último hijo → z-index más alto
+        rootPane.getChildren().add(lblResultado); // ÚLTIMO HIJO = Z-INDEX MÁS ALTO (SIEMPRE AL FRENTE)
 
         // ==============================================
-        // Construcción de la SequentialTransition
+        // CONSTRUCCIÓN DE LA SEQUENTIAL TRANSITION
         // ==============================================
 
-        // Paso 1 (300ms): overlay oscurece + dado crece + lblTurno aparecen juntos
+        // PASO 1 (300ms): OVERLAY SE OSCURECE + DADO CRECE + TEXTO TURNO APARECEN JUNTOS
         javafx.animation.FadeTransition fadeInOverlay = new javafx.animation.FadeTransition(
             javafx.util.Duration.millis(300), overlayPane);
         fadeInOverlay.setFromValue(0);
@@ -2088,18 +1965,18 @@ public class PantallaPartida {
         fadeInTurno.setFromValue(0);
         fadeInTurno.setToValue(1);
 
-        // Overlay + (dado zoom + fade + texto turno) todos a la vez
+        // OVERLAY + DADO (ZOOM + FADE) + TEXTO TURNO: TODOS A LA VEZ EN PARALELO
         javafx.animation.ParallelTransition paso1 = new javafx.animation.ParallelTransition(
             fadeInOverlay, fadeInDado, zoomDado, fadeInTurno);
 
-        // Paso 2 (2000ms): dado gira 3 vueltas mientras "Turno de X" permanece visible
+        // PASO 2 (2000ms): EL DADO GIRA 3 VUELTAS COMPLETAS MIENTRAS SE VE "TURNO DE X"
         javafx.animation.RotateTransition girarDado = new javafx.animation.RotateTransition(
             javafx.util.Duration.millis(2000), dadoView);
         girarDado.setFromAngle(0);
         girarDado.setToAngle(360 * 3);
         girarDado.setInterpolator(javafx.animation.Interpolator.LINEAR);
 
-        // Paso 3 (400ms): dado y lblTurno desaparecen juntos
+        // PASO 3 (400ms): EL DADO Y EL TEXTO DE TURNO DESAPARECEN JUNTOS CON FADE OUT
         javafx.animation.FadeTransition fadeOutDado = new javafx.animation.FadeTransition(
             javafx.util.Duration.millis(400), dadoView);
         fadeOutDado.setFromValue(1);
@@ -2113,17 +1990,17 @@ public class PantallaPartida {
         javafx.animation.ParallelTransition paso3 =
             new javafx.animation.ParallelTransition(fadeOutDado, fadeOutTurno);
 
-        // Paso 4 (300ms): mensaje de resultado aparece en el centro
+        // PASO 4 (300ms): EL MENSAJE CON EL RESULTADO NUMÉRICO APARECE EN EL CENTRO
         javafx.animation.FadeTransition fadeInLabel = new javafx.animation.FadeTransition(
             javafx.util.Duration.millis(300), lblResultado);
         fadeInLabel.setFromValue(0);
         fadeInLabel.setToValue(1);
 
-        // Paso 5 (1500ms): pausa para que el jugador lea el resultado
+        // PASO 5 (1500ms): PAUSA PARA QUE EL JUGADOR PUEDA LEER EL RESULTADO
         javafx.animation.PauseTransition pausaResultado =
             new javafx.animation.PauseTransition(javafx.util.Duration.millis(1500));
 
-        // Paso 6 (400ms): resultado y overlay desaparecen juntos
+        // PASO 6 (400ms): EL RESULTADO Y EL OVERLAY DESAPARECEN JUNTOS
         javafx.animation.FadeTransition fadeOutLabel = new javafx.animation.FadeTransition(
             javafx.util.Duration.millis(400), lblResultado);
         fadeOutLabel.setFromValue(1);
@@ -2137,33 +2014,31 @@ public class PantallaPartida {
         javafx.animation.ParallelTransition paso6 =
             new javafx.animation.ParallelTransition(fadeOutLabel, fadeOutOverlay);
 
-        // --- Secuencia completa encadenada ---
+        // SECUENCIA COMPLETA ENCADENADA EN ORDEN
         javafx.animation.SequentialTransition secuenciaCompleta =
             new javafx.animation.SequentialTransition(
-                paso1,           // overlay + dado + "Turno de X" aparecen
-                girarDado,       // dado gira 3 vueltas
-                paso3,           // dado + "Turno de X" desaparecen
-                fadeInLabel,     // resultado aparece en el centro
-                pausaResultado,  // pausa 1.5s
-                paso6            // resultado + overlay desaparecen
+                paso1,           // OVERLAY + DADO + "TURNO DE X" APARECEN
+                girarDado,       // DADO GIRA 3 VUELTAS
+                paso3,           // DADO + "TURNO DE X" DESAPARECEN
+                fadeInLabel,     // RESULTADO APARECE EN EL CENTRO
+                pausaResultado,  // PAUSA 1.5 SEGUNDOS
+                paso6            // RESULTADO + OVERLAY DESAPARECEN
             );
 
         secuenciaCompleta.setOnFinished(e -> {
-            // Eliminar todos los nodos del grafo de la escena
+            // ELIMINAMOS TODOS LOS NODOS DEL OVERLAY DEL GRAFO DE ESCENA
             rootPane.getChildren().removeAll(overlayPane, lblTurno, dadoView, lblResultado);
-            // Ejecutar el movimiento del personaje amarillo
+            // EJECUTAMOS EL CALLBACK: AQUÍ ES DONDE SE MUEVE EL PERSONAJE
             if (onFinish != null) onFinish.run();
         });
 
         secuenciaCompleta.play();
     }
 
-    /**
-     * Notifica a Oracle que la partida ha finalizado.
-     * 1. Si la partida no se había guardado antes, le asigna ID automático.
-     * 2. Guarda el estado FINAL de la partida (con el ganador en su posición de victoria).
-     * 3. Asigna el ganador en BBDD (dispara el trigger 'incrementar_wins').
-     */
+    // NOTIFICA A ORACLE QUE LA PARTIDA HA TERMINADO Y ACTUALIZA LAS ESTADÍSTICAS
+    // PASO 1: SI NO TENÍA ID, SE GENERA UNO AUTOMÁTICO
+    // PASO 2: GUARDA EL ESTADO FINAL CON EL GANADOR EN LA META
+    // PASO 3: DISPARA EL TRIGGER 'INCREMENTAR_WINS' EN ORACLE
     private void notificarFinPartidaBBDD(Jugador ganador) {
         try {
             GestorBBDD gestor = new GestorBBDD();
@@ -2202,14 +2077,14 @@ public class PantallaPartida {
             java.util.List<String> participantes = new java.util.ArrayList<>();
             if (partida != null && partida.getJugadores() != null) {
                 for (Jugador jug : partida.getJugadores()) {
-                    // Solo añadir Pinguinos (no Focas/CPU, que no son usuarios reales)
+                    // SOLO AÑADIMOS PINGÜINOS (LAS FOCAS/CPU NO SON USUARIOS REALES)
                     if (jug instanceof Pinguino) {
                         participantes.add(jug.getNombre());
                     }
                 }
             }
 
-            // PASO 5: Asignar ganador y actualizar num_partidas a todos
+            // PASO 5: ASIGNAR GANADOR Y ACTUALIZAR NUM_PARTIDAS A TODOS
             gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
             if (idGanador != -1) {
                 gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
