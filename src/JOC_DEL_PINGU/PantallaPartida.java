@@ -223,12 +223,15 @@ public class PantallaPartida {
         if (esActualizacion) {
             idAUsar = this.idPartidaActual;
             boolean exito = gestor.guardarBBDD(partida, idAUsar);
-            gestor.cerrarConexion();
             if (exito) {
                 gestorUI.registrar("✅ Partida " + idAUsar + " actualizada en BBDD.");
+                // ⭐ Registrar en HISTORIAL como GUARDAR
+                gestor.registrarHistorial(idAUsar, "GUARDAR", 
+                    "Partida " + idAUsar + " actualizada (re-guardada).");
             } else {
                 gestorUI.registrar("❌ Error al actualizar en BBDD.");
             }
+            gestor.cerrarConexion();
         } else {
             // PRIMERA VEZ QUE SE GUARDA: GENERAMOS UN ID AUTOMÁTICO CON LA SEQUENCE DE ORACLE
             idAUsar = gestor.guardarPartidaAuto(partida);
@@ -236,6 +239,9 @@ public class PantallaPartida {
             if (idAUsar > 0) {
                 this.idPartidaActual = idAUsar;
                 gestorUI.registrar("✅ Partida creada con ID " + idAUsar + " (asignado automáticamente).");
+                // ⭐ Registrar en HISTORIAL como CREACION
+                gestor.registrarHistorial(idAUsar, "CREACION", 
+                    "Partida " + idAUsar + " creada y guardada por primera vez.");
 
                 // MOSTRAMOS UN DIALOGO INFORMANDO AL JUGADOR DEL ID ASIGNADO
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
@@ -968,7 +974,13 @@ public class PantallaPartida {
     }
 
     // ENCOLA LA ANIMACIÓN DEL REGALO / EVENTO (TIPO 3: CAJA TEMBLANDO CON OBJETO DENTRO)
-    /** Encola la animación de soborno a Oso. Tipo 7. */
+    private void encolarAnimacionEvento(Jugador j) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q == null) return;
+        q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
+    }
+
+    /** Encola la animación de soborno al Oso. Tipo 7. */
     private void encolarAnimacionSobornoOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
         if (q == null) return;
