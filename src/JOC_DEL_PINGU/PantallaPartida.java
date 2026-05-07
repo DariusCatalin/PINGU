@@ -1057,6 +1057,7 @@ public class PantallaPartida {
             ejecutarPasoSuave(pasos, idx + 1, onFinished);
             return;
         }
+        
         Runnable next = () -> ejecutarPasoSuave(pasos, idx + 1, onFinished);
         if (tipo == 1) {
             animarSaltoDirecto(fic, j, hasta, next);
@@ -1245,6 +1246,85 @@ public class PantallaPartida {
         seq.play();
     }
 
+    // MUESTRA UNA ANIMACIÓN A PANTALLA COMPLETA DEL SOBORNO AL OSO
+    private void mostrarAnimacionSobornoOso(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            if (onFinish != null) onFinish.run();
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        javafx.scene.image.ImageView osoView = new javafx.scene.image.ImageView();
+        var recurso = getClass().getResourceAsStream("/resources/soborno_oso.png");
+        if (recurso != null) {
+            osoView.setImage(new Image(recurso));
+        }
+        double OSO_SIZE = 400;
+        osoView.setFitWidth(OSO_SIZE);
+        osoView.setFitHeight(OSO_SIZE);
+        osoView.setPreserveRatio(true);
+        osoView.setOpacity(0);
+        osoView.setScaleX(0.5);
+        osoView.setScaleY(0.5);
+        osoView.setManaged(false);
+        osoView.setLayoutX(W / 2 - OSO_SIZE / 2);
+        osoView.setLayoutY(H / 2 - OSO_SIZE / 2 - 50);
+        rootPane.getChildren().add(osoView);
+
+        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " ha sobornado al oso con un pez!\nTe quedas en tu sitio.");
+        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+        lblMensaje.setFill(javafx.scene.paint.Color.web("#44FF44"));
+        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblMensaje.setWrappingWidth(W);
+        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+        lblMensaje.setOpacity(0);
+        lblMensaje.setManaged(false);
+        lblMensaje.setLayoutX(0);
+        lblMensaje.setLayoutY(H / 2 + OSO_SIZE / 2 + 20);
+        rootPane.getChildren().add(lblMensaje);
+
+        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOver.setToValue(0.8);
+
+        javafx.animation.FadeTransition ftOso = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), osoView);
+        ftOso.setToValue(1);
+        javafx.animation.ScaleTransition stOso = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), osoView);
+        stOso.setToX(1.2);
+        stOso.setToY(1.2);
+
+        javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftText.setToValue(1);
+
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftOso, stOso, ftText);
+
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+        ftOverOut.setToValue(0);
+        javafx.animation.FadeTransition ftOsoOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), osoView);
+        ftOsoOut.setToValue(0);
+        javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+        ftTextOut.setToValue(0);
+
+        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftOsoOut, ftTextOut);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().removeAll(overlayPane, osoView, lblMensaje);
+            if (onFinish != null) onFinish.run();
+        });
+        seq.play();
+    }
     // MUESTRA LA ANIMACIÓN DEL REGALO: PRIMERO TIEMBLA Y LUEGO REVELA EL OBJETO OBTENIDO
     private void mostrarAnimacionEvento(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
