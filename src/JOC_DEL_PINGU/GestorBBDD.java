@@ -491,11 +491,17 @@ public class GestorBBDD {
 
     // ==================== ALTRES MÈTODES ====================
 
+    /**
+     * Elimina una partida llamando al procedure ELIMINARPARTIDA de Oracle.
+     * También registra el evento en HISTORIAL.
+     */
     public boolean eliminarPartida(int idPartida) {
         if (this.conexion == null) return false;
         try (CallableStatement cs = this.conexion.prepareCall("{ call EliminarPartida(?) }")) {
             cs.setInt(1, idPartida);
             cs.execute();
+            // Registrar en historial (con id_partida null porque la partida ya no existe)
+            registrarHistorial(0, "DELETE", "Partida " + idPartida + " eliminada del sistema.");
             return true;
         } catch (Exception e) {
             System.out.println("❌ Excepción al eliminar partida: " + e.getMessage());
@@ -589,37 +595,57 @@ public class GestorBBDD {
      * @param idGanador ID del jugador ganador
      * @param nombresParticipantes Lista de nombres de TODOS los jugadores que han participado
      */
+    /**
+     * Marca la partida como finalizada y actualiza estadísticas.
+     * - Asigna el ganador (dispara trigger 'incrementar_wins')
+     * - Incrementa num_partidas a TODOS los participantes
+     * - Inserta en JUG_IN_PAR una fila por cada participante (con flag de ganador)
+     * - Registra el evento en HISTORIAL
+     */
     public boolean finalizarPartida(int idPartida, int idGanador, java.util.List<String> nombresParticipantes) {
         if (this.conexion == null) return false;
         try {
             // 1. Asignar ganador (dispara trigger incrementar_wins)
             String sql1 = "UPDATE PARTIDA SET ganador = ?, data_modificacio = CURRENT_TIMESTAMP WHERE id_partida = ?";
             try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql1)) {
-                if (idGanador == -1) {
-                    ps.setNull(1, java.sql.Types.INTEGER);
-                } else {
-                    ps.setInt(1, idGanador);
-                }
+                ps.setInt(1, idGanador);
                 ps.setInt(2, idPartida);
                 ps.executeUpdate();
             }
 
-            // 2. Incrementar num_partidas a TODOS los participantes registrados
+            // 2. Incrementar num_partidas a TODOS los participantes
             String sql2 = "UPDATE JUGADOR SET num_partidas = num_partidas + 1 WHERE nombre_usuario = ?";
             int actualizados = 0;
+            String nombreGanador = null;
             if (nombresParticipantes != null) {
                 try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
                     for (String nombre : nombresParticipantes) {
                         if (nombre == null || nombre.trim().isEmpty()) continue;
-                        ps.setString(1, nombre.trim());
-                        int n = ps.executeUpdate();
-                        if (n > 0) actualizados++;
+                        String n = nombre.trim();
+                        ps.setString(1, n);
+                        int updated = ps.executeUpdate();
+                        if (updated > 0) actualizados++;
+
+                        // ⭐ Registrar este participante en JUG_IN_PAR
+                        int idJ = obtenerIdJugador(n);
+                        if (idJ != -1) {
+                            boolean esGanador = (idJ == idGanador);
+                            registrarJugInPar(idJ, idPartida, esGanador);
+                            if (esGanador) nombreGanador = n;
+                        }
                     }
                 }
             }
 
+            // 3. Registrar el evento en HISTORIAL
+            String desc = "Partida " + idPartida + " finalizada. Ganador: " 
+                          + (nombreGanador != null ? nombreGanador : "id=" + idGanador)
+                          + ". Participantes: " + actualizados;
+            registrarHistorial(idPartida, "FINAL", desc);
+
             System.out.println("✅ Partida " + idPartida + " finalizada. Ganador: " + idGanador 
-                             + " | num_partidas incrementado a " + actualizados + " participantes.");
+                             + " | num_partidas incrementado a " + actualizados + " participantes."
+                             + " | JUG_IN_PAR + HISTORIAL actualizados.");
             return true;
         } catch (Exception e) {
             System.err.println("❌ Error al finalizar partida: " + e.getMessage());
@@ -859,6 +885,45 @@ public class GestorBBDD {
         } catch (Exception e) {
             System.err.println("❌ Error obteniendo victorias del jugador: " + e.getMessage());
             return 0;
+        }
+    }
+    /**
+     * Registra un evento en HISTORIAL llamando al procedure de Oracle.
+     * Tipos válidos: 'CREACION', 'GUARDAR', 'FINAL', 'DELETE'
+     */
+    public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?) }")) {
+            if (idPartida > 0) {
+                cs.setInt(1, idPartida);
+            } else {
+                cs.setNull(1, java.sql.Types.NUMERIC);
+            }
+            cs.setString(2, tipoEvento);
+            cs.setString(3, descripcion);
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error registrando historial: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Registra una participación de un jugador en una partida llamando al procedure de Oracle.
+     * @param esGanador true si este jugador ganó la partida, false en caso contrario
+     */
+    public boolean registrarJugInPar(int idJugador, int idPartida, boolean esGanador) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_JUG_IN_PAR(?, ?, ?) }")) {
+            cs.setInt(1, idJugador);
+            cs.setInt(2, idPartida);
+            cs.setString(3, esGanador ? "S" : "N");
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error registrando JUG_IN_PAR: " + e.getMessage());
+            return false;
         }
     }
 }
