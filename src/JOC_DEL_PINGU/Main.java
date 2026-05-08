@@ -64,8 +64,8 @@ public class Main extends Application {
      */
     public static void escalar(Parent root, double baseW, double baseH,
                                 double screenW, double screenH) {
-        if (!(root instanceof StackPane)) return;
-        StackPane stack = (StackPane) root;
+        if (root instanceof StackPane) {
+            StackPane stack = (StackPane) root;
  
         // Busca el AnchorPane "contenedor"
         stack.getChildren().stream()
@@ -79,6 +79,7 @@ public class Main extends Application {
                  node.setScaleX(scaleX);
                  node.setScaleY(scaleY);
              });
+        }
     }
  
     // ==================== MÈTODE MAIN ====================
