@@ -436,114 +436,72 @@ public class GestorBBDD {
         }
     }
 
-    /**
-     * Crea la tabla USUARIOS si no existe todavía.
-     * Se llama automáticamente desde iniciarConexionGUI().
-     */
-    private void inicializarTablaUsuarios() {
-        if (this.conexion == null) return;
-        String ddl = "CREATE TABLE USUARIOS (" +
-                "id_usuario   NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
-                "username     VARCHAR2(100) NOT NULL UNIQUE, " +
-                "password_enc VARCHAR2(500) NOT NULL, " +
-                "data_registre TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
-        try (java.sql.Statement st = this.conexion.createStatement()) {
-            st.execute(ddl);
-            System.out.println("✅ Tabla USUARIOS creada.");
-        } catch (java.sql.SQLException e) {
-            if (e.getMessage() != null && e.getMessage().contains("ORA-00955")) {
-                System.out.println("ℹ️ Tabla USUARIOS ya existe.");
-            } else {
-                System.err.println("❌ Error creando tabla USUARIOS: " + e.getMessage());
-            }
-        }
-    }
+
 
     /**
-     * Registra un nuevo usuario usando SQL directo (sin stored procedure).
-     * La contraseña se guarda como hash SHA-256.
+     * Registra un usuario nuevo llamando al procedure REGISTRAR_USUARIO de Oracle.
+     * Toda la lógica (comprobar si existe, generar ID, insertar) está en PL/SQL.
      *
-     * @return null       → registro exitoso
-     *         "DUPLICATE" → el username ya existe
-     *         "ERROR:..." → otro error de BD
+     * @return null si OK, mensaje de error si falla
      */
     public String registrarUsuario(String username, String password) {
-        if (this.conexion == null) {
-            return "ERROR:Sin conexión a la base de datos.";
-        }
+        if (this.conexion == null) return "Sin conexión a la BBDD.";
+        if (username == null || username.trim().isEmpty()) return "El usuario no puede estar vacío.";
+        if (password == null || password.isEmpty()) return "La contraseña no puede estar vacía.";
 
-        // 1. Comprobar si el username ya existe
-        String sqlCheck = "SELECT COUNT(*) FROM USUARIOS WHERE username = ?";
-        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlCheck)) {
-            ps.setString(1, username.trim());
-            java.sql.ResultSet rs = ps.executeQuery();
-            if (rs.next() && rs.getInt(1) > 0) {
-                System.out.println("❌ Usuario ya existe: " + username);
-                return "DUPLICATE";
-            }
-        } catch (java.sql.SQLException e) {
-            System.err.println("❌ Error al verificar usuario: " + e.getMessage());
-            return "ERROR:" + e.getMessage();
-        }
+        username = username.trim();
 
-        // 2. Insertar el nuevo usuario
-        String sqlInsert = "INSERT INTO USUARIOS (username, password_enc) VALUES (?, ?)";
-        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlInsert)) {
-            ps.setString(1, username.trim());
-            ps.setString(2, hashPassword(password));
-            ps.executeUpdate();
-            // No llamar a commit() — la conexión tiene auto-commit activado (Oracle JDBC por defecto)
-
-            // ⭐ NUEVO: Sincronizar con tabla JUGADOR para llevar estadísticas
-            crearJugadorEstadisticas(username.trim(), hashPassword(password), "rojo");
-
-            System.out.println("✅ Usuario registrado: " + username);
+        // Llamar al procedure Oracle REGISTRAR_USUARIO
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_USUARIO(?, ?) }")) {
+            cs.setString(1, username);
+            cs.setString(2, hashPassword(password));
+            cs.execute();
+            System.out.println("✅ Usuario registrado en JUGADOR: " + username);
             return null; // null = éxito
         } catch (java.sql.SQLException e) {
-            String msg = e.getMessage();
-            System.err.println("❌ Error al insertar usuario: " + msg);
-            // ORA-00001 = unique constraint violated (por si acaso)
-            if (msg != null && (msg.contains("ORA-00001") || msg.contains("unique"))) {
-                return "DUPLICATE";
+            // Si el procedure ha lanzado RAISE_APPLICATION_ERROR (-20010)
+            if (e.getMessage() != null && e.getMessage().contains("ya existe")) {
+                return "El usuario '" + username + "' ya existe.";
             }
-            return "ERROR:" + msg;
-        } catch (Exception e) {
-            return "ERROR:" + e.getMessage();
+            return "Error al registrar: " + e.getMessage();
         }
     }
 
     /**
-     * Valida login usando SQL directo (sin stored procedure).
-     * Compara el hash SHA-256 de la contraseña introducida con el almacenado.
+     * Valida un login llamando al procedure VALIDAR_LOGIN de Oracle.
+     * Toda la lógica de comprobación está en PL/SQL.
      *
-     * @return true si las credenciales son correctas.
+     * @return true si las credenciales son correctas, false en caso contrario
      */
     public boolean validarLogin(String username, String password) {
-        if (this.conexion == null) {
-            System.out.println("❌ Sin conexión a la BBDD.");
-            return false;
-        }
-        String sql = "SELECT COUNT(*) FROM USUARIOS WHERE username = ? AND password_enc = ?";
-        try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql)) {
-            ps.setString(1, username.trim());
-            ps.setString(2, hashPassword(password));
-            java.sql.ResultSet rs = ps.executeQuery();
-            boolean ok = rs.next() && rs.getInt(1) > 0;
-            System.out.println("Login '" + username + "': " + (ok ? "✅ Correcto" : "❌ Incorrecto"));
-            return ok;
-        } catch (Exception e) {
-            System.err.println("❌ Excepción al validar login: " + e.getMessage());
+        if (this.conexion == null) return false;
+        if (username == null || password == null) return false;
+
+        try (CallableStatement cs = this.conexion.prepareCall("{ call VALIDAR_LOGIN(?, ?, ?) }")) {
+            cs.setString(1, username.trim());
+            cs.setString(2, hashPassword(password));
+            cs.registerOutParameter(3, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getInt(3) == 1;
+        } catch (java.sql.SQLException e) {
+            System.err.println("❌ Error validando login: " + e.getMessage());
             return false;
         }
     }
 
     // ==================== ALTRES MÈTODES ====================
 
+    /**
+     * Elimina una partida llamando al procedure ELIMINARPARTIDA de Oracle.
+     * También registra el evento en HISTORIAL.
+     */
     public boolean eliminarPartida(int idPartida) {
         if (this.conexion == null) return false;
         try (CallableStatement cs = this.conexion.prepareCall("{ call EliminarPartida(?) }")) {
             cs.setInt(1, idPartida);
             cs.execute();
+            // Registrar en historial (con id_partida null porque la partida ya no existe)
+            registrarHistorial(0, "DELETE", "Partida " + idPartida + " eliminada del sistema.");
             return true;
         } catch (Exception e) {
             System.out.println("❌ Excepción al eliminar partida: " + e.getMessage());
@@ -594,56 +552,19 @@ public class GestorBBDD {
      * Llama al procedure SincronizarUsuarioJugador en Oracle.
      * Si el procedure no existe, hace INSERT directo como fallback.
      */
+    /**
+     * Método legacy. Antes creaba la fila en JUGADOR cuando se registraba un
+     * usuario en USUARIOS. Como USUARIOS ya no existe y la fila se crea
+     * directamente en registrarUsuario(), este método ya no hace nada
+     * pero se mantiene por si alguna pantalla lo llama.
+     */
     public boolean crearJugadorEstadisticas(String username, String passwordHash, String color) {
-        if (this.conexion == null) return false;
-
-        // Intento 1: usar el stored procedure
-        try (CallableStatement cs = this.conexion.prepareCall("{ call SincronizarUsuarioJugador(?, ?, ?) }")) {
-            cs.setString(1, username);
-            cs.setString(2, passwordHash);
-            cs.setString(3, color != null ? color : "rojo");
-            cs.execute();
-            return true;
-        } catch (Exception e) {
-            // Fallback: INSERT directo si el procedure no existe
-            return crearJugadorEstadisticasFallback(username, passwordHash, color);
-        }
+        // Ya no es necesario sincronizar nada porque solo existe la tabla JUGADOR.
+        // Se mantiene como no-op por compatibilidad.
+        return true;
     }
 
-    /** Fallback: crea el jugador con SQL directo si el procedure no existe. */
-    private boolean crearJugadorEstadisticasFallback(String username, String passwordHash, String color) {
-        try {
-            // Comprobar si ya existe
-            String sqlCheck = "SELECT COUNT(*) FROM JUGADOR WHERE nombre_usuario = ?";
-            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlCheck)) {
-                ps.setString(1, username);
-                java.sql.ResultSet rs = ps.executeQuery();
-                if (rs.next() && rs.getInt(1) > 0) return true; // ya existe
-            }
 
-            // Generar id_jugador automáticamente
-            int nuevoId = 1;
-            try (java.sql.Statement st = this.conexion.createStatement();
-                 java.sql.ResultSet rs = st.executeQuery("SELECT NVL(MAX(id_jugador), 0) + 1 FROM JUGADOR")) {
-                if (rs.next()) nuevoId = rs.getInt(1);
-            }
-
-            // Insertar
-            String sqlInsert = "INSERT INTO JUGADOR (id_jugador, nombre_usuario, contrasenya, " +
-                               "color_personaje, num_partidas, partidas_ganadas) VALUES (?, ?, ?, ?, 0, 0)";
-            try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sqlInsert)) {
-                ps.setInt(1, nuevoId);
-                ps.setString(2, username);
-                ps.setString(3, passwordHash);
-                ps.setString(4, color != null ? color : "rojo");
-                ps.executeUpdate();
-            }
-            return true;
-        } catch (Exception e) {
-            System.err.println("❌ Error en fallback de sincronización: " + e.getMessage());
-            return false;
-        }
-    }
 
     /**
      * Obtiene el id_jugador a partir del username llamando al procedure
@@ -674,37 +595,57 @@ public class GestorBBDD {
      * @param idGanador ID del jugador ganador
      * @param nombresParticipantes Lista de nombres de TODOS los jugadores que han participado
      */
+    /**
+     * Marca la partida como finalizada y actualiza estadísticas.
+     * - Asigna el ganador (dispara trigger 'incrementar_wins')
+     * - Incrementa num_partidas a TODOS los participantes
+     * - Inserta en JUG_IN_PAR una fila por cada participante (con flag de ganador)
+     * - Registra el evento en HISTORIAL
+     */
     public boolean finalizarPartida(int idPartida, int idGanador, java.util.List<String> nombresParticipantes) {
         if (this.conexion == null) return false;
         try {
             // 1. Asignar ganador (dispara trigger incrementar_wins)
             String sql1 = "UPDATE PARTIDA SET ganador = ?, data_modificacio = CURRENT_TIMESTAMP WHERE id_partida = ?";
             try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql1)) {
-                if (idGanador == -1) {
-                    ps.setNull(1, java.sql.Types.INTEGER);
-                } else {
-                    ps.setInt(1, idGanador);
-                }
+                ps.setInt(1, idGanador);
                 ps.setInt(2, idPartida);
                 ps.executeUpdate();
             }
 
-            // 2. Incrementar num_partidas a TODOS los participantes registrados
+            // 2. Incrementar num_partidas a TODOS los participantes
             String sql2 = "UPDATE JUGADOR SET num_partidas = num_partidas + 1 WHERE nombre_usuario = ?";
             int actualizados = 0;
+            String nombreGanador = null;
             if (nombresParticipantes != null) {
                 try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
                     for (String nombre : nombresParticipantes) {
                         if (nombre == null || nombre.trim().isEmpty()) continue;
-                        ps.setString(1, nombre.trim());
-                        int n = ps.executeUpdate();
-                        if (n > 0) actualizados++;
+                        String n = nombre.trim();
+                        ps.setString(1, n);
+                        int updated = ps.executeUpdate();
+                        if (updated > 0) actualizados++;
+
+                        // ⭐ Registrar este participante en JUG_IN_PAR
+                        int idJ = obtenerIdJugador(n);
+                        if (idJ != -1) {
+                            boolean esGanador = (idJ == idGanador);
+                            registrarJugInPar(idJ, idPartida, esGanador);
+                            if (esGanador) nombreGanador = n;
+                        }
                     }
                 }
             }
 
+            // 3. Registrar el evento en HISTORIAL
+            String desc = "Partida " + idPartida + " finalizada. Ganador: " 
+                          + (nombreGanador != null ? nombreGanador : "id=" + idGanador)
+                          + ". Participantes: " + actualizados;
+            registrarHistorial(idPartida, "FINAL", desc);
+
             System.out.println("✅ Partida " + idPartida + " finalizada. Ganador: " + idGanador 
-                             + " | num_partidas incrementado a " + actualizados + " participantes.");
+                             + " | num_partidas incrementado a " + actualizados + " participantes."
+                             + " | JUG_IN_PAR + HISTORIAL actualizados.");
             return true;
         } catch (Exception e) {
             System.err.println("❌ Error al finalizar partida: " + e.getMessage());
@@ -944,6 +885,45 @@ public class GestorBBDD {
         } catch (Exception e) {
             System.err.println("❌ Error obteniendo victorias del jugador: " + e.getMessage());
             return 0;
+        }
+    }
+    /**
+     * Registra un evento en HISTORIAL llamando al procedure de Oracle.
+     * Tipos válidos: 'CREACION', 'GUARDAR', 'FINAL', 'DELETE'
+     */
+    public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?) }")) {
+            if (idPartida > 0) {
+                cs.setInt(1, idPartida);
+            } else {
+                cs.setNull(1, java.sql.Types.NUMERIC);
+            }
+            cs.setString(2, tipoEvento);
+            cs.setString(3, descripcion);
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error registrando historial: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Registra una participación de un jugador en una partida llamando al procedure de Oracle.
+     * @param esGanador true si este jugador ganó la partida, false en caso contrario
+     */
+    public boolean registrarJugInPar(int idJugador, int idPartida, boolean esGanador) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_JUG_IN_PAR(?, ?, ?) }")) {
+            cs.setInt(1, idJugador);
+            cs.setInt(2, idPartida);
+            cs.setString(3, esGanador ? "S" : "N");
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error registrando JUG_IN_PAR: " + e.getMessage());
+            return false;
         }
     }
 }
