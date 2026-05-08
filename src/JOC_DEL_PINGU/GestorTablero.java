@@ -7,45 +7,43 @@ public class GestorTablero {
     }
     
     public void ejecutarCasilla(Partida partida, Jugador j, Casilla c) {
-        if (partida == null || j == null || c == null) {
+        if (partida != null && j != null && c != null) {
+            System.out.println("Ejecutando la casilla para el jugador: " + j.getNombre());
+            c.realizarAccion(partida, j);
+        } else {
             System.out.println("Error: Parametros nulos a ejecutarCasilla()");
-            return;
         }
-        
-        System.out.println("Ejecutando la casilla para el jugador: " + j.getNombre());
-        c.realizarAccion(partida, j);
     }
     
     public void comprobarFinTurno(Partida partida) {
-        if (partida == null) {
-            return;
-        }
+        if (partida != null) {
         
-        GestorEventos ge = partida.getGestorEventos();
-        int meta = 49;
-        
-        // CALCULAMOS LA POSICIÓN DE LA META REAL SEGÚN EL TAMAÑO DEL TABLERO ACTUAL
-        if (partida.getTablero() != null && !partida.getTablero().getCasillas().isEmpty()) {
-            meta = partida.getTablero().getCasillas().size() - 1;
-        }
-        
-        // RECORREMOS TODOS LOS JUGADORES PARA VER SI ALGUNO HA LLEGADO A LA META
-        boolean finalizada = false;
-        for (int i = 0; i < partida.getJugadores().size() && !finalizada; i++) {
-            Jugador j = partida.getJugadores().get(i);
-            if (j.getPosicion() >= meta) {
-                partida.setGanador(j);
-                partida.setFinalizada(true);
-                finalizada = true;
+            GestorEventos ge = partida.getGestorEventos();
+            int meta = 49;
 
-                if (ge != null) {
-                    ge.registrar("********************************");
-                    ge.registrar("¡FIN DE LA PARTIDA!");
-                    ge.registrar("EL GANADOR ES: " + j.getNombre());
-                    ge.registrar("********************************");
+            // CALCULAMOS LA POSICIÓN DE LA META REAL SEGÚN EL TAMAÑO DEL TABLERO ACTUAL
+            if (partida.getTablero() != null && !partida.getTablero().getCasillas().isEmpty()) {
+                meta = partida.getTablero().getCasillas().size() - 1;
+            }
+
+            // RECORREMOS TODOS LOS JUGADORES PARA VER SI ALGUNO HA LLEGADO A LA META
+            boolean finalizada = false;
+            for (int i = 0; i < partida.getJugadores().size() && !finalizada; i++) {
+                Jugador j = partida.getJugadores().get(i);
+                if (j.getPosicion() >= meta) {
+                    partida.setGanador(j);
+                    partida.setFinalizada(true);
+                    finalizada = true;
+
+                    if (ge != null) {
+                        ge.registrar("********************************");
+                        ge.registrar("¡FIN DE LA PARTIDA!");
+                        ge.registrar("EL GANADOR ES: " + j.getNombre());
+                        ge.registrar("********************************");
+                    }
+
+                    System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
                 }
-
-                System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
             }
         }
     }

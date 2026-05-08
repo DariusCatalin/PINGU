@@ -102,8 +102,7 @@ public class PantallaPrincipal {
             alert.setContentText("Actualmente no hay ninguna partida guardada en la base de datos.");
             alert.showAndWait();
             gestor.cerrarConexion();
-            return;
-        }
+        } else {
 
         // Crear el diálogo con tabla
         Dialog<String[]> dialog = new Dialog<>();
@@ -163,32 +162,32 @@ public class PantallaPrincipal {
         // Acción del botón Eliminar
         btnEliminar.setOnAction(e -> {
             PartidaInfo seleccionada = tabla.getSelectionModel().getSelectedItem();
-            if (seleccionada == null) return;
+            if (seleccionada != null) {
+                Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmacion.setTitle("Confirmar eliminación");
+                confirmacion.setHeaderText("¿Eliminar partida " + seleccionada.getId() + "?");
+                confirmacion.setContentText("Esta acción no se puede deshacer.");
 
-            Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmacion.setTitle("Confirmar eliminación");
-            confirmacion.setHeaderText("¿Eliminar partida " + seleccionada.getId() + "?");
-            confirmacion.setContentText("Esta acción no se puede deshacer.");
-
-            Optional<ButtonType> resp = confirmacion.showAndWait();
-            if (resp.isPresent() && resp.get() == ButtonType.OK) {
-                try {
-                    int idEliminar = Integer.parseInt(seleccionada.getId());
-                    boolean exito = gestor.eliminarPartida(idEliminar);
-                    if (exito) {
-                        data.remove(seleccionada);
-                        Alert ok = new Alert(Alert.AlertType.INFORMATION);
-                        ok.setTitle("Eliminada");
-                        ok.setHeaderText("Partida " + idEliminar + " eliminada correctamente.");
-                        ok.showAndWait();
-                    } else {
-                        Alert err = new Alert(Alert.AlertType.ERROR);
-                        err.setTitle("Error");
-                        err.setHeaderText("No se pudo eliminar la partida.");
-                        err.showAndWait();
+                Optional<ButtonType> resp = confirmacion.showAndWait();
+                if (resp.isPresent() && resp.get() == ButtonType.OK) {
+                    try {
+                        int idEliminar = Integer.parseInt(seleccionada.getId());
+                        boolean exito = gestor.eliminarPartida(idEliminar);
+                        if (exito) {
+                            data.remove(seleccionada);
+                            Alert ok = new Alert(Alert.AlertType.INFORMATION);
+                            ok.setTitle("Eliminada");
+                            ok.setHeaderText("Partida " + idEliminar + " eliminada correctamente.");
+                            ok.showAndWait();
+                        } else {
+                            Alert err = new Alert(Alert.AlertType.ERROR);
+                            err.setTitle("Error");
+                            err.setHeaderText("No se pudo eliminar la partida.");
+                            err.showAndWait();
+                        }
+                    } catch (NumberFormatException ex) {
+                        System.err.println("ID inválido: " + seleccionada.getId());
                     }
-                } catch (NumberFormatException ex) {
-                    System.err.println("ID inválido: " + seleccionada.getId());
                 }
             }
         });
@@ -220,9 +219,10 @@ public class PantallaPrincipal {
         // Acción del botón Cargar (cierra el diálogo y carga)
         btnCargar.setOnAction(e -> {
             PartidaInfo seleccionada = tabla.getSelectionModel().getSelectedItem();
-            if (seleccionada == null) return;
-            dialog.setResult(new String[] { seleccionada.getId() });
-            dialog.close();
+            if (seleccionada != null) {
+                dialog.setResult(new String[] { seleccionada.getId() });
+                dialog.close();
+            }
         });
 
         Optional<String[]> resultado = dialog.showAndWait();
@@ -266,6 +266,7 @@ public class PantallaPrincipal {
         });
 
         gestor.cerrarConexion();
+        }
     }
  
     // ==========================================

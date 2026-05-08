@@ -78,36 +78,36 @@ public class PantallaConfig {
         GestorBBDD gestor = new GestorBBDD();
         try {
             gestor.iniciarConexionGUI();
-            if (gestor.getConexion() == null) {
-                System.err.println("⚠️ Sin conexión a BBDD, no se pueden cargar usuarios.");
-                return;
-            }
+            if (gestor.getConexion() != null) {
 
-            // Obtener todos los usuarios registrados
-            String sql = "SELECT nombre_usuario FROM JUGADOR ORDER BY nombre_usuario";
-            java.util.ArrayList<java.util.LinkedHashMap<String, String>> resultados =
-                BBDD.select(gestor.getConexion(), sql);
+                // Obtener todos los usuarios registrados
+                String sql = "SELECT nombre_usuario FROM JUGADOR ORDER BY nombre_usuario";
+                java.util.ArrayList<java.util.LinkedHashMap<String, String>> resultados =
+                    BBDD.select(gestor.getConexion(), sql);
 
-            javafx.collections.ObservableList<String> usuarios =
-                javafx.collections.FXCollections.observableArrayList();
+                javafx.collections.ObservableList<String> usuarios =
+                    javafx.collections.FXCollections.observableArrayList();
 
-            if (resultados != null) {
-                for (java.util.LinkedHashMap<String, String> fila : resultados) {
-                    String nombre = fila.get("NOMBRE_USUARIO");
-                    if (nombre != null && !nombre.isEmpty()) {
-                        usuarios.add(nombre);
+                if (resultados != null) {
+                    for (java.util.LinkedHashMap<String, String> fila : resultados) {
+                        String nombre = fila.get("NOMBRE_USUARIO");
+                        if (nombre != null && !nombre.isEmpty()) {
+                            usuarios.add(nombre);
+                        }
                     }
                 }
+
+                // Rellenar los ComboBox de nombres con la lista
+                nombreJ1.setItems(usuarios);
+                nombreJ2.setItems(usuarios);
+                nombreJ3.setItems(usuarios);
+                nombreJ4.setItems(usuarios);
+
+                gestor.cerrarConexion();
+                System.out.println("✅ Cargados " + usuarios.size() + " usuarios registrados.");
+            } else {
+                System.err.println("⚠️ Sin conexión a BBDD, no se pueden cargar usuarios.");
             }
-
-            // Rellenar los ComboBox de nombres con la lista
-            nombreJ1.setItems(usuarios);
-            nombreJ2.setItems(usuarios);
-            nombreJ3.setItems(usuarios);
-            nombreJ4.setItems(usuarios);
-
-            gestor.cerrarConexion();
-            System.out.println("✅ Cargados " + usuarios.size() + " usuarios registrados.");
 
         } catch (Exception e) {
             System.err.println("❌ Error cargando usuarios: " + e.getMessage());
@@ -183,82 +183,84 @@ public class PantallaConfig {
         ComboBox<String>[] colores = new ComboBox[]{colorJ1, colorJ2, colorJ3, colorJ4};
 
         // Validar que todos los jugadores activos tienen usuario y color elegidos
-        for (int i = 0; i < numJugadores; i++) {
+        boolean hayError = false;
+        for (int i = 0; i < numJugadores && !hayError; i++) {
             String nombre = nombres[i].getValue();
             String color  = colores[i].getValue();
 
             if (nombre == null || nombre.trim().isEmpty()) {
                 mostrarError("El Jugador " + (i + 1) + " necesita elegir un usuario.");
-                return;
-            }
-            if (color == null || color.isEmpty()) {
+                hayError = true;
+            } else if (color == null || color.isEmpty()) {
                 mostrarError("El Jugador " + (i + 1) + " necesita elegir un color.");
-                return;
+                hayError = true;
             }
         }
 
         // Validar nombres únicos (un mismo usuario no puede jugar 2 veces)
-        for (int i = 0; i < numJugadores; i++) {
-            for (int j = i + 1; j < numJugadores; j++) {
+        for (int i = 0; i < numJugadores && !hayError; i++) {
+            for (int j = i + 1; j < numJugadores && !hayError; j++) {
                 if (nombres[i].getValue().equals(nombres[j].getValue())) {
                     mostrarError("El mismo usuario no puede jugar 2 veces (" 
                                  + nombres[i].getValue() + ").");
-                    return;
+                    hayError = true;
                 }
             }
         }
 
         // Validar colores únicos
-        for (int i = 0; i < numJugadores; i++) {
-            for (int j = i + 1; j < numJugadores; j++) {
+        for (int i = 0; i < numJugadores && !hayError; i++) {
+            for (int j = i + 1; j < numJugadores && !hayError; j++) {
                 if (colores[i].getValue().equals(colores[j].getValue())) {
                     mostrarError("Dos jugadores no pueden tener el mismo color.");
-                    return;
+                    hayError = true;
                 }
             }
         }
 
-        // Construir la lista de jugadores
-        ArrayList<Jugador> jugadores = new ArrayList<>();
-        for (int i = 0; i < numJugadores; i++) {
-            String nombre = nombres[i].getValue().trim();
-            String color  = colores[i].getValue();
-            jugadores.add(new Pinguino(0, nombre, color));
-        }
-
-        // Añadir CPU si está marcada
-        if (chkCPU.isSelected()) {
-            jugadores.add(new Foca(0, "Foca CPU", "Gris"));
-        }
-
-        // Pasar jugadores a PantallaPartida y lanzar el juego
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
-            Parent root = loader.load();
-
-            Scene scene = new Scene(root);
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("El Juego del Pingüino - Partida");
-            stage.setMaximized(true);
-            stage.setFullScreen(true);
-            stage.setFullScreenExitHint("");
-            stage.show();
-            stage.requestFocus(); // Asegura foco y listeners de teclado/botones activos
-
-            // Pasar jugadores DESPUÉS de que la escena está activa en el stage
-            PantallaPartida controlador = loader.getController();
-            controlador.setJugadores(jugadores);
-        } catch (Throwable e) {
-            // ⭐ Capturamos Throwable para pillar también NoClassDefFoundError (Error, no Exception)
-            String msg = e.getMessage();
-            if (e instanceof NoClassDefFoundError || (msg != null && msg.contains("media"))) {
-                mostrarError("Error: Falta la librería 'javafx-media'. Asegúrate de añadirla al proyecto.");
-            } else {
-                mostrarError("Error al cargar el juego: " + (msg != null ? msg : e.toString()));
+        if (!hayError) {
+            // Construir la lista de jugadores
+            ArrayList<Jugador> jugadores = new ArrayList<>();
+            for (int i = 0; i < numJugadores; i++) {
+                String nombre = nombres[i].getValue().trim();
+                String color  = colores[i].getValue();
+                jugadores.add(new Pinguino(0, nombre, color));
             }
-            e.printStackTrace();
+
+            // Añadir CPU si está marcada
+            if (chkCPU.isSelected()) {
+                jugadores.add(new Foca(0, "Foca CPU", "Gris"));
+            }
+
+            // Pasar jugadores a PantallaPartida y lanzar el juego
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/PantallaJuego.fxml"));
+                Parent root = loader.load();
+
+                Scene scene = new Scene(root);
+                try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch(Exception ignored){}
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(scene);
+                stage.setTitle("El Juego del Pingüino - Partida");
+                stage.setMaximized(true);
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint("");
+                stage.show();
+                stage.requestFocus(); // Asegura foco y listeners de teclado/botones activos
+
+                // Pasar jugadores DESPUÉS de que la escena está activa en el stage
+                PantallaPartida controlador = loader.getController();
+                controlador.setJugadores(jugadores);
+            } catch (Throwable e) {
+                // ⭐ Capturamos Throwable para pillar también NoClassDefFoundError (Error, no Exception)
+                String msg = e.getMessage();
+                if (e instanceof NoClassDefFoundError || (msg != null && msg.contains("media"))) {
+                    mostrarError("Error: Falta la librería 'javafx-media'. Asegúrate de añadirla al proyecto.");
+                } else {
+                    mostrarError("Error al cargar el juego: " + (msg != null ? msg : e.toString()));
+                }
+                e.printStackTrace();
+            }
         }
     }
 

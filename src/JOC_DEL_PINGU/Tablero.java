@@ -119,30 +119,29 @@ public class Tablero {
  
     public void actualizarTablero() {
         System.out.println("==== DIBUJANDO MAPA ====");
-        
+
         if (casillas.isEmpty()) {
             System.out.println("¡El tablero no tiene casillas generadas!");
-            return;
-        }
-        
-        StringBuilder mapa = new StringBuilder();
-        
-        for (int i = 0; i < casillas.size(); i++) {
-            Casilla c = casillas.get(i);
-            String nombreTipo = c.getClass().getSimpleName();
-            
-            mapa.append("[").append(nombreTipo).append("] ");
-            
-            // Saltos de línea cada 10 casillas para mejor visualización
-            if ((i + 1) % 10 == 0) {
-                mapa.append("\n");
-            } else if (i < casillas.size() - 1) {
-                mapa.append(" - ");
+        } else {
+            StringBuilder mapa = new StringBuilder();
+
+            for (int i = 0; i < casillas.size(); i++) {
+                Casilla c = casillas.get(i);
+                String nombreTipo = c.getClass().getSimpleName();
+
+                mapa.append("[").append(nombreTipo).append("] ");
+
+                // Saltos de línea cada 10 casillas para mejor visualización
+                if ((i + 1) % 10 == 0) {
+                    mapa.append("\n");
+                } else if (i < casillas.size() - 1) {
+                    mapa.append(" - ");
+                }
             }
+
+            System.out.println(mapa.toString());
+            System.out.println("========================");
         }
-        
-        System.out.println(mapa.toString());
-        System.out.println("========================");
     }
     
     // ==================== GETTERS Y SETTERS ====================

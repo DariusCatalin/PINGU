@@ -14,9 +14,7 @@ public class Evento extends Casilla {
     
     @Override
     public void realizarAccion(Partida p, Jugador j) {
-        if (j == null || j.getInventario() == null) {
-            return;
-        }
+        if (j != null && j.getInventario() != null) {
         
         GestorEventos ge = p.getGestorEventos();
         Random rand = new Random();
@@ -95,5 +93,6 @@ public class Evento extends Casilla {
                 if (ge != null) ge.registrar("¡Evento! " + j.getNombre() + " halla un dado rápido pero no tiene espacio.");
             }
         }
+        } // fin if (j != null && j.getInventario() != null)
     }
 }

@@ -215,30 +215,29 @@ public class PantallaVictoria {
         GestorBBDD gestor = new GestorBBDD();
         try {
             gestor.iniciarConexionGUI();
-            if (gestor.getConexion() == null) {
+            if (gestor.getConexion() != null) {
+                // Llamadas a las funciones PL/SQL
+                int recordGlobal = gestor.obtenerRecord();
+                double mediaGlobal = gestor.obtenerMediaWins();
+                int idJugador = gestor.obtenerIdJugador(nombreGanador);
+
+                // Obtener partidas ganadas del jugador llamando a la function
+                // PARTIDAS_GANADAS_JUGADOR de Oracle (no SELECT directo)
+                final int misVictorias = (idJugador != -1) ? gestor.obtenerVictoriasJugador(idJugador) : 0;
+
+                // % de jugadores con menos victorias que el ganador
+                final double porcentaje = gestor.obtenerPorcentajeMenosWins(misVictorias);
+
+                // Cerrar conexión
+                gestor.cerrarConexion();
+
+                // Mostrar las estadísticas en la GUI
+                javafx.application.Platform.runLater(() ->
+                    mostrarEstadisticasEnPantalla(recordGlobal, mediaGlobal, porcentaje, misVictorias)
+                );
+            } else {
                 System.err.println("⚠️ No se pudieron cargar las estadísticas (sin conexión).");
-                return;
             }
-
-            // Llamadas a las funciones PL/SQL
-            int recordGlobal = gestor.obtenerRecord();
-            double mediaGlobal = gestor.obtenerMediaWins();
-            int idJugador = gestor.obtenerIdJugador(nombreGanador);
-
-            // Obtener partidas ganadas del jugador llamando a la function
-            // PARTIDAS_GANADAS_JUGADOR de Oracle (no SELECT directo)
-            final int misVictorias = (idJugador != -1) ? gestor.obtenerVictoriasJugador(idJugador) : 0;
-
-            // % de jugadores con menos victorias que el ganador
-            final double porcentaje = gestor.obtenerPorcentajeMenosWins(misVictorias);
-
-            // Cerrar conexión
-            gestor.cerrarConexion();
-
-            // Mostrar las estadísticas en la GUI
-            javafx.application.Platform.runLater(() ->
-                mostrarEstadisticasEnPantalla(recordGlobal, mediaGlobal, porcentaje, misVictorias)
-            );
 
         } catch (Exception e) {
             System.err.println("❌ Error cargando estadísticas: " + e.getMessage());
@@ -251,7 +250,7 @@ public class PantallaVictoria {
      * (encima de los botones).
      */
     private void mostrarEstadisticasEnPantalla(int record, double media, double porcentaje, int misVictorias) {
-        if (overlayBottom == null) return;
+        if (overlayBottom != null) {
 
         // Crear el contenedor de estadísticas
         VBox boxStats = new VBox(8);
@@ -295,5 +294,6 @@ public class PantallaVictoria {
 
         // Insertar el box ANTES de los botones (al principio del overlay)
         overlayBottom.getChildren().add(0, boxStats);
+        } // fin if (overlayBottom != null)
     }
 }
