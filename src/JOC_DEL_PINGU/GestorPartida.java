@@ -42,7 +42,7 @@ public class GestorPartida {
 
             // Inicialitzem els valors per defecte
             this.partida.setTurnos(0);
-            this.partida.setIndiceJugadorActual(0);
+            this.partida.setJugadorActual(0);
             this.partida.setFinalizada(false);
             this.partida.setGestorEventos(this.gestorEventos);
 

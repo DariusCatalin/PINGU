@@ -331,12 +331,13 @@ public class PantallaPartida {
                     avanzarTurno();
                     dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
                 } else {
- 
-        // SI EL JUGADOR TIENE OBJETOS USABLES, LE PREGUNTAMOS SI QUIERE USARLOS ANTES DE TIRAR
-        if (tieneObjetosUsables(actual)) {
-            mostrarPopupObjetos(actual);
-        } else {
-            ejecutarTiradaNormal(actual);
+                    if (tieneObjetosUsables(actual)) {
+                        mostrarPopupObjetos(actual);
+                    } else {
+                        ejecutarTiradaNormal(actual);
+                    }
+                }
+            }
         }
     }
  
@@ -457,35 +458,33 @@ public class PantallaPartida {
     private void usarDadoEspecial(String nombreDado, int min, int max) {
         if (!partida.isFinalizada()) {
             Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
- 
-        if (actual instanceof Pinguino) {
-            if (consumirObjeto(actual, nombreDado)) {
-                int tirada = (int)(Math.random() * (max - min + 1)) + min;
-
-                // SI HAY ANIMACIÓN CONFIGURADA PARA ESTE DADO, LA REPRODUCIMOS ANTES DE MOVER
-                String[] config = obtenerConfigAnimacion(actual, nombreDado);
-                if (config != null) {
-                    final int tiradaFinal = tirada;
-                    setUIInteractuable(false);
-                    mostrarAnimacionTurno(actual, tiradaFinal,
-                        config[0],
-                        javafx.scene.paint.Color.web(config[1]),
-                        () -> {
-                            moverJugadorYAccion(actual, tiradaFinal, nombreDado);
-                            if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal + " (" + nombreDado + ")");
-                            actualizarTextosInventario(actual);
-                            avanzarTurno();
-                            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-                        });
+            if (actual instanceof Pinguino) {
+                if (consumirObjeto(actual, nombreDado)) {
+                    int tirada = (int)(Math.random() * (max - min + 1)) + min;
+                    String[] config = obtenerConfigAnimacion(actual, nombreDado);
+                    if (config != null) {
+                        final int tiradaFinal = tirada;
+                        setUIInteractuable(false);
+                        mostrarAnimacionTurno(actual, tiradaFinal,
+                            config[0],
+                            javafx.scene.paint.Color.web(config[1]),
+                            () -> {
+                                moverJugadorYAccion(actual, tiradaFinal, nombreDado);
+                                if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tiradaFinal + " (" + nombreDado + ")");
+                                actualizarTextosInventario(actual);
+                                avanzarTurno();
+                                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                            });
+                    } else {
+                        moverJugadorYAccion(actual, tirada, nombreDado);
+                        if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
+                        actualizarTextosInventario(actual);
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    }
                 } else {
-                    moverJugadorYAccion(actual, tirada, nombreDado);
-                    if (dadoResultText != null) dadoResultText.setText("Has sacado un: " + tirada + " (" + nombreDado + ")");
-                    actualizarTextosInventario(actual);
-                    avanzarTurno();
-                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
                 }
-            } else {
-                gestorUI.registrar("¡No tienes ningún " + nombreDado + " en la mochila!");
             }
         }
     }
@@ -1346,6 +1345,9 @@ public class PantallaPartida {
             if (onFinish != null) onFinish.run();
         });
         seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
     }
     // MUESTRA LA ANIMACIÓN DEL REGALO: PRIMERO TIEMBLA Y LUEGO REVELA EL OBJETO OBTENIDO
     private void mostrarAnimacionEvento(Jugador j, Runnable onFinish) {
