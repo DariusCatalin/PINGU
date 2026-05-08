@@ -508,62 +508,61 @@ public class PantallaPartida {
  
     @FXML
     private void usarBolaNieve(ActionEvent event) {
-        if (partida.isFinalizada()) return;
-        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
- 
-        if (!(actual instanceof Pinguino)) return;
- 
-        int bolasActual = contarBolas(actual);
-        if (bolasActual == 0) {
-            gestorUI.registrar("¡No tienes Bolas de Nieve para lanzar!");
-            return;
-        }
- 
-        // BUSCAMOS AL PINGÜINO HUMANO QUE VA MÁS ADELANTE EN EL TABLERO (OBJETIVO DEL ATAQUE)
-        Jugador objetivo = null;
-        int maxPos = -1;
-        for (Jugador j : partida.getJugadores()) {
-            if (j != actual && j instanceof Pinguino && j.getPosicion() > maxPos) {
-                maxPos = j.getPosicion();
-                objetivo = j;
+        if (!partida.isFinalizada()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+
+            if (actual instanceof Pinguino) {
+                int bolasActual = contarBolas(actual);
+                if (bolasActual == 0) {
+                    gestorUI.registrar("¡No tienes Bolas de Nieve para lanzar!");
+                } else {
+                    // BUSCAMOS AL PINGÜINO HUMANO QUE VA MÁS ADELANTE EN EL TABLERO (OBJETIVO DEL ATAQUE)
+                    Jugador objetivo = null;
+                    int maxPos = -1;
+                    for (Jugador j : partida.getJugadores()) {
+                        if (j != actual && j instanceof Pinguino && j.getPosicion() > maxPos) {
+                            maxPos = j.getPosicion();
+                            objetivo = j;
+                        }
+                    }
+
+                    if (objetivo == null) {
+                        gestorUI.registrar("No hay otros pingüinos a los que lanzar bolas de nieve.");
+                    } else {
+                        // ¡GUERRA DE BOLAS DE NIEVE! Ambos gastan todas sus bolas
+                        int bolasObj = contarBolas(objetivo);
+                        actual.vaciarBolas();
+                        objetivo.vaciarBolas();
+                        actualizarTextosInventario(actual);
+                        actualizarTextosInventario(objetivo);
+
+                        if (bolasActual > bolasObj) {
+                            int diff = bolasActual - bolasObj;
+                            objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
+                            gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
+                                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+                            encolarAnimacionGuerra(actual, actual.getNombre() + ":" + objetivo.getNombre() + ":" + diff);
+                            encolarSaltoDirecto(objetivo, objetivo.getPosicion());
+                        } else if (bolasObj > bolasActual) {
+                            int diff = bolasObj - bolasActual;
+                            actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
+                            gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
+                                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
+                            encolarAnimacionGuerra(objetivo, objetivo.getNombre() + ":" + actual.getNombre() + ":" + diff);
+                            encolarSaltoDirecto(actual, actual.getPosicion());
+                        } else {
+                            gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
+                                + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
+                            encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + objetivo.getNombre() + ":0");
+                        }
+
+                        // LANZAR BOLAS ES LA ACCIÓN DEL TURNO: NO SE TIRA EL DADO ESTE TURNO
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    }
+                }
             }
         }
- 
-        if (objetivo == null) {
-            gestorUI.registrar("No hay otros pingüinos a los que lanzar bolas de nieve.");
-            return;
-        }
- 
-        // ¡GUERRA DE BOLAS DE NIEVE! Ambos gastan todas sus bolas
-        int bolasObj = contarBolas(objetivo);
-        actual.vaciarBolas();
-        objetivo.vaciarBolas();
-        actualizarTextosInventario(actual);
-        actualizarTextosInventario(objetivo);
- 
-        if (bolasActual > bolasObj) {
-            int diff = bolasActual - bolasObj;
-            objetivo.moverPosicion(Math.max(0, objetivo.getPosicion() - diff));
-            gestorUI.registrar("¡GUERRA DE BOLAS! " + actual.getNombre() + " ataca a " + objetivo.getNombre()
-                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
-            encolarAnimacionGuerra(actual, actual.getNombre() + ":" + objetivo.getNombre() + ":" + diff);
-            encolarSaltoDirecto(objetivo, objetivo.getPosicion());
-        } else if (bolasObj > bolasActual) {
-            int diff = bolasObj - bolasActual;
-            actual.moverPosicion(Math.max(0, actual.getPosicion() - diff));
-            gestorUI.registrar("¡GUERRA DE BOLAS! " + objetivo.getNombre() + " contraataca a " + actual.getNombre()
-                + " y gana por " + diff + " bolas. El perdedor retrocede " + diff + " casillas.");
-            encolarAnimacionGuerra(objetivo, objetivo.getNombre() + ":" + actual.getNombre() + ":" + diff);
-            encolarSaltoDirecto(actual, actual.getPosicion());
-        } else {
-            gestorUI.registrar("¡EMPATE en la Guerra de Bolas entre " + actual.getNombre()
-                + " y " + objetivo.getNombre() + "! Todos pierden sus bolas pero nadie retrocede.");
-            encolarAnimacionGuerra(actual, "EMPATE:" + actual.getNombre() + " y " + objetivo.getNombre() + ":0");
-        }
- 
-        // LANZAR BOLAS ES LA ACCIÓN DEL TURNO: NO SE TIRA EL DADO ESTE TURNO
-        avanzarTurno();
-        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
     }
  
     // ==========================================
@@ -617,39 +616,38 @@ public class PantallaPartida {
 
             // NAVEGAMOS A LA PANTALLA DE VICTORIA DESDE EL HILO DE UI
             javafx.application.Platform.runLater(() -> irAPantallaVictoria(j));
-            return;
-        }
-        
-        // EJECUTAMOS LA ACCION DE LA CASILLA EN LA QUE CAYÓ EL JUGADOR (OSO, TRINEO, EVENTO...)
-        Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
-        int posAntesCasilla = j.getPosicion();
+        } else {
+            // EJECUTAMOS LA ACCION DE LA CASILLA EN LA QUE CAYÓ EL JUGADOR (OSO, TRINEO, EVENTO...)
+            Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
+            int posAntesCasilla = j.getPosicion();
 
-        casillaActual.realizarAccion(partida, j);
+            casillaActual.realizarAccion(partida, j);
 
-        if (casillaActual instanceof Evento) {
-            String msg = partida.getGestorEventos().getUltimoMensaje();
-            ultimoEventoVisual.put(j, msg);
-            encolarAnimacionEvento(j);
-        }
-        if (casillaActual instanceof Oso) {
-            if (posAntesCasilla == j.getPosicion()) {
-                encolarAnimacionSobornoOso(j);
-            } else {
-                encolarAnimacionOso(j);
+            if (casillaActual instanceof Evento) {
+                String msg = partida.getGestorEventos().getUltimoMensaje();
+                ultimoEventoVisual.put(j, msg);
+                encolarAnimacionEvento(j);
+            }
+            if (casillaActual instanceof Oso) {
+                if (posAntesCasilla == j.getPosicion()) {
+                    encolarAnimacionSobornoOso(j);
+                } else {
+                    encolarAnimacionOso(j);
+                    encolarSaltoDirecto(j, j.getPosicion());
+                }
+            } else if (posAntesCasilla != j.getPosicion()) {
+                if (casillaActual instanceof Agujero) {
+                    encolarAnimacionAgujero(j, j.getPosicion());
+                } else if (casillaActual instanceof Trineo) {
+                    encolarAnimacionTrineo(j, j.getPosicion());
+                }
+                // SI HUBO MOVIMIENTO EXTRA POR LA CASILLA, ENCOLAMOS UN SALTO DIRECTO VISUAL
                 encolarSaltoDirecto(j, j.getPosicion());
             }
-        } else if (posAntesCasilla != j.getPosicion()) {
-            if (casillaActual instanceof Agujero) {
-                encolarAnimacionAgujero(j, j.getPosicion());
-            } else if (casillaActual instanceof Trineo) {
-                encolarAnimacionTrineo(j, j.getPosicion());
-            }
-            // SI HUBO MOVIMIENTO EXTRA POR LA CASILLA, ENCOLAMOS UN SALTO DIRECTO VISUAL
-            encolarSaltoDirecto(j, j.getPosicion());
+            
+            // COMPROBAMOS SI ALGÚN JUGADOR ATERRIZÓ EN LA MISMA CASILLA QUE OTRO
+            verificarColisionesLocal(j);
         }
-        
-        // COMPROBAMOS SI ALGÚN JUGADOR ATERRIZÓ EN LA MISMA CASILLA QUE OTRO
-        verificarColisionesLocal(j);
     }
  
     // CARGA LA PANTALLA DE VICTORIA Y LE PASA EL NOMBRE Y COLOR DEL GANADOR
@@ -836,19 +834,21 @@ public class PantallaPartida {
         ctxMenuEscape.getItems().addAll(miGuardar, miGuardarSalir, sep, miSalir);
  
         // ADJUNTAMOS EL LISTENER AL TABLERO PARA CAPTURAR LA TECLA ESCAPE EN CUALQUIER MOMENTO
-        tablero.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                newScene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-                    if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                        if (ctxMenuEscape.isShowing()) {
-                            ctxMenuEscape.hide();
-                        } else {
-                            ctxMenuEscape.show(newScene.getWindow(), 0, 32);
+        if (tablero != null) {
+            tablero.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene != null) {
+                    newScene.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+                        if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                            if (ctxMenuEscape.isShowing()) {
+                                ctxMenuEscape.hide();
+                            } else {
+                                ctxMenuEscape.show(newScene.getWindow(), 0, 32);
+                            }
                         }
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
     }
  
     private ImageView getFichaVisual(Jugador j) {
@@ -870,51 +870,50 @@ public class PantallaPartida {
     }
  
     private void mostrarTiposDeCasillasEnTablero(Tablero t) {
-        if (tablero == null) return;
-        // BORRAMOS LAS IMÁGENES DE CASILLAS DEL TURNO ANTERIOR ANTES DE REDIBUJARLAS
-        tablero.getChildren().removeIf(node -> TAG_CASILLA_TEXT.equals(node.getUserData()));
+        if (tablero != null) {
+            // BORRAMOS LAS IMÁGENES DE CASILLAS DEL TURNO ANTERIOR ANTES DE REDIBUJARLAS
+            tablero.getChildren().removeIf(node -> TAG_CASILLA_TEXT.equals(node.getUserData()));
  
-        for (int i = 0; i < t.getCasillas().size(); i++) {
-            Casilla casilla = t.getCasillas().get(i);
+            for (int i = 0; i < t.getCasillas().size(); i++) {
+                Casilla casilla = t.getCasillas().get(i);
  
-            // LA CASILLA 49 ES EL IGLU (META): YA VIENE DIBUJADA EN EL FONDO, NO LA SOBREPONEMOS
-            if (i == 49) {
-                continue;
-            }
+                // LA CASILLA 49 ES EL IGLU (META): YA VIENE DIBUJADA EN EL FONDO, NO LA SOBREPONEMOS
+                if (i != 49) {
+                    String rutaImg = getRutaCasilla(casilla, i, t.getCasillas().size());
  
-            String rutaImg = getRutaCasilla(casilla, i, t.getCasillas().size());
+                    if (rutaImg != null) {
+                        try {
+                            var resource = getClass().getResourceAsStream(rutaImg);
+                            if (resource != null) {
+                                ImageView imgView = new ImageView(new Image(resource));
+                                imgView.setFitWidth(110);
+                                imgView.setFitHeight(80);
+                                imgView.setPreserveRatio(true);
+                                imgView.setUserData(TAG_CASILLA_TEXT);
  
-            if (rutaImg != null) {
-                try {
-                    var resource = getClass().getResourceAsStream(rutaImg);
-                    if (resource != null) {
-                        ImageView imgView = new ImageView(new Image(resource));
-                        imgView.setFitWidth(110);
-                        imgView.setFitHeight(80);
-                        imgView.setPreserveRatio(true);
-                        imgView.setUserData(TAG_CASILLA_TEXT);
+                                int columna = i % COLUMNS;
+                                int fila = 9 - (i / COLUMNS);
  
-                        int columna = i % COLUMNS;
-                        int fila = 9 - (i / COLUMNS);
+                                GridPane.setRowIndex(imgView, fila);
+                                GridPane.setColumnIndex(imgView, columna);
+                                GridPane.setValignment(imgView, javafx.geometry.VPos.CENTER);
+                                GridPane.setHalignment(imgView, javafx.geometry.HPos.CENTER);
  
-                        GridPane.setRowIndex(imgView, fila);
-                        GridPane.setColumnIndex(imgView, columna);
-                        GridPane.setValignment(imgView, javafx.geometry.VPos.CENTER);
-                        GridPane.setHalignment(imgView, javafx.geometry.HPos.CENTER);
- 
-                        tablero.getChildren().add(0, imgView);
+                                tablero.getChildren().add(0, imgView);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error cargando imagen casilla " + i + ": " + e.getMessage());
+                        }
                     }
-                } catch (Exception e) {
-                    System.err.println("Error cargando imagen casilla " + i + ": " + e.getMessage());
                 }
             }
+            
+            // ASEGURAMOS QUE LAS FICHAS DE LOS JUGADORES SIEMPRE SE DIBUJEN POR ENCIMA DE LAS CASILLAS
+            if (P1 != null) P1.toFront();
+            if (P2 != null) P2.toFront();
+            if (P3 != null) P3.toFront();
+            if (P4 != null) P4.toFront();
         }
-        
-        // ASEGURAMOS QUE LAS FICHAS DE LOS JUGADORES SIEMPRE SE DIBUJEN POR ENCIMA DE LAS CASILLAS
-        if (P1 != null) P1.toFront();
-        if (P2 != null) P2.toFront();
-        if (P3 != null) P3.toFront();
-        if (P4 != null) P4.toFront();
     }
  
     // DEVUELVE LA RUTA DEL ARCHIVO DE IMAGEN CORRESPONDIENTE A CADA TIPO DE CASILLA
@@ -1026,32 +1025,34 @@ public class PantallaPartida {
     // ANIMA CASILLA A CASILLA CON UN SALTITO PARABÓLICO (300ms POR PASO)
     // EL BOTÓN DE TIRAR DADO PERMANECE DESHABILITADO DURANTE TODA LA ANIMACIÓN
     private void dispararAnimadorVisual(Runnable onFinished) {
-        if (animando) return;
-        animando = true;
-        setUIInteractuable(false);
- 
-        // LISTA PLANA DE TODOS LOS PASOS: int[]{playerIdx, posOrigen, posDestino, animType}
-        java.util.List<int[]> listaPasos = new java.util.ArrayList<>();
-        for (Jugador j : partida.getJugadores()) {
-            java.util.Queue<int[]> q = colasAnimacion.get(j);
-            if (q == null || q.isEmpty()) continue;
-            int idx  = partida.getJugadores().indexOf(j);
-            int prev = posVisual.getOrDefault(j, j.getPosicion());
-            for (int[] entry : q) {
-                int dest = entry[0], tipo = entry[1];
-                listaPasos.add(new int[]{idx, prev, dest, tipo});
-                prev = dest;
+        if (!animando) {
+            animando = true;
+            setUIInteractuable(false);
+
+            // LISTA PLANA DE TODOS LOS PASOS: int[]{playerIdx, posOrigen, posDestino, animType}
+            java.util.List<int[]> listaPasos = new java.util.ArrayList<>();
+            for (Jugador j : partida.getJugadores()) {
+                java.util.Queue<int[]> q = colasAnimacion.get(j);
+                if (q != null && !q.isEmpty()) {
+                    int idx  = partida.getJugadores().indexOf(j);
+                    int prev = posVisual.getOrDefault(j, j.getPosicion());
+                    for (int[] entry : q) {
+                        int dest = entry[0], tipo = entry[1];
+                        listaPasos.add(new int[]{idx, prev, dest, tipo});
+                        prev = dest;
+                    }
+                    q.clear();
+                }
             }
-            q.clear();
+
+            if (listaPasos.isEmpty()) {
+                animando = false;
+                setUIInteractuable(true);
+                if (onFinished != null) javafx.application.Platform.runLater(onFinished);
+            } else {
+                ejecutarPasoSuave(listaPasos, 0, onFinished);
+            }
         }
- 
-        if (listaPasos.isEmpty()) {
-            animando = false;
-            setUIInteractuable(true);
-            if (onFinished != null) javafx.application.Platform.runLater(onFinished);
-            return;
-        }
-        ejecutarPasoSuave(listaPasos, 0, onFinished);
     }
 
     // EJECUTA RECURSIVAMENTE CADA PASO CON LA ANIMACIÓN QUE LE CORRESPONDE
@@ -1819,20 +1820,21 @@ public class PantallaPartida {
             int total = lista.size();
             for (int i = 0; i < total; i++) {
                 ImageView ficha = getFichaVisual(lista.get(i));
-                if (ficha == null) continue;
-                if (total == 1) {
-                    // UN SOLO JUGADOR EN LA CELDA: SÓLO RESETEAMOS ESCALA, NO MOVEMOS
-                    ficha.setScaleX(1.0); ficha.setScaleY(1.0);
-                } else if (total == 2) {
-                    ficha.setScaleX(0.85); ficha.setScaleY(0.85);
-                    ficha.setTranslateX(i == 0 ? -15 : 15);
-                } else if (total == 3) {
-                    ficha.setScaleX(0.70); ficha.setScaleY(0.70);
-                    ficha.setTranslateX(i == 0 ? -20 : (i == 1 ? 0 : 20));
-                } else {
-                    ficha.setScaleX(0.60); ficha.setScaleY(0.60);
-                    int[] offsets = {-22, -7, 7, 22};
-                    ficha.setTranslateX(i < offsets.length ? offsets[i] : 0);
+                if (ficha != null) {
+                    if (total == 1) {
+                        // UN SOLO JUGADOR EN LA CELDA: SÓLO RESETEAMOS ESCALA, NO MOVEMOS
+                        ficha.setScaleX(1.0); ficha.setScaleY(1.0);
+                    } else if (total == 2) {
+                        ficha.setScaleX(0.85); ficha.setScaleY(0.85);
+                        ficha.setTranslateX(i == 0 ? -15 : 15);
+                    } else if (total == 3) {
+                        ficha.setScaleX(0.70); ficha.setScaleY(0.70);
+                        ficha.setTranslateX(i == 0 ? -20 : (i == 1 ? 0 : 20));
+                    } else {
+                        ficha.setScaleX(0.60); ficha.setScaleY(0.60);
+                        int[] offsets = {-22, -7, 7, 22};
+                        ficha.setTranslateX(i < offsets.length ? offsets[i] : 0);
+                    }
                 }
             }
         }
@@ -2143,6 +2145,10 @@ public class PantallaPartida {
      * 5. Registra los resultados finales de cada jugador en RESULTADO_PARTIDA.
      * 6. Registra el evento en HISTORIAL.
      */
+    /**
+     * Notifica a Oracle que la partida ha finalizado.
+     * Guarda estado, ganador, JUG_IN_PAR, RESULTADO_PARTIDA e HISTORIAL.
+     */
     private void notificarFinPartidaBBDD(Jugador ganador) {
         try {
             GestorBBDD gestor = new GestorBBDD();
@@ -2150,83 +2156,90 @@ public class PantallaPartida {
 
             if (gestor.getConexion() == null) {
                 gestorUI.registrar("⚠️ Sin conexión a BBDD, no se actualizan estadísticas.");
-                return;
-            }
-
-            // PASO 1: Si la partida no se había guardado nunca, asignar ID automático
-            if (idPartidaActual <= 0) {
-                int nuevoId = gestor.obtenerSiguienteIdPartida();
-                if (nuevoId > 0) {
-                    this.idPartidaActual = nuevoId;
-                    gestorUI.registrar("ℹ️ Partida nueva creada con ID " + nuevoId);
-                } else {
-                    gestorUI.registrar("⚠️ No se pudo generar ID, no se guardará la partida.");
-                    gestor.cerrarConexion();
-                    return;
-                }
-            }
-
-            // PASO 2: Guardar el ESTADO FINAL de la partida
-            boolean exitoGuardado = gestor.guardarBBDD(partida, idPartidaActual);
-            if (exitoGuardado) {
-                gestorUI.registrar("💾 Estado final de la partida guardado.");
             } else {
-                gestorUI.registrar("⚠️ No se pudo guardar el estado final.");
-            }
-
-            // PASO 3: Buscar id del ganador en tabla JUGADOR
-            int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
-            if (idGanador != -1) {
-                // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
-                java.util.List<String> participantes = new java.util.ArrayList<>();
-                if (partida != null && partida.getJugadores() != null) {
-                    for (Jugador jug : partida.getJugadores()) {
-                        if (jug instanceof Pinguino) {
-                            participantes.add(jug.getNombre());
-                        }
+                // PASO 1: Generar ID si la partida es nueva
+                boolean idValido = true;
+                if (idPartidaActual <= 0) {
+                    int nuevoId = gestor.obtenerSiguienteIdPartida();
+                    if (nuevoId > 0) {
+                        this.idPartidaActual = nuevoId;
+                        gestorUI.registrar("ℹ️ Partida nueva creada con ID " + nuevoId);
+                    } else {
+                        gestorUI.registrar("⚠️ No se pudo generar ID, no se guardará la partida.");
+                        idValido = false;
                     }
                 }
 
-                // PASO 5: Asignar ganador y actualizar num_partidas a todos
-                gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
-                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size()
-                                 + " jugadores. Ganador: " + ganador.getNombre());
+                if (idValido) {
+                    // PASO 2: Guardar estado final cifrado
+                    boolean exitoGuardado = gestor.guardarBBDD(partida, idPartidaActual);
+                    if (exitoGuardado) {
+                        gestorUI.registrar("💾 Estado final de la partida guardado.");
+                    } else {
+                        gestorUI.registrar("⚠️ No se pudo guardar el estado final.");
+                    }
 
-                // PASO 6: Registrar el RESULTADO FINAL de cada jugador en RESULTADO_PARTIDA
-                int turnosFinales = (partida != null) ? partida.getTurnos() : 0;
-                int resultadosGuardados = 0;
-                if (partida != null && partida.getJugadores() != null) {
-                    for (Jugador jug : partida.getJugadores()) {
-                        if (jug instanceof Pinguino) {
-                            int idJ = gestor.obtenerIdJugador(jug.getNombre());
-                            if (idJ != -1) {
-                                int idJip = gestor.obtenerIdJugInPar(idJ, idPartidaActual);
-                                if (idJip != -1) {
-                                    int posicion    = jug.getPosicion();
-                                    int peces       = contarItemPorNombre(jug, "pez", "peix");
-                                    int bolas       = contarItemPorNombre(jug, "bola");
-                                    int dadosLentos = contarItemPorNombre(jug, "lento");
-                                    int dadosRapidos = contarItemPorNombre(jug, "rapido", "rápido", "ràpid");
-                                    if (gestor.registrarResultadoPartida(idJip, posicion, peces, bolas,
-                                                                         dadosLentos, dadosRapidos, turnosFinales)) {
-                                        resultadosGuardados++;
+                    // PASO 3: Buscar id del ganador
+                    int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
+                    if (idGanador == -1) {
+                        gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
+                    } else {
+                        // PASO 4: Construir lista de participantes (solo Pinguinos)
+                        java.util.List<String> participantes = new java.util.ArrayList<>();
+                        if (partida != null && partida.getJugadores() != null) {
+                            for (Jugador jug : partida.getJugadores()) {
+                                if (jug instanceof Pinguino) {
+                                    participantes.add(jug.getNombre());
+                                }
+                            }
+                        }
+
+                        // PASO 5: Asignar ganador y actualizar estadísticas
+                        gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+                        gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
+                                         + " jugadores. Ganador: " + ganador.getNombre());
+
+                        // PASO 6: Registrar resultados de cada jugador en RESULTADO_PARTIDA
+                        int turnosFinales = 0;
+                        if (partida != null) {
+                            turnosFinales = partida.getTurnos();
+                        }
+                        int resultadosGuardados = 0;
+                        if (partida != null && partida.getJugadores() != null) {
+                            for (Jugador jug : partida.getJugadores()) {
+                                if (jug instanceof Pinguino) {
+                                    int idJ = gestor.obtenerIdJugador(jug.getNombre());
+                                    if (idJ != -1) {
+                                        int idJip = gestor.obtenerIdJugInPar(idJ, idPartidaActual);
+                                        if (idJip != -1) {
+                                            int posicion = jug.getPosicion();
+                                            int peces = jug.contarPeces();
+                                            int bolas = jug.contarBolas();
+                                            int dadosLentos = jug.contarDadosLentos();
+                                            int dadosRapidos = jug.contarDadosRapidos();
+                                            boolean okRes = gestor.registrarResultadoPartida(
+                                                idJip, posicion, peces, bolas,
+                                                dadosLentos, dadosRapidos, turnosFinales
+                                            );
+                                            if (okRes) {
+                                                resultadosGuardados++;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                        gestorUI.registrar("📊 Resultados guardados para " + resultadosGuardados + " jugadores.");
+
+                        // PASO 7: Registrar evento FINAL en HISTORIAL con id del ganador
+                        gestor.registrarHistorial(idPartidaActual, "FINAL", 
+                            "Partida " + idPartidaActual + " finalizada. Ganador: " + ganador.getNombre(),
+                            idGanador);
                     }
                 }
-                gestorUI.registrar("📊 Resultados guardados para " + resultadosGuardados + " jugadores.");
 
-                // PASO 7: Registrar el evento FINAL en HISTORIAL con el id del ganador
-                gestor.registrarHistorial(idPartidaActual, "FINAL",
-                    "Partida " + idPartidaActual + " finalizada. Ganador: " + ganador.getNombre(),
-                    idGanador);
-            } else {
-                gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
+                gestor.cerrarConexion();
             }
-
-            gestor.cerrarConexion();
         } catch (Exception e) {
             gestorUI.registrar("❌ Error al actualizar estadísticas: " + e.getMessage());
         }

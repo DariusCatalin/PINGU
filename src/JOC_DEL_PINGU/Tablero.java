@@ -36,8 +36,9 @@ public class Tablero {
         for (int i = 1; i < POSICION_META; i++) {
             Casilla c = null;
             int intentos = 0;
+            boolean stopWhile = false;
 
-            while (intentos < 20) {
+            while (intentos < 20 && !stopWhile) {
                 int roll = rand.nextInt(100); // 0-99
 
                 // Probabilidades: Normal 30% (0-29), Oso ~11% (30-40), Trineo ~11% (41-51),
@@ -60,27 +61,26 @@ public class Tablero {
                 // Las casillas normales no tienen restricción de repetición
                 if (tipoCandidato.equals("Normal")) {
                     c = new CasillaNormal(i);
-                    break;
-                }
-
-                // Comprobar que el mismo tipo especial no aparece en ninguna de las 3 casillas anteriores
-                boolean bloqueada = false;
-                for (int retro = 1; retro <= 3 && (i - retro) >= 0; retro++) {
-                    if (this.casillas.get(i - retro).getClass().getSimpleName().equals(tipoCandidato)) {
-                        bloqueada = true;
-                        break;
+                    stopWhile = true;
+                } else {
+                    // Comprobar que el mismo tipo especial no aparece en ninguna de las 3 casillas anteriores
+                    boolean bloqueada = false;
+                    for (int retro = 1; retro <= 3 && (i - retro) >= 0 && !bloqueada; retro++) {
+                        if (this.casillas.get(i - retro).getClass().getSimpleName().equals(tipoCandidato)) {
+                            bloqueada = true;
+                        }
                     }
-                }
 
-                if (!bloqueada) {
-                    switch (tipoCandidato) {
-                        case "Oso":           c = new Oso(i);           break;
-                        case "Trineo":        c = new Trineo(i);        break;
-                        case "Agujero":       c = new Agujero(i);       break;
-                        case "CasillaFragil": c = new CasillaFragil(i); break;
-                        case "Evento":        c = new Evento(i);        break;
+                    if (!bloqueada) {
+                        switch (tipoCandidato) {
+                            case "Oso":           c = new Oso(i);           break;
+                            case "Trineo":        c = new Trineo(i);        break;
+                            case "Agujero":       c = new Agujero(i);       break;
+                            case "CasillaFragil": c = new CasillaFragil(i); break;
+                            case "Evento":        c = new Evento(i);        break;
+                        }
+                        stopWhile = true;
                     }
-                    break;
                 }
 
                 intentos++;

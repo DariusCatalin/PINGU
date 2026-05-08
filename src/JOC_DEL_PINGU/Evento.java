@@ -74,13 +74,12 @@ public class Evento extends Casilla {
         } else if (i <= 95) {
             Tablero t = p.getTablero();
             boolean encontrado = false;
-            for (int k = j.getPosicion() + 1; k < t.getTotalCasillas(); k++) {
+            for (int k = j.getPosicion() + 1; k < t.getTotalCasillas() && !encontrado; k++) {
                 if (t.getCasilla(k) instanceof Trineo) {
                     int avanzadas = k - j.getPosicion();
                     j.moverPosicion(k);
                     if (ge != null) ge.registrar("¡Evento! " + j.getNombre() + " encuentra una moto de nieve y vuela " + avanzadas + " casillas.");
                     encontrado = true;
-                    break;
                 }
             }
             if (!encontrado) {

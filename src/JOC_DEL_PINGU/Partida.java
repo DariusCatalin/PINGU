@@ -56,6 +56,7 @@ public class Partida {
     public void pasarTurno() {
         int intentos = 0;
         int totalJugadores = jugadores.size();
+        boolean halt = false;
         
         do {
             jugadorActual++;
@@ -80,28 +81,24 @@ public class Partida {
             
             if (intentos > totalJugadores * 2) {
                 System.out.println("Error: Tots els jugadors estan penalitzats indefinidament.");
-                break;
+                halt = true;
             }
             
-        } while (jugadores.get(jugadorActual).estaPenalizado());
+        } while (!halt && jugadores.get(jugadorActual).estaPenalizado());
     }
     
     // ==================== MÈTODES DE COL·LISIÓ ====================
     
    
     public void verificarColisiones(Jugador jugadorMovido) {
-        if (!modoGuerraActivado) {
-            return; // No aplicar guerra en nivell intermig
-        }
-        
-        // No hi ha guerres a la sortida (0) ni a la meta (49+)
-        if (jugadorMovido.getPosicion() == 0 || jugadorMovido.getPosicion() >= 49) {
-            return;
-        }
-
-        for (Jugador otro : jugadores) {
-            if (otro != jugadorMovido && otro.getPosicion() == jugadorMovido.getPosicion()) {
-                resolverGuerra(jugadorMovido, otro);
+        if (modoGuerraActivado) {
+            // No hi ha guerres a la sortida (0) ni a la meta (49+)
+            if (jugadorMovido.getPosicion() != 0 && jugadorMovido.getPosicion() < 49) {
+                for (Jugador otro : jugadores) {
+                    if (otro != jugadorMovido && otro.getPosicion() == jugadorMovido.getPosicion()) {
+                        resolverGuerra(jugadorMovido, otro);
+                    }
+                }
             }
         }
     }

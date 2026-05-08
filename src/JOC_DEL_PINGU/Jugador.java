@@ -69,6 +69,36 @@ public abstract class Jugador {
         }
         return count;
     }
+
+    public int contarPeces() {
+        int count = 0;
+        for (Item item : inventario.getLista()) {
+            if (item != null && (item.getNombre().toLowerCase().contains("pez") || item.getNombre().toLowerCase().contains("peix"))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public int contarDadosLentos() {
+        int count = 0;
+        for (Item item : inventario.getLista()) {
+            if (item != null && item.getNombre().toLowerCase().contains("lento")) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public int contarDadosRapidos() {
+        int count = 0;
+        for (Item item : inventario.getLista()) {
+            if (item != null && item.getNombre().toLowerCase().contains("rápido")) {
+                count++;
+            }
+        }
+        return count;
+    }
     
    
     public void vaciarBolas() {
@@ -84,16 +114,15 @@ public abstract class Jugador {
         int total = inventario.getLista().size();
         if (total == 0) {
             System.out.println(nombre + " no té objectes per perdre.");
-            return;
-        }
-        
-        int aPerder = total / 2;
-        Random rand = new Random();
+        } else {
+            int aPerder = total / 2;
+            Random rand = new Random();
 
-        for (int i = 0; i < aPerder && !inventario.getLista().isEmpty(); i++) {
-            int index = rand.nextInt(inventario.getLista().size());
-            Item eliminado = inventario.getLista().remove(index);
-            System.out.println(nombre + " perd: " + (eliminado != null ? eliminado.getNombre() : "objecte"));
+            for (int i = 0; i < aPerder && !inventario.getLista().isEmpty(); i++) {
+                int index = rand.nextInt(inventario.getLista().size());
+                Item eliminado = inventario.getLista().remove(index);
+                System.out.println(nombre + " perd: " + (eliminado != null ? eliminado.getNombre() : "objecte"));
+            }
         }
     }
     
