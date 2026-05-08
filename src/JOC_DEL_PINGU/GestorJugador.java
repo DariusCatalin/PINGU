@@ -17,31 +17,33 @@ public class GestorJugador {
     public void jugadorUsaItem(Jugador j, String nombreItem) {
         if (j == null || j.getInventario() == null || j.getInventario().getLista() == null) {
             System.out.println("Error: Inventari no vàlid");
-            return;
-        }
-        
-        Item itemAUsar = null;
-        
-        // Busquem si té l'item
-        for (Item item : j.getInventario().getLista()) {
-            if (item != null && item.getNombre().equalsIgnoreCase(nombreItem)) {
-                itemAUsar = item;
-                break;
-            }
-        }
-        
-        if (itemAUsar != null) {
-            // L'eliminem de l'inventari en usar-lo
-            j.getInventario().eliminarItem(itemAUsar);
-            
-            // Si és un Pingüí, cridem al seu mètode intern
-            if (j instanceof Pinguino) {
-                ((Pinguino) j).usarItem(itemAUsar);
-            } else {
-                System.out.println(j.getNombre() + " usa l'objecte: " + itemAUsar.getNombre());
-            }
         } else {
-            System.out.println(j.getNombre() + " no té l'objecte " + nombreItem + " al seu inventari.");
+            Item itemAUsar = null;
+            boolean trobat = false;
+            
+            // Busquem si té l'item
+            java.util.List<Item> items = j.getInventario().getLista();
+            for (int i = 0; i < items.size() && !trobat; i++) {
+                Item item = items.get(i);
+                if (item != null && item.getNombre().equalsIgnoreCase(nombreItem)) {
+                    itemAUsar = item;
+                    trobat = true;
+                }
+            }
+            
+            if (itemAUsar != null) {
+                // L'eliminem de l'inventari en usar-lo
+                j.getInventario().eliminarItem(itemAUsar);
+                
+                // Si és un Pingüí, cridem al seu mètode intern
+                if (j instanceof Pinguino) {
+                    ((Pinguino) j).usarItem(itemAUsar);
+                } else {
+                    System.out.println(j.getNombre() + " usa l'objecte: " + itemAUsar.getNombre());
+                }
+            } else {
+                System.out.println(j.getNombre() + " no té l'objecte " + nombreItem + " al seu inventari.");
+            }
         }
     }
     
@@ -51,66 +53,61 @@ public class GestorJugador {
     public void jugadorSeMueve(Jugador j, int passos, Tablero t) {
         if (j == null) {
             System.out.println("Error: Jugador null a jugadorSeMueve()");
-            return;
+        } else {
+            int novaPos = j.getPosicion() + passos;
+            
+            // Obtenim la mida real del taulell (si existeix)
+            int maxPos = 49;
+            if (t != null && t.getCasillas() != null && !t.getCasillas().isEmpty()) {
+                maxPos = t.getCasillas().size() - 1;
+            }
+            
+            // Verifiquem límits
+            if (novaPos > maxPos) {
+                novaPos = maxPos;
+            }
+            
+            if (novaPos < 0) {
+                novaPos = 0;
+            }
+            
+            j.setPosicion(novaPos);
+            System.out.println(j.getNombre() + " s'ha mogut a la casella " + novaPos);
         }
-        
-        int novaPos = j.getPosicion() + passos;
-        
-        // Obtenim la mida real del taulell (si existeix)
-        int maxPos = 49;
-        if (t != null && t.getCasillas() != null && !t.getCasillas().isEmpty()) {
-            maxPos = t.getCasillas().size() - 1;
-        }
-        
-        // Verifiquem límits
-        if (novaPos > maxPos) {
-            novaPos = maxPos;
-        }
-        
-        if (novaPos < 0) {
-            novaPos = 0;
-        }
-        
-        j.setPosicion(novaPos);
-        System.out.println(j.getNombre() + " s'ha mogut a la casella " + novaPos);
     }
     
     
     public void jugadorMoureAPosicio(Jugador j, int posicio, Tablero t) {
-        if (j == null) {
-            return;
+        if (j != null) {
+            int maxPos = 49;
+            if (t != null && t.getCasillas() != null && !t.getCasillas().isEmpty()) {
+                maxPos = t.getCasillas().size() - 1;
+            }
+            
+            // Verifiquem límits
+            if (posicio < 0) {
+                posicio = 0;
+            }
+            if (posicio > maxPos) {
+                posicio = maxPos;
+            }
+            
+            j.setPosicion(posicio);
+            System.out.println(j.getNombre() + " s'ha mogut a la casella " + posicio);
         }
-        
-        int maxPos = 49;
-        if (t != null && t.getCasillas() != null && !t.getCasillas().isEmpty()) {
-            maxPos = t.getCasillas().size() - 1;
-        }
-        
-        // Verifiquem límits
-        if (posicio < 0) {
-            posicio = 0;
-        }
-        if (posicio > maxPos) {
-            posicio = maxPos;
-        }
-        
-        j.setPosicion(posicio);
-        System.out.println(j.getNombre() + " s'ha mogut a la casella " + posicio);
     }
     
     // ==================== MÈTODES DE FINALITZACIÓ DE TORN ====================
     
   
     public void jugadorFinalizaTurno(Jugador j) {
-        if (j == null) {
-            return;
-        }
-        
-        if (j.getTurnosPenalizados() > 0) {
-            System.out.println(j.getNombre() + " finalitza el seu torn. Li queden " + 
-                             j.getTurnosPenalizados() + " torns de penalització.");
-        } else {
-            System.out.println(j.getNombre() + " ha finalitzat el seu torn correctament sense penalitzacions.");
+        if (j != null) {
+            if (j.getTurnosPenalizados() > 0) {
+                System.out.println(j.getNombre() + " finalitza el seu torn. Li queden " + 
+                                 j.getTurnosPenalizados() + " torns de penalització.");
+            } else {
+                System.out.println(j.getNombre() + " ha finalitzat el seu torn correctament sense penalitzacions.");
+            }
         }
     }
     
@@ -118,11 +115,10 @@ public class GestorJugador {
     
    
     public void piguinoEvento(Pinguino p) {
-        if (p == null) {
-            return;
+        if (p != null) {
+            System.out.println("¡El pingüí " + p.getNombre() + " ha activat un esdeveniment sorpresa!");
+            // Aquí es podria delegar la lògica a una Casilla de Evento
         }
-        System.out.println("¡El pingüí " + p.getNombre() + " ha activat un esdeveniment sorpresa!");
-        // Aquí es podria delegar la lògica a una Casilla de Evento
     }
     
     // ==================== MÈTODES DE GUERRA  ====================
@@ -162,15 +158,13 @@ public class GestorJugador {
     
     
     private void retrocederPinguino(Jugador j, int caselles) {
-        if (j == null) {
-            return;
+        if (j != null) {
+            int novaPos = j.getPosicion() - caselles;
+            if (novaPos < 0) {
+                novaPos = 0;
+            }
+            j.setPosicion(novaPos);
         }
-        
-        int novaPos = j.getPosicion() - caselles;
-        if (novaPos < 0) {
-            novaPos = 0;
-        }
-        j.setPosicion(novaPos);
     }
     
     // ==================== MÈTODES DE FOCA ====================
@@ -191,22 +185,19 @@ public class GestorJugador {
     
    
     public void jugadorPerdObjecteAleatori(Jugador j) {
-        if (j == null) {
-            return;
+        if (j != null) {
+            j.perderObjetoAleatorio();
         }
-        j.perderObjetoAleatorio();
     }
     
    
     public void aplicarPenalizacion(Jugador j, int torns) {
-        if (j == null) {
-            return;
+        if (j != null) {
+            for (int i = 0; i < torns; i++) {
+                j.aplicarPenalizacion();
+            }
+            
+            System.out.println(j.getNombre() + " ha estat penalitzat " + torns + " torns.");
         }
-        
-        for (int i = 0; i < torns; i++) {
-            j.aplicarPenalizacion();
-        }
-        
-        System.out.println(j.getNombre() + " ha estat penalitzat " + torns + " torns.");
     }
 }

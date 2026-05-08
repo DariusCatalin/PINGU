@@ -12,32 +12,31 @@ public class Trineo extends Casilla {
     
     @Override
     public void realizarAccion(Partida p, Jugador j) {
-        if (j == null || p == null || p.getTablero() == null) {
-            return;
-        }
-        
-        Tablero t = p.getTablero();
-        GestorEventos ge = p.getGestorEventos();
-        int tamañoTablero = t.getCasillas().size();
-        
-        // Buscar el següent trineu
-        for (int i = j.getPosicion() + 1; i < tamañoTablero; i++) {
-            Casilla c = t.getCasilla(i);
+        if (j != null && p != null && p.getTablero() != null) {
+            Tablero t = p.getTablero();
+            GestorEventos ge = p.getGestorEventos();
+            int tamañoTablero = t.getCasillas().size();
+            boolean trobat = false;
             
-            if (c instanceof Trineo) {
-                int casillasAvanzadas = i - j.getPosicion();
-                j.moverPosicion(i);
+            // Buscar el següent trineu
+            for (int i = j.getPosicion() + 1; i < tamañoTablero && !trobat; i++) {
+                Casilla c = t.getCasilla(i);
                 
-                if (ge != null) {
-                    ge.registrar("¡" + j.getNombre() + " usa un trineo! Avanza " + casillasAvanzadas + " casillas.");
+                if (c instanceof Trineo) {
+                    int casillasAvanzadas = i - j.getPosicion();
+                    j.moverPosicion(i);
+                    
+                    if (ge != null) {
+                        ge.registrar("¡" + j.getNombre() + " usa un trineo! Avanza " + casillasAvanzadas + " casillas.");
+                    }
+                    trobat = true;
                 }
-                return;
             }
-        }
-        
-        // ==================== NO HI HA MÉS TRINEUS: CAP EFECTE ====================
-        if (ge != null) {
-            ge.registrar(j.getNombre() + " se baja del trineo (último trineo del tablero).");
+            
+            // ==================== NO HI HA MÉS TRINEUS: CAP EFECTE ====================
+            if (!trobat && ge != null) {
+                ge.registrar(j.getNombre() + " se baja del trineo (último trineo del tablero).");
+            }
         }
     }
 }

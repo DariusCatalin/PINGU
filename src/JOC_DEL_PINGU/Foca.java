@@ -22,19 +22,18 @@ public class Foca extends Jugador {
             if (ge != null) {
                 ge.registrar("La foca " + this.getNombre() + " esta distraida comiendo un pez. Pierde su turno.");
             }
-            return;
+        } else {
+            // 2. Tirar el dado (1-6 estandar)
+            int tirada = (int)(Math.random() * 6) + 1;
+            this.avanzarCasillas(tirada);
+            
+            if (ge != null) {
+                ge.registrar("La CPU (" + this.getNombre() + ") tira el dado, saca un " + tirada + " y avanza a la casilla " + this.getPosicion() + ".");
+            }
+            
+            // 3. Comprovar si ha caigut damunt d'algun pinguino
+            interactuarConJugadores(p);
         }
-        
-        // 2. Tirar el dado (1-6 estandar)
-        int tirada = (int)(Math.random() * 6) + 1;
-        this.avanzarCasillas(tirada);
-        
-        if (ge != null) {
-            ge.registrar("La CPU (" + this.getNombre() + ") tira el dado, saca un " + tirada + " y avanza a la casilla " + this.getPosicion() + ".");
-        }
-        
-        // 3. Comprovar si ha caigut damunt d'algun pinguino
-        interactuarConJugadores(p);
     }
     
     public void interactuarConJugadores(Partida p) {
@@ -44,10 +43,13 @@ public class Foca extends Jugador {
                 
                 // Buscar si el pinguino te un peix
                 Item pez = null;
-                for (Item item : j.getInventario().getLista()) {
+                boolean trobat = false;
+                java.util.List<Item> items = j.getInventario().getLista();
+                for (int i = 0; i < items.size() && !trobat; i++) {
+                    Item item = items.get(i);
                     if (item.getNombre().equalsIgnoreCase("Pez")) {
                         pez = item;
-                        break;
+                        trobat = true;
                     }
                 }
                 
@@ -73,19 +75,22 @@ public class Foca extends Jugador {
     }
     
     private void enviarAlAgujeroAnterior(Jugador j, Tablero t, GestorEventos ge) {
-        for (int i = j.getPosicion() - 1; i >= 0; i--) {
+        boolean encontrado = false;
+        for (int i = j.getPosicion() - 1; i >= 0 && !encontrado; i--) {
             Casilla c = t.getCasilla(i);
             if (c instanceof Agujero) {
                 j.moverPosicion(i);
                 if (ge != null) {
                     ge.registrar(j.getNombre() + " es enviado al agujero anterior por la Foca.");
                 }
-                return;
+                encontrado = true;
             }
         }
-        j.moverPosicion(0);
-        if (ge != null) {
-            ge.registrar(j.getNombre() + " es enviado al inicio por la Foca (primer agujero).");
+        if (!encontrado) {
+            j.moverPosicion(0);
+            if (ge != null) {
+                ge.registrar(j.getNombre() + " es enviado al inicio por la Foca (primer agujero).");
+            }
         }
     }
     

@@ -10,47 +10,34 @@ public class Agujero extends Casilla {
     
     @Override
     public void realizarAccion(Partida p, Jugador j) {
-    	
-        if (j == null || p == null || p.getTablero() == null) {
+        if (j != null) {
+            GestorEventos ge = p.getGestorEventos();
+            int posActual = j.getPosicion();
             
-        	return;
-        	
-        }
-        
-        Tablero t = p.getTablero();
-        
-        GestorEventos ge = p.getGestorEventos();
-        
-        // Buscar el forat anterior
-        for (int i = j.getPosicion() - 1; i >= 0; i--) {
-        	
-            Casilla c = t.getCasilla(i);
+            // Busca la casella "Agujero" anterior a la posició actual
+            int posAnterior = -1;
+            Tablero t = p.getTablero();
             
-            if (c instanceof Agujero) {
-            	
-                int casillasAtras = j.getPosicion() - i;
-                j.moverPosicion(i);
-                
-                if (ge != null) {
-                	
-                    ge.registrar(j.getNombre() + " cae al agujero! Retrocede " + casillasAtras + " casillas.");
-                    
+            for (int i = posActual - 1; i >= 0; i--) {
+                if (t.getCasilla(i) instanceof Agujero) {
+                    posAnterior = i;
+                    // No usem break, usem i = -1 per sortir del bucle
+                    i = -1; 
                 }
-                
-                return;
             }
             
+            if (posAnterior != -1) {
+                j.moverPosicion(posAnterior);
+                if (ge != null) {
+                    ge.registrar("¡" + j.getNombre() + " cae en un agujero! Retrocede al agujero anterior (casilla " + posAnterior + ").");
+                }
+            } else {
+                j.moverPosicion(0);
+                if (ge != null) {
+                    ge.registrar("¡" + j.getNombre() + " cae en un agujero! No hay agujeros anteriores, vuelve al inicio.");
+                }
+            }
         }
-        
-        // NO HI HA FORAT ANTERIOR: RETORNA A L'INICI
-        
-        j.moverPosicion(0);
-        
-        if (ge != null) {
-        	
-            ge.registrar(j.getNombre() + " resbala hasta la casilla inicial (primer agujero).");
-        }
-        
     }
     
 }

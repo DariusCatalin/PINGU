@@ -295,12 +295,13 @@ public class GestorBBDD {
             String tableroStr = null;
             for (String parte : estat.split("\\|")) {
                 String[] kv = parte.split(":", 2);
-                if (kv.length != 2) continue;
-                switch (kv[0]) {
-                    case "torn":       p.setJugadorActual(Integer.parseInt(kv[1]));       break;
-                    case "turnos":     p.setTurnos(Integer.parseInt(kv[1]));              break;
-                    case "finalizada": p.setFinalizada(Boolean.parseBoolean(kv[1]));     break;
-                    case "tablero":    tableroStr = kv[1];                                break;
+                if (kv.length == 2) {
+                    switch (kv[0]) {
+                        case "torn":       p.setJugadorActual(Integer.parseInt(kv[1]));       break;
+                        case "turnos":     p.setTurnos(Integer.parseInt(kv[1]));              break;
+                        case "finalizada": p.setFinalizada(Boolean.parseBoolean(kv[1]));     break;
+                        case "tablero":    tableroStr = kv[1];                                break;
+                    }
                 }
             }
 
@@ -311,9 +312,12 @@ public class GestorBBDD {
 
             // Parsear BLOB 2: jugadores
             for (String jStr : jugadoresStr.split(";")) {
-                if (jStr.trim().isEmpty()) continue;
-                Jugador j = deserializarJugador(jStr.trim());
-                if (j != null) p.getJugadores().add(j);
+                if (!jStr.trim().isEmpty()) {
+                    Jugador j = deserializarJugador(jStr.trim());
+                    if (j != null) {
+                        p.getJugadores().add(j);
+                    }
+                }
             }
 
             System.out.println("✅ Partida cargada (ID: " + idPartida + ")");
@@ -621,18 +625,23 @@ public class GestorBBDD {
             if (nombresParticipantes != null) {
                 try (java.sql.PreparedStatement ps = this.conexion.prepareStatement(sql2)) {
                     for (String nombre : nombresParticipantes) {
-                        if (nombre == null || nombre.trim().isEmpty()) continue;
-                        String n = nombre.trim();
-                        ps.setString(1, n);
-                        int updated = ps.executeUpdate();
-                        if (updated > 0) actualizados++;
+                        if (nombre != null && !nombre.trim().isEmpty()) {
+                            String n = nombre.trim();
+                            ps.setString(1, n);
+                            int updated = ps.executeUpdate();
+                            if (updated > 0) {
+                                actualizados++;
+                            }
 
-                        // ⭐ Registrar este participante en JUG_IN_PAR
-                        int idJ = obtenerIdJugador(n);
-                        if (idJ != -1) {
-                            boolean esGanador = (idJ == idGanador);
-                            registrarJugInPar(idJ, idPartida, esGanador);
-                            if (esGanador) nombreGanador = n;
+                            // ⭐ Registrar este participante en JUG_IN_PAR
+                            int idJ = obtenerIdJugador(n);
+                            if (idJ != -1) {
+                                boolean esGanador = (idJ == idGanador);
+                                registrarJugInPar(idJ, idPartida, esGanador);
+                                if (esGanador) {
+                                    nombreGanador = n;
+                                }
+                            }
                         }
                     }
                 }
@@ -894,26 +903,28 @@ public class GestorBBDD {
      * @param idJugador opcional, puede ser -1 si no aplica (se guarda como NULL)
      */
     public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion, int idJugador) {
-        if (this.conexion == null) return false;
-        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?, ?) }")) {
-            if (idPartida > 0) {
-                cs.setInt(1, idPartida);
-            } else {
-                cs.setNull(1, java.sql.Types.NUMERIC);
+        boolean resultado = false;
+        if (this.conexion != null) {
+            try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?, ?) }")) {
+                if (idPartida > 0) {
+                    cs.setInt(1, idPartida);
+                } else {
+                    cs.setNull(1, java.sql.Types.NUMERIC);
+                }
+                cs.setString(2, tipoEvento);
+                cs.setString(3, descripcion);
+                if (idJugador > 0) {
+                    cs.setInt(4, idJugador);
+                } else {
+                    cs.setNull(4, java.sql.Types.NUMERIC);
+                }
+                cs.execute();
+                resultado = true;
+            } catch (Exception e) {
+                System.err.println("❌ Error registrando historial: " + e.getMessage());
             }
-            cs.setString(2, tipoEvento);
-            cs.setString(3, descripcion);
-            if (idJugador > 0) {
-                cs.setInt(4, idJugador);
-            } else {
-                cs.setNull(4, java.sql.Types.NUMERIC);
-            }
-            cs.execute();
-            return true;
-        } catch (Exception e) {
-            System.err.println("❌ Error registrando historial: " + e.getMessage());
-            return false;
         }
+        return resultado;
     }
 
     /**
@@ -946,41 +957,45 @@ public class GestorBBDD {
      * @return el id_jug_in_par, o -1 si no existe
      */
     public int obtenerIdJugInPar(int idJugador, int idPartida) {
-        if (this.conexion == null) return -1;
-        try (CallableStatement cs = this.conexion.prepareCall("{ call OBTENER_ID_JUG_IN_PAR(?, ?, ?) }")) {
-            cs.setInt(1, idJugador);
-            cs.setInt(2, idPartida);
-            cs.registerOutParameter(3, java.sql.Types.NUMERIC);
-            cs.execute();
-            return cs.getInt(3);
-        } catch (Exception e) {
-            System.err.println("❌ Error obteniendo id_jug_in_par: " + e.getMessage());
-            return -1;
+        int resultado = -1;
+        if (this.conexion != null) {
+            try (CallableStatement cs = this.conexion.prepareCall("{ call OBTENER_ID_JUG_IN_PAR(?, ?, ?) }")) {
+                cs.setInt(1, idJugador);
+                cs.setInt(2, idPartida);
+                cs.registerOutParameter(3, java.sql.Types.NUMERIC);
+                cs.execute();
+                resultado = cs.getInt(3);
+            } catch (Exception e) {
+                System.err.println("❌ Error obteniendo id_jug_in_par: " + e.getMessage());
+            }
         }
+        return resultado;
     }
 
     /**
      * Registra el resultado final de un jugador en una partida llamando al procedure
      * REGISTRAR_RESULTADO_PARTIDA de Oracle.
      */
-    public boolean registrarResultadoPartida(int idJugInPar, int posicionFinal,
-                                              int peces, int bolas, int dadosLentos,
+    public boolean registrarResultadoPartida(int idJugInPar, int posicionFinal, 
+                                              int peces, int bolas, int dadosLentos, 
                                               int dadosRapidos, int turnoFinal) {
-        if (this.conexion == null) return false;
-        try (CallableStatement cs = this.conexion.prepareCall(
-                "{ call REGISTRAR_RESULTADO_PARTIDA(?, ?, ?, ?, ?, ?, ?) }")) {
-            cs.setInt(1, idJugInPar);
-            cs.setInt(2, posicionFinal);
-            cs.setInt(3, peces);
-            cs.setInt(4, bolas);
-            cs.setInt(5, dadosLentos);
-            cs.setInt(6, dadosRapidos);
-            cs.setInt(7, turnoFinal);
-            cs.execute();
-            return true;
-        } catch (Exception e) {
-            System.err.println("❌ Error registrando resultado partida: " + e.getMessage());
-            return false;
+        boolean resultado = false;
+        if (this.conexion != null) {
+            try (CallableStatement cs = this.conexion.prepareCall(
+                    "{ call REGISTRAR_RESULTADO_PARTIDA(?, ?, ?, ?, ?, ?, ?) }")) {
+                cs.setInt(1, idJugInPar);
+                cs.setInt(2, posicionFinal);
+                cs.setInt(3, peces);
+                cs.setInt(4, bolas);
+                cs.setInt(5, dadosLentos);
+                cs.setInt(6, dadosRapidos);
+                cs.setInt(7, turnoFinal);
+                cs.execute();
+                resultado = true;
+            } catch (Exception e) {
+                System.err.println("❌ Error registrando resultado partida: " + e.getMessage());
+            }
         }
+        return resultado;
     }
 }
