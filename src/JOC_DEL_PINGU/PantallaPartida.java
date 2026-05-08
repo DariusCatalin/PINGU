@@ -116,10 +116,12 @@ public class PantallaPartida {
             }
         }
  
-        for (Jugador j : jugadoresConfig) {
+        boolean encontradoPinguino = false;
+        for (int pi = 0; pi < jugadoresConfig.size() && !encontradoPinguino; pi++) {
+            Jugador j = jugadoresConfig.get(pi);
             if (j instanceof Pinguino) {
                 actualizarTextosInventario(j);
-                break;
+                encontradoPinguino = true;
             }
         }
         
@@ -188,10 +190,12 @@ public class PantallaPartida {
         inicializarColas();
  
         // ACTUALIZAMOS EL CONTADOR DEL INVENTARIO DEL PRIMER PINGÜINO HUMANO
-        for (Jugador j : jugadoresConfig) {
+        boolean encontradoPinguinoConf = false;
+        for (int pi = 0; pi < jugadoresConfig.size() && !encontradoPinguinoConf; pi++) {
+            Jugador j = jugadoresConfig.get(pi);
             if (j instanceof Pinguino) {
                 actualizarTextosInventario(j);
-                break;
+                encontradoPinguinoConf = true;
             }
         }
         
@@ -423,7 +427,10 @@ public class PantallaPartida {
         int n = 0;
         for (Item item : j.getInventario().getLista()) {
             String nombre = item.getNombre().toLowerCase();
-            for (String clave : claves) { if (nombre.contains(clave)) { n++; break; } }
+            boolean coincide = false;
+            for (int ci = 0; ci < claves.length && !coincide; ci++) {
+                if (nombre.contains(claves[ci])) { n++; coincide = true; }
+            }
         }
         return n;
     }
@@ -2127,10 +2134,15 @@ public class PantallaPartida {
         secuenciaCompleta.play();
     }
 
-    // NOTIFICA A ORACLE QUE LA PARTIDA HA TERMINADO Y ACTUALIZA LAS ESTADÍSTICAS
-    // PASO 1: SI NO TENÍA ID, SE GENERA UNO AUTOMÁTICO
-    // PASO 2: GUARDA EL ESTADO FINAL CON EL GANADOR EN LA META
-    // PASO 3: DISPARA EL TRIGGER 'INCREMENTAR_WINS' EN ORACLE
+    /**
+     * Notifica a Oracle que la partida ha finalizado.
+     * 1. Si la partida no se había guardado nunca, le asigna ID automático.
+     * 2. Guarda el estado FINAL de la partida (con el ganador en su posición).
+     * 3. Asigna el ganador en BBDD (dispara trigger 'incrementar_wins').
+     * 4. Registra en JUG_IN_PAR la participación de cada jugador.
+     * 5. Registra los resultados finales de cada jugador en RESULTADO_PARTIDA.
+     * 6. Registra el evento en HISTORIAL.
+     */
     private void notificarFinPartidaBBDD(Jugador ganador) {
         try {
             GestorBBDD gestor = new GestorBBDD();
@@ -2154,7 +2166,7 @@ public class PantallaPartida {
                 }
             }
 
-            // PASO 2: Guardar el ESTADO FINAL de la partida (con el ganador en la meta)
+            // PASO 2: Guardar el ESTADO FINAL de la partida
             boolean exitoGuardado = gestor.guardarBBDD(partida, idPartidaActual);
             if (exitoGuardado) {
                 gestorUI.registrar("💾 Estado final de la partida guardado.");
@@ -2164,26 +2176,54 @@ public class PantallaPartida {
 
             // PASO 3: Buscar id del ganador en tabla JUGADOR
             int idGanador = gestor.obtenerIdJugador(ganador.getNombre());
-            
-            // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
-            java.util.List<String> participantes = new java.util.ArrayList<>();
-            if (partida != null && partida.getJugadores() != null) {
-                for (Jugador jug : partida.getJugadores()) {
-                    // SOLO AÑADIMOS PINGÜINOS (LAS FOCAS/CPU NO SON USUARIOS REALES)
-                    if (jug instanceof Pinguino) {
-                        participantes.add(jug.getNombre());
+            if (idGanador != -1) {
+                // PASO 4: Construir lista de TODOS los participantes (no solo el ganador)
+                java.util.List<String> participantes = new java.util.ArrayList<>();
+                if (partida != null && partida.getJugadores() != null) {
+                    for (Jugador jug : partida.getJugadores()) {
+                        if (jug instanceof Pinguino) {
+                            participantes.add(jug.getNombre());
+                        }
                     }
                 }
-            }
 
-            // PASO 5: ASIGNAR GANADOR Y ACTUALIZAR NUM_PARTIDAS A TODOS
-            gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
-            if (idGanador != -1) {
-                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
+                // PASO 5: Asignar ganador y actualizar num_partidas a todos
+                gestor.finalizarPartida(idPartidaActual, idGanador, participantes);
+                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size()
                                  + " jugadores. Ganador: " + ganador.getNombre());
+
+                // PASO 6: Registrar el RESULTADO FINAL de cada jugador en RESULTADO_PARTIDA
+                int turnosFinales = (partida != null) ? partida.getTurnos() : 0;
+                int resultadosGuardados = 0;
+                if (partida != null && partida.getJugadores() != null) {
+                    for (Jugador jug : partida.getJugadores()) {
+                        if (jug instanceof Pinguino) {
+                            int idJ = gestor.obtenerIdJugador(jug.getNombre());
+                            if (idJ != -1) {
+                                int idJip = gestor.obtenerIdJugInPar(idJ, idPartidaActual);
+                                if (idJip != -1) {
+                                    int posicion    = jug.getPosicion();
+                                    int peces       = contarItemPorNombre(jug, "pez", "peix");
+                                    int bolas       = contarItemPorNombre(jug, "bola");
+                                    int dadosLentos = contarItemPorNombre(jug, "lento");
+                                    int dadosRapidos = contarItemPorNombre(jug, "rapido", "rápido", "ràpid");
+                                    if (gestor.registrarResultadoPartida(idJip, posicion, peces, bolas,
+                                                                         dadosLentos, dadosRapidos, turnosFinales)) {
+                                        resultadosGuardados++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                gestorUI.registrar("📊 Resultados guardados para " + resultadosGuardados + " jugadores.");
+
+                // PASO 7: Registrar el evento FINAL en HISTORIAL con el id del ganador
+                gestor.registrarHistorial(idPartidaActual, "FINAL",
+                    "Partida " + idPartidaActual + " finalizada. Ganador: " + ganador.getNombre(),
+                    idGanador);
             } else {
-                gestorUI.registrar("✅ Estadísticas actualizadas para " + participantes.size() 
-                                 + " jugadores. ¡La IA ha ganado!");
+                gestorUI.registrar("⚠️ El ganador no está registrado en JUGADOR.");
             }
 
             gestor.cerrarConexion();

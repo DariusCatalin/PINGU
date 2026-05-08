@@ -30,20 +30,22 @@ public class GestorTablero {
         }
         
         // RECORREMOS TODOS LOS JUGADORES PARA VER SI ALGUNO HA LLEGADO A LA META
-        for (Jugador j : partida.getJugadores()) {
+        boolean finalizada = false;
+        for (int i = 0; i < partida.getJugadores().size() && !finalizada; i++) {
+            Jugador j = partida.getJugadores().get(i);
             if (j.getPosicion() >= meta) {
                 partida.setGanador(j);
                 partida.setFinalizada(true);
-                
+                finalizada = true;
+
                 if (ge != null) {
                     ge.registrar("********************************");
                     ge.registrar("¡FIN DE LA PARTIDA!");
                     ge.registrar("EL GANADOR ES: " + j.getNombre());
                     ge.registrar("********************************");
                 }
-                
+
                 System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
-                break;
             }
         }
     }
