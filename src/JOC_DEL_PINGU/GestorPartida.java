@@ -32,11 +32,7 @@ public class GestorPartida {
     
     public void nuevaPartida(ArrayList<Jugador> jugadores, Tablero tablero) {
         // Verifiquem que hi ha prou jugadors (Nivell INTERMIG: mínim 2)
-        if (jugadores == null || jugadores.size() < 2) {
-            System.out.println("Error: Es necessiten mínim 2 jugadors per començar.");
-            return;
-        }
-        
+        if (jugadores != null && jugadores.size() >= 2) {
             // Creem la instància del model Partida
             this.partida = new Partida();
 
@@ -46,7 +42,7 @@ public class GestorPartida {
 
             // Inicialitzem els valors per defecte
             this.partida.setTurnos(0);
-            this.partida.setJugadorActual(0);
+            this.partida.setIndiceJugadorActual(0);
             this.partida.setFinalizada(false);
             this.partida.setGestorEventos(this.gestorEventos);
 
@@ -66,13 +62,14 @@ public class GestorPartida {
 
             // Actualitzem l'estat del taulell
             actualizarEstadoTablero();
-            if ()
+            
             System.out.println("Partida creada. Número de Jugadors: " + jugadores.size());
             System.out.println("ID de Partida: " + this.idPartidaActual);
-        	} else {
-            System.out.println("Error: Es necessiten mínim 2 jugadors per começar.");
-        	}
-		}
+        } else {
+            System.out.println("Error: Es necessiten mínim 2 jugadors per començar.");
+        }
+    }
+
         
     // ==================== GESTIÓ DE DADOS ====================
     

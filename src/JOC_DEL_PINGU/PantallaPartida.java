@@ -216,47 +216,46 @@ public class PantallaPartida {
 
         if (gestor.getConexion() == null) {
             gestorUI.registrar("❌ No hay conexión a la BBDD.");
-            return;
-        }
-
-        // SI YA HAY UN ID ASIGNADO A ESTA PARTIDA, LA SOBRESCRIBIMOS EN LA BASE DE DATOS
-        // SI NO TIENE ID AÚN, GENERAMOS UNO NUEVO CON LA SEQUENCE DE ORACLE
-        int idAUsar;
-        boolean esActualizacion = (this.idPartidaActual > 0);
-
-        if (esActualizacion) {
-            idAUsar = this.idPartidaActual;
-            boolean exito = gestor.guardarBBDD(partida, idAUsar);
-            if (exito) {
-                gestorUI.registrar("✅ Partida " + idAUsar + " actualizada en BBDD.");
-                // ⭐ Registrar en HISTORIAL como GUARDAR
-                gestor.registrarHistorial(idAUsar, "GUARDAR", 
-                    "Partida " + idAUsar + " actualizada (re-guardada).");
-            } else {
-                gestorUI.registrar("❌ Error al actualizar en BBDD.");
-            }
-            gestor.cerrarConexion();
         } else {
-            // PRIMERA VEZ QUE SE GUARDA: GENERAMOS UN ID AUTOMÁTICO CON LA SEQUENCE DE ORACLE
-            idAUsar = gestor.guardarPartidaAuto(partida);
-            gestor.cerrarConexion();
-            if (idAUsar > 0) {
-                this.idPartidaActual = idAUsar;
-                gestorUI.registrar("✅ Partida creada con ID " + idAUsar + " (asignado automáticamente).");
-                // ⭐ Registrar en HISTORIAL como CREACION
-                gestor.registrarHistorial(idAUsar, "CREACION", 
-                    "Partida " + idAUsar + " creada y guardada por primera vez.");
+            // SI YA HAY UN ID ASIGNADO A ESTA PARTIDA, LA SOBRESCRIBIMOS EN LA BASE DE DATOS
+            // SI NO TIENE ID AÚN, GENERAMOS UNO NUEVO CON LA SEQUENCE DE ORACLE
+            int idAUsar;
+            boolean esActualizacion = (this.idPartidaActual > 0);
 
-                // MOSTRAMOS UN DIALOGO INFORMANDO AL JUGADOR DEL ID ASIGNADO
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.INFORMATION);
-                alert.setTitle("Partida guardada");
-                alert.setHeaderText("ID asignado: " + idAUsar);
-                alert.setContentText("Apunta este ID si quieres cargar la partida más tarde.\n" +
-                                     "También puedes verlo en la pantalla 'Cargar Partida'.");
-                alert.showAndWait();
+            if (esActualizacion) {
+                idAUsar = this.idPartidaActual;
+                boolean exito = gestor.guardarBBDD(partida, idAUsar);
+                if (exito) {
+                    gestorUI.registrar("✅ Partida " + idAUsar + " actualizada en BBDD.");
+                    // ⭐ Registrar en HISTORIAL como GUARDAR
+                    gestor.registrarHistorial(idAUsar, "GUARDAR", 
+                        "Partida " + idAUsar + " actualizada (re-guardada).");
+                } else {
+                    gestorUI.registrar("❌ Error al actualizar en BBDD.");
+                }
+                gestor.cerrarConexion();
             } else {
-                gestorUI.registrar("❌ Error al guardar en BBDD.");
+                // PRIMERA VEZ QUE SE GUARDA: GENERAMOS UN ID AUTOMÁTICO CON LA SEQUENCE DE ORACLE
+                idAUsar = gestor.guardarPartidaAuto(partida);
+                gestor.cerrarConexion();
+                if (idAUsar > 0) {
+                    this.idPartidaActual = idAUsar;
+                    gestorUI.registrar("✅ Partida creada con ID " + idAUsar + " (asignado automáticamente).");
+                    // ⭐ Registrar en HISTORIAL como CREACION
+                    gestor.registrarHistorial(idAUsar, "CREACION", 
+                        "Partida " + idAUsar + " creada y guardada por primera vez.");
+
+                    // MOSTRAMOS UN DIALOGO INFORMANDO AL JUGADOR DEL ID ASIGNADO
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.INFORMATION);
+                    alert.setTitle("Partida guardada");
+                    alert.setHeaderText("ID asignado: " + idAUsar);
+                    alert.setContentText("Apunta este ID si quieres cargar la partida más tarde.\n" +
+                                         "También puedes verlo en la pantalla 'Cargar Partida'.");
+                    alert.showAndWait();
+                } else {
+                    gestorUI.registrar("❌ Error al guardar en BBDD.");
+                }
             }
         }
     }
@@ -318,23 +317,20 @@ public class PantallaPartida {
     // ==========================================
     @FXML
     private void handleDado(ActionEvent event) {
-        if (partida.isFinalizada()) return;
-        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
- 
-        if (!(actual instanceof Pinguino)) {
-            avanzarTurno();
-            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-            return;
-        }
- 
-        if (actual.estaPenalizado()) {
-            actual.decrementarPenalizacion();
-            gestorUI.registrar("¡" + actual.getNombre() + " está penalizado y pierde este turno!");
-            actualizarTextosInventario(actual);
-            avanzarTurno();
-            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-            return;
-        }
+        if (!partida.isFinalizada()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+
+            if (!(actual instanceof Pinguino)) {
+                avanzarTurno();
+                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+            } else {
+                if (actual.estaPenalizado()) {
+                    actual.decrementarPenalizacion();
+                    gestorUI.registrar("¡" + actual.getNombre() + " está penalizado y pierde este turno!");
+                    actualizarTextosInventario(actual);
+                    avanzarTurno();
+                    dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                } else {
  
         // SI EL JUGADOR TIENE OBJETOS USABLES, LE PREGUNTAMOS SI QUIERE USARLOS ANTES DE TIRAR
         if (tieneObjetosUsables(actual)) {
@@ -459,8 +455,8 @@ public class PantallaPartida {
     }
  
     private void usarDadoEspecial(String nombreDado, int min, int max) {
-        if (partida.isFinalizada()) return;
-        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+        if (!partida.isFinalizada()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
  
         if (actual instanceof Pinguino) {
             if (consumirObjeto(actual, nombreDado)) {
@@ -748,42 +744,43 @@ public class PantallaPartida {
     }
  
     private void procesarTurnosCPU_Async() {
-        if (partida.isFinalizada()) return;
-        Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
-        if (actual instanceof Foca) {
-            // REPRODUCIMOS EL SONIDO DE LA FOCA DURANTE 1 SEGUNDO AL INICIO DE SU TURNO
-            reproducirSonidoFoca();
-            // LÓGICA DEL TURNO DE LA FOCA (CPU)
-            if (actual.estaPenalizado()) {
-                actual.decrementarPenalizacion();
-                gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
-                avanzarTurno();
-                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-            } else {
-                int tirada = (int)(Math.random() * 6) + 1;
-                
-                String[] config = obtenerConfigAnimacion(actual, "normal");
-                if (config != null) {
-                    final int tiradaFinal = tirada;
-                    setUIInteractuable(false);
-                    mostrarAnimacionTurno(actual, tiradaFinal,
-                        config[0],
-                        javafx.scene.paint.Color.web(config[1]),
-                        () -> {
-                            moverJugadorYAccion(actual, tiradaFinal, "tirada CPU");
-                            avanzarTurno();
-                            dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
-                        });
-                } else {
-                    moverJugadorYAccion(actual, tirada, "tirada CPU");
+        if (!partida.isFinalizada()) {
+            Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
+            if (actual instanceof Foca) {
+                // REPRODUCIMOS EL SONIDO DE LA FOCA DURANTE 1 SEGUNDO AL INICIO DE SU TURNO
+                reproducirSonidoFoca();
+                // LÓGICA DEL TURNO DE LA FOCA (CPU)
+                if (actual.estaPenalizado()) {
+                    actual.decrementarPenalizacion();
+                    gestorUI.registrar("La foca " + actual.getNombre() + " está entretenida comiendo. Pierde su turno.");
                     avanzarTurno();
                     dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                } else {
+                    int tirada = (int)(Math.random() * 6) + 1;
+                    
+                    String[] config = obtenerConfigAnimacion(actual, "normal");
+                    if (config != null) {
+                        final int tiradaFinal = tirada;
+                        setUIInteractuable(false);
+                        mostrarAnimacionTurno(actual, tiradaFinal,
+                            config[0],
+                            javafx.scene.paint.Color.web(config[1]),
+                            () -> {
+                                moverJugadorYAccion(actual, tiradaFinal, "tirada CPU");
+                                avanzarTurno();
+                                dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                            });
+                    } else {
+                        moverJugadorYAccion(actual, tirada, "tirada CPU");
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    }
                 }
+            } else {
+                // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
+                actualizarTextosTurno();
+                setUIInteractuable(true);
             }
-        } else {
-            // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
-            actualizarTextosTurno();
-            setUIInteractuable(true);
         }
     }
 
@@ -946,72 +943,81 @@ public class PantallaPartida {
 
     // COLOCA INMEDIATAMENTE LA FICHA VISUAL EN LA CELDA CORRESPONDIENTE A LA POSICIÓN DEL JUGADOR
     private void actualizarPosicionVisual(Jugador j, ImageView ficha) {
-        if (ficha == null) return;
-        int pos = j.getPosicion();
-        if (pos > 49) pos = 49;
-        if (pos < 0)  pos = 0;
-        int col = pos % 5;
-        int fil = 9 - (pos / 5);
-        GridPane.setColumnIndex(ficha, col);
-        GridPane.setRowIndex(ficha, fil);
-        posVisual.put(j, pos);
+        if (ficha != null) {
+            int pos = j.getPosicion();
+            if (pos > 49) pos = 49;
+            if (pos < 0)  pos = 0;
+            int col = pos % 5;
+            int fil = 9 - (pos / 5);
+            GridPane.setColumnIndex(ficha, col);
+            GridPane.setRowIndex(ficha, fil);
+            posVisual.put(j, pos);
+        }
     }
 
     // ENCOLA CADA CASILLA INTERMEDIA (SALTITO) ENTRE 'DESDE' Y 'HASTA'
     private void encolarCaminoPasoAPaso(Jugador j, int desde, int hasta) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        int step = (desde < hasta) ? 1 : -1;
-        for (int pos = desde + step; pos != hasta + step; pos += step) q.add(new int[]{pos, 0});
+        if (q != null) {
+            int step = (desde < hasta) ? 1 : -1;
+            for (int pos = desde + step; pos != hasta + step; pos += step) q.add(new int[]{pos, 0});
+        }
     }
 
     // ENCOLA UN SALTO DIRECTO SIN PASAR POR CASILLAS INTERMEDIAS (USADO EN OSO, FOCA, BOLAS)
     private void encolarSaltoDirecto(Jugador j, int hasta) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{hasta, 1});
+        if (q != null) {
+            q.add(new int[]{hasta, 1});
+        }
     }
 
     // ENCOLA LA ANIMACIÓN DE ATAQUE DEL OSO (TIPO 2: OVERLAY ROJO A PANTALLA COMPLETA)
     private void encolarAnimacionOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{j.getPosicion(), 2}); // Destino no importa
+        if (q != null) {
+            q.add(new int[]{j.getPosicion(), 2}); // Destino no importa
+        }
     }
 
     // ENCOLA LA ANIMACIÓN DEL REGALO / EVENTO (TIPO 3: CAJA TEMBLANDO CON OBJETO DENTRO)
     private void encolarAnimacionEvento(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
+        if (q != null) {
+            q.add(new int[]{j.getPosicion(), 3}); // Destino no importa
+        }
     }
 
     /** Encola la animación de soborno al Oso. Tipo 7. */
     private void encolarAnimacionSobornoOso(Jugador j) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{j.getPosicion(), 7});
+        if (q != null) {
+            q.add(new int[]{j.getPosicion(), 7});
+        }
     }
     // ENCOLA LA ANIMACIÓN DEL AGUJERO (TIPO 4: JUGADOR SE CAE Y APARECE EN LA CASILLA DESTINO)
     private void encolarAnimacionAgujero(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{destino, 4}); 
+        if (q != null) {
+            q.add(new int[]{destino, 4}); 
+        }
     }
 
     // ENCOLA LA ANIMACIÓN DEL TRINEO (TIPO 5: JUGADOR SUBE AL TRINEO Y AVANZA DE GOLPE)
     private void encolarAnimacionTrineo(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        q.add(new int[]{destino, 5}); 
+        if (q != null) {
+            q.add(new int[]{destino, 5}); 
+        }
     }
 
     // ENCOLA LA ANIMACIÓN DE GUERRA DE BOLAS (TIPO 6: OVERLAY CON EL RESULTADO DEL DUELO)
     private void encolarAnimacionGuerra(Jugador j, String data) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
-        if (q == null) return;
-        ultimoGuerraVisual.put(j, data);
-        q.add(new int[]{j.getPosicion(), 6}); // Destino no importa
+        if (q != null) {
+            ultimoGuerraVisual.put(j, data);
+            q.add(new int[]{j.getPosicion(), 6}); // Destino no importa
+        }
     }
  
     private void setUIInteractuable(boolean interactuable) {
@@ -1062,39 +1068,38 @@ public class PantallaPartida {
             setUIInteractuable(true);
             refrescarDistribucionVisual();
             if (onFinished != null) javafx.application.Platform.runLater(onFinished);
-            return;
-        }
-        int[] paso    = pasos.get(idx);
-        int playerIdx = paso[0], desde = paso[1], hasta = paso[2], tipo = paso[3];
-        if (playerIdx < 0 || playerIdx >= partida.getJugadores().size()) {
-            ejecutarPasoSuave(pasos, idx + 1, onFinished);
-            return;
-        }
-        Jugador   j   = partida.getJugadores().get(playerIdx);
-        ImageView fic = getFichaVisual(j);
-        if (fic == null) {
-            posVisual.put(j, hasta);
-            ejecutarPasoSuave(pasos, idx + 1, onFinished);
-            return;
-        }
-        
-        Runnable next = () -> ejecutarPasoSuave(pasos, idx + 1, onFinished);
-        if (tipo == 1) {
-            animarSaltoDirecto(fic, j, hasta, next);
-        } else if (tipo == 2) {
-            mostrarAnimacionOso(next);
-        } else if (tipo == 3) {
-            mostrarAnimacionEvento(j, next);
-        } else if (tipo == 4) {
-            mostrarAnimacionAgujero(j, hasta, next);
-        } else if (tipo == 5) {
-            mostrarAnimacionTrineo(j, hasta, next);
-        } else if (tipo == 6) {
-            mostrarAnimacionGuerra(j, next);
-        } else if (tipo == 7) {
-            mostrarAnimacionSobornoOso(j, next);
         } else {
-            animarConSaltito(fic, j, desde, hasta, next);
+            int[] paso    = pasos.get(idx);
+            int playerIdx = paso[0], desde = paso[1], hasta = paso[2], tipo = paso[3];
+            if (playerIdx < 0 || playerIdx >= partida.getJugadores().size()) {
+                ejecutarPasoSuave(pasos, idx + 1, onFinished);
+            } else {
+                Jugador   j   = partida.getJugadores().get(playerIdx);
+                ImageView fic = getFichaVisual(j);
+                if (fic == null) {
+                    posVisual.put(j, hasta);
+                    ejecutarPasoSuave(pasos, idx + 1, onFinished);
+                } else {
+                    Runnable next = () -> ejecutarPasoSuave(pasos, idx + 1, onFinished);
+                    if (tipo == 1) {
+                        animarSaltoDirecto(fic, j, hasta, next);
+                    } else if (tipo == 2) {
+                        mostrarAnimacionOso(next);
+                    } else if (tipo == 3) {
+                        mostrarAnimacionEvento(j, next);
+                    } else if (tipo == 4) {
+                        mostrarAnimacionAgujero(j, hasta, next);
+                    } else if (tipo == 5) {
+                        mostrarAnimacionTrineo(j, hasta, next);
+                    } else if (tipo == 6) {
+                        mostrarAnimacionGuerra(j, next);
+                    } else if (tipo == 7) {
+                        mostrarAnimacionSobornoOso(j, next);
+                    } else {
+                        animarConSaltito(fic, j, desde, hasta, next);
+                    }
+                }
+            }
         }
     }
 
@@ -1189,13 +1194,10 @@ public class PantallaPartida {
     // MUESTRA UNA ANIMACIÓN A PANTALLA COMPLETA DEL ATAQUE DEL OSO
     private void mostrarAnimacionOso(Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
         javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
         overlayPane.setStyle("-fx-background-color: black;");
@@ -1264,18 +1266,18 @@ public class PantallaPartida {
             if (onFinish != null) onFinish.run();
         });
         seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
     }
 
     // MUESTRA UNA ANIMACIÓN A PANTALLA COMPLETA DEL SOBORNO AL OSO
     private void mostrarAnimacionSobornoOso(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
         javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
         overlayPane.setStyle("-fx-background-color: black;");
@@ -1348,13 +1350,10 @@ public class PantallaPartida {
     // MUESTRA LA ANIMACIÓN DEL REGALO: PRIMERO TIEMBLA Y LUEGO REVELA EL OBJETO OBTENIDO
     private void mostrarAnimacionEvento(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
         javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
         overlayPane.setStyle("-fx-background-color: black;");
@@ -1524,18 +1523,18 @@ public class PantallaPartida {
             }
         });
         seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
     }
 
     // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DE LA GUERRA DE BOLAS DE NIEVE
     private void mostrarAnimacionGuerra(Jugador j, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
         javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
         overlayPane.setStyle("-fx-background-color: black;");
@@ -1632,166 +1631,169 @@ public class PantallaPartida {
             if (onFinish != null) onFinish.run();
         });
         seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
     }
 
     // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DEL AGUJERO: EL JUGADOR SE CAE
     private void mostrarAnimacionAgujero(Jugador j, int destino, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/agujero_ani.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " se ha caído!\ncaes a la casilla " + destino);
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+            lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2);
+            stImg.setToY(1.2);
+
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        } else {
             if (onFinish != null) onFinish.run();
-            return;
         }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
-
-        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
-        overlayPane.setStyle("-fx-background-color: black;");
-        overlayPane.setManaged(false);
-        overlayPane.resize(W, H);
-        overlayPane.setOpacity(0);
-        rootPane.getChildren().add(overlayPane);
-
-        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        var recurso = getClass().getResourceAsStream("/resources/agujero_ani.png");
-        if (recurso != null) {
-            imgView.setImage(new Image(recurso));
-        }
-        double IMG_SIZE = 400;
-        imgView.setFitWidth(IMG_SIZE);
-        imgView.setFitHeight(IMG_SIZE);
-        imgView.setPreserveRatio(true);
-        imgView.setOpacity(0);
-        imgView.setScaleX(0.5);
-        imgView.setScaleY(0.5);
-        imgView.setManaged(false);
-        imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
-        imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
-        rootPane.getChildren().add(imgView);
-
-        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " se ha caído!\ncaes a la casilla " + destino);
-        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
-        lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
-        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblMensaje.setWrappingWidth(W);
-        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
-        lblMensaje.setOpacity(0);
-        lblMensaje.setManaged(false);
-        lblMensaje.setLayoutX(0);
-        lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
-        rootPane.getChildren().add(lblMensaje);
-
-        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOver.setToValue(0.8);
-
-        javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
-        ftImg.setToValue(1);
-        javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
-        stImg.setToX(1.2);
-        stImg.setToY(1.2);
-
-        javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftText.setToValue(1);
-
-        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
-
-        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
-
-        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOverOut.setToValue(0);
-        javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
-        ftImgOut.setToValue(0);
-        javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftTextOut.setToValue(0);
-
-        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
-
-        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
-        seq.setOnFinished(e -> {
-            rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
-            if (onFinish != null) onFinish.run();
-        });
-        seq.play();
     }
 
     // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DEL TRINEO: EL JUGADOR AVANZA RÁPIDO
     private void mostrarAnimacionTrineo(Jugador j, int destino, Runnable onFinish) {
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/trineo_ani.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " ha montado en trineo!\navanzas a la casilla " + destino);
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+            lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2);
+            stImg.setToY(1.2);
+
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        } else {
             if (onFinish != null) onFinish.run();
-            return;
         }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
-
-        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
-        overlayPane.setStyle("-fx-background-color: black;");
-        overlayPane.setManaged(false);
-        overlayPane.resize(W, H);
-        overlayPane.setOpacity(0);
-        rootPane.getChildren().add(overlayPane);
-
-        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        var recurso = getClass().getResourceAsStream("/resources/trineo_ani.png");
-        if (recurso != null) {
-            imgView.setImage(new Image(recurso));
-        }
-        double IMG_SIZE = 400;
-        imgView.setFitWidth(IMG_SIZE);
-        imgView.setFitHeight(IMG_SIZE);
-        imgView.setPreserveRatio(true);
-        imgView.setOpacity(0);
-        imgView.setScaleX(0.5);
-        imgView.setScaleY(0.5);
-        imgView.setManaged(false);
-        imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
-        imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
-        rootPane.getChildren().add(imgView);
-
-        javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text("¡" + j.getNombre() + " ha montado en trineo!\navanzas a la casilla " + destino);
-        lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
-        lblMensaje.setFill(javafx.scene.paint.Color.WHITE);
-        lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblMensaje.setWrappingWidth(W);
-        lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
-        lblMensaje.setOpacity(0);
-        lblMensaje.setManaged(false);
-        lblMensaje.setLayoutX(0);
-        lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
-        rootPane.getChildren().add(lblMensaje);
-
-        javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOver.setToValue(0.8);
-
-        javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
-        ftImg.setToValue(1);
-        javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
-        stImg.setToX(1.2);
-        stImg.setToY(1.2);
-
-        javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftText.setToValue(1);
-
-        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
-
-        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
-
-        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
-        ftOverOut.setToValue(0);
-        javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
-        ftImgOut.setToValue(0);
-        javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
-        ftTextOut.setToValue(0);
-
-        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
-
-        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
-        seq.setOnFinished(e -> {
-            rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
-            if (onFinish != null) onFinish.run();
-        });
-        seq.play();
     }
  
     // OFFSET X EN PIXELES PARA QUE LA FICHA EN CASILLA 49 QUEDE ENCIMA DEL IGLU (~85.5% DEL ANCHO)
@@ -1914,16 +1916,17 @@ public class PantallaPartida {
     }
  
     private void asignarImagenAFicha(ImageView ficha, String path) {
-        if (ficha == null) return;
-        try {
-            var resource = getClass().getResourceAsStream(path);
-            if (resource != null) {
-                ficha.setImage(new Image(resource));
-            } else {
-                System.err.println("No se encontró el recurso: " + path);
+        if (ficha != null) {
+            try {
+                var resource = getClass().getResourceAsStream(path);
+                if (resource != null) {
+                    ficha.setImage(new Image(resource));
+                } else {
+                    System.err.println("No se encontró el recurso: " + path);
+                }
+            } catch (Exception e) {
+                System.err.println("Error aplicando skin: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Error aplicando skin: " + e.getMessage());
         }
     }
 
@@ -1967,14 +1970,10 @@ public class PantallaPartida {
                                        Runnable onFinish) {
         // OBTENEMOS LAS DIMENSIONES DE LA ESCENA PARA CENTRAR LOS ELEMENTOS
         javafx.scene.Scene escena = tablero.getScene();
-        if (escena == null) {
-            // SI LA ESCENA AÚN NO ESTÁ DISPONIBLE, EJECUTAMOS EL CALLBACK DIRECTAMENTE
-            if (onFinish != null) onFinish.run();
-            return;
-        }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
 
     
         final double DADO_SIZE   = 380;
@@ -2134,6 +2133,10 @@ public class PantallaPartida {
         });
 
         secuenciaCompleta.play();
+        } else {
+            // SI LA ESCENA AÚN NO ESTÁ DISPONIBLE, EJECUTAMOS EL CALLBACK DIRECTAMENTE
+            if (onFinish != null) onFinish.run();
+        }
     }
 
     /**
