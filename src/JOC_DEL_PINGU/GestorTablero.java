@@ -3,7 +3,7 @@ package JOC_DEL_PINGU;
 public class GestorTablero {
     
     public GestorTablero() {
-        // No cal inicialitzacio addicional
+        // ESTA CLASE NO NECESITA INICIALIZACIÓN, ACTÚA COMO SERVICIO DE LÓGICA DE TABLERO
     }
     
     public void ejecutarCasilla(Partida partida, Jugador j, Casilla c) {
@@ -24,26 +24,28 @@ public class GestorTablero {
         GestorEventos ge = partida.getGestorEventos();
         int meta = 49;
         
-        // Obtenim la mida real del tauler
+        // CALCULAMOS LA POSICIÓN DE LA META REAL SEGÚN EL TAMAÑO DEL TABLERO ACTUAL
         if (partida.getTablero() != null && !partida.getTablero().getCasillas().isEmpty()) {
             meta = partida.getTablero().getCasillas().size() - 1;
         }
         
-        // Comprovar TOTS els jugadors
-        for (Jugador j : partida.getJugadores()) {
+        // RECORREMOS TODOS LOS JUGADORES PARA VER SI ALGUNO HA LLEGADO A LA META
+        boolean finalizada = false;
+        for (int i = 0; i < partida.getJugadores().size() && !finalizada; i++) {
+            Jugador j = partida.getJugadores().get(i);
             if (j.getPosicion() >= meta) {
                 partida.setGanador(j);
                 partida.setFinalizada(true);
-                
+                finalizada = true;
+
                 if (ge != null) {
                     ge.registrar("********************************");
                     ge.registrar("¡FIN DE LA PARTIDA!");
                     ge.registrar("EL GANADOR ES: " + j.getNombre());
                     ge.registrar("********************************");
                 }
-                
+
                 System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
-                break;
             }
         }
     }

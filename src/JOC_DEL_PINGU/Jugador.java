@@ -89,11 +89,8 @@ public abstract class Jugador {
         
         int aPerder = total / 2;
         Random rand = new Random();
-        
-        for (int i = 0; i < aPerder; i++) {
-            if (inventario.getLista().isEmpty()) {
-                break;
-            }
+
+        for (int i = 0; i < aPerder && !inventario.getLista().isEmpty(); i++) {
             int index = rand.nextInt(inventario.getLista().size());
             Item eliminado = inventario.getLista().remove(index);
             System.out.println(nombre + " perd: " + (eliminado != null ? eliminado.getNombre() : "objecte"));

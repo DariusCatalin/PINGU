@@ -240,8 +240,9 @@ public class GestorBBDD {
         int n = 0;
         for (Item item : j.getInventario().getLista()) {
             String nombre = item.getNombre().toLowerCase();
-            for (String clave : claves) {
-                if (nombre.contains(clave)) { n++; break; }
+            boolean coincide = false;
+            for (int ci = 0; ci < claves.length && !coincide; ci++) {
+                if (nombre.contains(claves[ci])) { n++; coincide = true; }
             }
         }
         return n;
@@ -890,10 +891,11 @@ public class GestorBBDD {
     /**
      * Registra un evento en HISTORIAL llamando al procedure de Oracle.
      * Tipos válidos: 'CREACION', 'GUARDAR', 'FINAL', 'DELETE'
+     * @param idJugador opcional, puede ser -1 si no aplica (se guarda como NULL)
      */
-    public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion) {
+    public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion, int idJugador) {
         if (this.conexion == null) return false;
-        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?) }")) {
+        try (CallableStatement cs = this.conexion.prepareCall("{ call REGISTRAR_HISTORIAL(?, ?, ?, ?) }")) {
             if (idPartida > 0) {
                 cs.setInt(1, idPartida);
             } else {
@@ -901,12 +903,24 @@ public class GestorBBDD {
             }
             cs.setString(2, tipoEvento);
             cs.setString(3, descripcion);
+            if (idJugador > 0) {
+                cs.setInt(4, idJugador);
+            } else {
+                cs.setNull(4, java.sql.Types.NUMERIC);
+            }
             cs.execute();
             return true;
         } catch (Exception e) {
             System.err.println("❌ Error registrando historial: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Sobrecarga sin idJugador (compatibilidad con código existente).
+     */
+    public boolean registrarHistorial(int idPartida, String tipoEvento, String descripcion) {
+        return registrarHistorial(idPartida, tipoEvento, descripcion, -1);
     }
 
     /**
@@ -923,6 +937,49 @@ public class GestorBBDD {
             return true;
         } catch (Exception e) {
             System.err.println("❌ Error registrando JUG_IN_PAR: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene el id_jug_in_par de un jugador en una partida llamando al procedure de Oracle.
+     * @return el id_jug_in_par, o -1 si no existe
+     */
+    public int obtenerIdJugInPar(int idJugador, int idPartida) {
+        if (this.conexion == null) return -1;
+        try (CallableStatement cs = this.conexion.prepareCall("{ call OBTENER_ID_JUG_IN_PAR(?, ?, ?) }")) {
+            cs.setInt(1, idJugador);
+            cs.setInt(2, idPartida);
+            cs.registerOutParameter(3, java.sql.Types.NUMERIC);
+            cs.execute();
+            return cs.getInt(3);
+        } catch (Exception e) {
+            System.err.println("❌ Error obteniendo id_jug_in_par: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * Registra el resultado final de un jugador en una partida llamando al procedure
+     * REGISTRAR_RESULTADO_PARTIDA de Oracle.
+     */
+    public boolean registrarResultadoPartida(int idJugInPar, int posicionFinal,
+                                              int peces, int bolas, int dadosLentos,
+                                              int dadosRapidos, int turnoFinal) {
+        if (this.conexion == null) return false;
+        try (CallableStatement cs = this.conexion.prepareCall(
+                "{ call REGISTRAR_RESULTADO_PARTIDA(?, ?, ?, ?, ?, ?, ?) }")) {
+            cs.setInt(1, idJugInPar);
+            cs.setInt(2, posicionFinal);
+            cs.setInt(3, peces);
+            cs.setInt(4, bolas);
+            cs.setInt(5, dadosLentos);
+            cs.setInt(6, dadosRapidos);
+            cs.setInt(7, turnoFinal);
+            cs.execute();
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error registrando resultado partida: " + e.getMessage());
             return false;
         }
     }
