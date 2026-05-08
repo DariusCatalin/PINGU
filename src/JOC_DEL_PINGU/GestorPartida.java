@@ -37,40 +37,43 @@ public class GestorPartida {
             return;
         }
         
-        // Creem la instància del model Partida
-        this.partida = new Partida();
-        
-        // Assignem el taulell i la llista de jugadors
-        this.partida.setTablero(tablero);
-        this.partida.setJugadores(jugadores);
-        
-        // Inicialitzem els valors per defecte
-        this.partida.setTurnos(0);
-        this.partida.setJugadorActual(0);
-        this.partida.setFinalizada(false);
-        this.partida.setGestorEventos(this.gestorEventos);
-        
-        // Assignem posició inicial a cada jugador
-        for (Jugador j : jugadores) {
-            j.setPosicion(0);
-            if (j instanceof Pinguino) {
-                // Assegurem que cada pingüí tingui inventari
-                if (j.getInventario() == null) {
-                    ((Pinguino) j).setInventario(new Inventario());
+            // Creem la instància del model Partida
+            this.partida = new Partida();
+
+            // Assignem el taulell i la llista de jugadors
+            this.partida.setTablero(tablero);
+            this.partida.setJugadores(jugadores);
+
+            // Inicialitzem els valors per defecte
+            this.partida.setTurnos(0);
+            this.partida.setJugadorActual(0);
+            this.partida.setFinalizada(false);
+            this.partida.setGestorEventos(this.gestorEventos);
+
+            // Assignem posició inicial a cada jugador
+            for (Jugador j : jugadores) {
+                j.setPosicion(0);
+                if (j instanceof Pinguino) {
+                    // Assegurem que cada pingüí tingui inventari
+                    if (j.getInventario() == null) {
+                        ((Pinguino) j).setInventario(new Inventario());
+                    }
                 }
             }
-        }
+
+            // Generem un ID únic per aquesta partida
+            this.idPartidaActual = (int) (System.currentTimeMillis() % 10000);
+
+            // Actualitzem l'estat del taulell
+            actualizarEstadoTablero();
+            if ()
+            System.out.println("Partida creada. Número de Jugadors: " + jugadores.size());
+            System.out.println("ID de Partida: " + this.idPartidaActual);
+        	} else {
+            System.out.println("Error: Es necessiten mínim 2 jugadors per começar.");
+        	}
+		}
         
-        // Generem un ID únic per aquesta partida
-        this.idPartidaActual = (int) (System.currentTimeMillis() % 10000);
-        
-        // Actualitzem l'estat del taulell
-        actualizarEstadoTablero();
-        
-        System.out.println("Partida creada. Número de Jugadors: " + jugadores.size());
-        System.out.println("ID de Partida: " + this.idPartidaActual);
-    }
-    
     // ==================== GESTIÓ DE DADOS ====================
     
    
@@ -102,28 +105,27 @@ public class GestorPartida {
     public void ejecutarTurnoCompleto() {
         // Obtenim el jugador actual
         Jugador actual = partida.getJugadorActual();
-        
-        if (actual == null) {
-            System.out.println("Error: No hi ha jugador actual.");
-            return;
-        }
-        
-        System.out.println("Torn de " + actual.getNombre());
-        
-        // Processem el seu torn
-        procesarTurnoJugador(actual, null);
-        
-        // Verifiquem si hi ha guanyador
-        verificarFinPartida();
-        
-        // Notifiquem fi de torn (penalitzacions, reduir torns càstigs, etc.)
-        this.gestorJugador.jugadorFinalizaTurno(actual);
-        
-        // Passem al següent torn si no s'ha acabat la partida
-        if (!this.partida.isFinalizada()) {
-            siguienteTurno();
+
+        if (actual != null) {
+            System.out.println("Torn de " + actual.getNombre());
+
+            // Processem el seu torn
+            procesarTurnoJugador(actual, null);
+
+            // Verifiquem si hi ha guanyador
+            verificarFinPartida();
+
+            // Notifiquem fi de torn (penalitzacions, reduir torns càstigs, etc.)
+            this.gestorJugador.jugadorFinalizaTurno(actual);
+
+            // Passem al següent torn si no s'ha acabat la partida
+            if (!this.partida.isFinalizada()) {
+                siguienteTurno();
+            } else {
+                System.out.println("¡El joc ha terminat! El guanyador és " + actual.getNombre());
+            }
         } else {
-            System.out.println("¡El joc ha terminat! El guanyador és " + actual.getNombre());
+            System.out.println("Error: No hi ha jugador actual.");
         }
     }
     
@@ -183,13 +185,15 @@ public class GestorPartida {
     // ==================== VERIFICACIÓ DE FI DE PARTIDA ====================
    
     public void verificarFinPartida() {
-        for (Jugador j : this.partida.getJugadores()) {
+        boolean hallado = false;
+        for (int vi = 0; vi < this.partida.getJugadores().size() && !hallado; vi++) {
+            Jugador j = this.partida.getJugadores().get(vi);
             if (j.getPosicion() >= 49) {
                 this.partida.setFinalizada(true);
                 this.partida.setGanador(j);
                 gestorEventos.registrar("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
                 System.out.println("¡PARTIDA FINALITZADA! Guanyador: " + j.getNombre());
-                return;
+                hallado = true;
             }
         }
     }

@@ -64,62 +64,61 @@ public class PantallaRanking {
 
             if (gestor.getConexion() == null) {
                 lblRecord.setText("⚠️ Sin conexión a la BBDD");
-                return;
-            }
-
-            // 1. Récord global
-            int record = gestor.obtenerRecord();
-            lblRecord.setText("🥇 Récord global: " + record + " partidas ganadas");
-
-            // 2. Media de victorias
-            double media = gestor.obtenerMediaWins();
-            lblMedia.setText("📈 Media de victorias: " + media + " por jugador");
-
-            // 3. Total de jugadores registrados (llama a function TOTAL_JUGADORES de Oracle)
-            int total = gestor.obtenerTotalJugadores();
-            lblTotalJugadores.setText("👥 Jugadores registrados: " + total);
-
-            // 4. Ranking por partidas jugadas
-            ArrayList<String[]> ranking = gestor.obtenerRanking();
-            ObservableList<JugadorRanking> data = FXCollections.observableArrayList();
-            int pos = 1;
-            for (String[] fila : ranking) {
-                String simbolo;
-                switch (pos) {
-                    case 1: simbolo = "🥇"; break;
-                    case 2: simbolo = "🥈"; break;
-                    case 3: simbolo = "🥉"; break;
-                    default: simbolo = "" + pos;
-                }
-                data.add(new JugadorRanking(simbolo, fila[0], fila[1], fila[2]));
-                pos++;
-            }
-            tablaRanking.setItems(data);
-
-            // 5. Jugadores con el récord actual
-            if (record > 0) {
-                ArrayList<String[]> recordistas = gestor.obtenerJugadoresConRecord(record);
-                StringBuilder sb = new StringBuilder();
-                for (String[] j : recordistas) {
-                    if (sb.length() > 0) sb.append(", ");
-                    sb.append("🏆 ").append(j[0]).append(" (").append(j[1]).append(" victorias)");
-                }
-                lblRecordistas.setText(sb.length() > 0 ? sb.toString() : "Aún no hay récords");
             } else {
-                lblRecordistas.setText("Aún no se ha jugado ninguna partida.");
-            }
+                // 1. Récord global
+                int record = gestor.obtenerRecord();
+                lblRecord.setText("🥇 Récord global: " + record + " partidas ganadas");
 
-            // 6. Jugadores sobre la media
-            ArrayList<String[]> sobreMedia = gestor.obtenerJugadoresSobreMedia();
-            StringBuilder sb2 = new StringBuilder();
-            for (String[] j : sobreMedia) {
-                if (sb2.length() > 0) sb2.append("\n");
-                sb2.append("• ").append(j[0]).append(": ").append(j[1]).append(" victorias");
-            }
-            lblSobreMedia.setText(sb2.length() > 0 ? sb2.toString() : "Nadie supera la media todavía.");
+                // 2. Media de victorias
+                double media = gestor.obtenerMediaWins();
+                lblMedia.setText("📈 Media de victorias: " + media + " por jugador");
 
-            gestor.cerrarConexion();
-            System.out.println("✅ Estadísticas cargadas correctamente.");
+                // 3. Total de jugadores registrados (llama a function TOTAL_JUGADORES de Oracle)
+                int total = gestor.obtenerTotalJugadores();
+                lblTotalJugadores.setText("👥 Jugadores registrados: " + total);
+
+                // 4. Ranking por partidas jugadas
+                ArrayList<String[]> ranking = gestor.obtenerRanking();
+                ObservableList<JugadorRanking> data = FXCollections.observableArrayList();
+                int pos = 1;
+                for (String[] fila : ranking) {
+                    String simbolo;
+                    switch (pos) {
+                        case 1: simbolo = "🥇"; break;
+                        case 2: simbolo = "🥈"; break;
+                        case 3: simbolo = "🥉"; break;
+                        default: simbolo = "" + pos;
+                    }
+                    data.add(new JugadorRanking(simbolo, fila[0], fila[1], fila[2]));
+                    pos++;
+                }
+                tablaRanking.setItems(data);
+
+                // 5. Jugadores con el récord actual
+                if (record > 0) {
+                    ArrayList<String[]> recordistas = gestor.obtenerJugadoresConRecord(record);
+                    StringBuilder sb = new StringBuilder();
+                    for (String[] j : recordistas) {
+                        if (sb.length() > 0) sb.append(", ");
+                        sb.append("🏆 ").append(j[0]).append(" (").append(j[1]).append(" victorias)");
+                    }
+                    lblRecordistas.setText(sb.length() > 0 ? sb.toString() : "Aún no hay récords");
+                } else {
+                    lblRecordistas.setText("Aún no se ha jugado ninguna partida.");
+                }
+
+                // 6. Jugadores sobre la media
+                ArrayList<String[]> sobreMedia = gestor.obtenerJugadoresSobreMedia();
+                StringBuilder sb2 = new StringBuilder();
+                for (String[] j : sobreMedia) {
+                    if (sb2.length() > 0) sb2.append("\n");
+                    sb2.append("• ").append(j[0]).append(": ").append(j[1]).append(" victorias");
+                }
+                lblSobreMedia.setText(sb2.length() > 0 ? sb2.toString() : "Nadie supera la media todavía.");
+
+                gestor.cerrarConexion();
+                System.out.println("✅ Estadísticas cargadas correctamente.");
+            } // fin else conexion OK
 
         } catch (Exception e) {
             System.err.println("❌ Error cargando estadísticas: " + e.getMessage());

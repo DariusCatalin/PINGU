@@ -37,46 +37,44 @@ public class PantallaMenu {
  
         if (username.isEmpty() || password.isEmpty()) {
             mostrarError("⚠ Por favor, introduce tu usuario y contraseña.");
-            return;
-        }
+        } else {
+            GestorBBDD gestor = new GestorBBDD();
+            gestor.iniciarConexionGUI();
+            boolean loginOk = gestor.validarLogin(username, password);
+            gestor.cerrarConexion();
  
-        GestorBBDD gestor = new GestorBBDD();
-        gestor.iniciarConexionGUI();
-        boolean loginOk = gestor.validarLogin(username, password);
-        gestor.cerrarConexion();
+            if (!loginOk) {
+                mostrarError("❌ Usuario o contraseña incorrectos.");
+                passField.clear();
+            } else {
+                // Credenciales correctas → ir al menú principal
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaPrincipal.fxml"));
+                    Parent root = loader.load();
  
-        if (!loginOk) {
-            mostrarError("❌ Usuario o contraseña incorrectos.");
-            passField.clear();
-            return;
-        }
+                    // Escalamos al tamaño de pantalla real
+                    Rectangle2D screen = Screen.getPrimary().getBounds();
+                    Main.escalar(root,
+                            Main.BASE_WIDTH_PRINCIPAL,
+                            Main.BASE_HEIGHT_PRINCIPAL,
+                            screen.getWidth(),
+                            screen.getHeight());
  
-        // Credenciales correctas → ir al menú principal
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/PantallaPrincipal.fxml"));
-            Parent root = loader.load();
+                    Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
+                    try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
  
-            // Escalamos al tamaño de pantalla real
-            Rectangle2D screen = Screen.getPrimary().getBounds();
-            Main.escalar(root,
-                    Main.BASE_WIDTH_PRINCIPAL,
-                    Main.BASE_HEIGHT_PRINCIPAL,
-                    screen.getWidth(),
-                    screen.getHeight());
+                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                    stage.setScene(scene);
+                    stage.setTitle("El Juego del Pingüino - Menú Principal");
+                    stage.setFullScreen(true);
+                    stage.setFullScreenExitHint("");
+                    stage.show();
  
-            Scene scene = new Scene(root, screen.getWidth(), screen.getHeight());
-            try { scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception ignored) {}
- 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("El Juego del Pingüino - Menú Principal");
-            stage.setFullScreen(true);
-            stage.setFullScreenExitHint("");
-            stage.show();
- 
-        } catch (Exception e) {
-            mostrarError("❌ Error al cargar el menú principal: " + e.getMessage());
-            e.printStackTrace();
+                } catch (Exception e) {
+                    mostrarError("❌ Error al cargar el menú principal: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
         }
     }
  

@@ -30,51 +30,44 @@ public class PantallaRegistro {
         // --- Validaciones locales ---
         if (username.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             mostrarError("⚠ Todos los campos son obligatorios.");
-            return;
-        }
-        if (username.length() < 3) {
+        } else if (username.length() < 3) {
             mostrarError("⚠ El nombre de usuario debe tener al menos 3 caracteres.");
-            return;
-        }
-        if (password.length() < 4) {
+        } else if (password.length() < 4) {
             mostrarError("⚠ La contraseña debe tener al menos 4 caracteres.");
-            return;
-        }
-        if (!password.equals(confirm)) {
+        } else if (!password.equals(confirm)) {
             mostrarError("⚠ Las contraseñas no coinciden.");
             passField.clear();
             passConfirmField.clear();
-            return;
-        }
-
-        // --- Intento de registro en BBDD ---
-        GestorBBDD gestor = new GestorBBDD();
-        gestor.iniciarConexionGUI();
-        String resultado = gestor.registrarUsuario(username, password);
-        gestor.cerrarConexion();
-
-        if (resultado == null) {
-            // ✅ Registro exitoso → login automático, ir directamente al menú principal
-            mostrarExito("✅ ¡Cuenta creada! Entrando al juego...");
-            // Espera breve para que el usuario vea el mensaje, luego navega
-            javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
-                    javafx.util.Duration.seconds(1.2));
-            pausa.setOnFinished(e -> irAlMenuPrincipal(event));
-            pausa.play();
-
-        } else if ("DUPLICATE".equals(resultado)) {
-            // ❌ Username ya existe
-            mostrarError("❌ El nombre de usuario \"" + username + "\" ya está en uso. Elige otro.");
-            userField.clear();
-            passField.clear();
-            passConfirmField.clear();
-            userField.requestFocus();
-
         } else {
-            // ❌ Otro error de BD (conexión, procedimiento no encontrado, etc.)
-            String detalle = resultado.startsWith("ERROR:") ? resultado.substring(6) : resultado;
-            mostrarError("❌ Error al registrar: " + detalle);
-            System.err.println("Error registro BD: " + detalle);
+            // --- Intento de registro en BBDD ---
+            GestorBBDD gestor = new GestorBBDD();
+            gestor.iniciarConexionGUI();
+            String resultado = gestor.registrarUsuario(username, password);
+            gestor.cerrarConexion();
+
+            if (resultado == null) {
+                // ✅ Registro exitoso → login automático, ir directamente al menú principal
+                mostrarExito("✅ ¡Cuenta creada! Entrando al juego...");
+                // Espera breve para que el usuario vea el mensaje, luego navega
+                javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.seconds(1.2));
+                pausa.setOnFinished(e -> irAlMenuPrincipal(event));
+                pausa.play();
+
+            } else if ("DUPLICATE".equals(resultado)) {
+                // ❌ Username ya existe
+                mostrarError("❌ El nombre de usuario \"" + username + "\" ya está en uso. Elige otro.");
+                userField.clear();
+                passField.clear();
+                passConfirmField.clear();
+                userField.requestFocus();
+
+            } else {
+                // ❌ Otro error de BD (conexión, procedimiento no encontrado, etc.)
+                String detalle = resultado.startsWith("ERROR:") ? resultado.substring(6) : resultado;
+                mostrarError("❌ Error al registrar: " + detalle);
+                System.err.println("Error registro BD: " + detalle);
+            }
         }
     }
 
