@@ -2189,7 +2189,11 @@ public class PantallaPartida {
                         encolarSaltoDirecto(afectado, casillaDest);
                     }
                 }
-                // Disparamos el animador para que ejecute los saltos de los pingüinos afectados
+                // CRÍTICO: reseteamos animando para que dispararAnimadorVisual pueda
+                // iniciar un nuevo ciclo que procese los saltos de los pingüinos afectados.
+                // Sin este reset, el guard "if (!animando)" bloqueaba el dispatcher
+                // silenciosamente y onFinish nunca se llamaba → juego colgado.
+                animando = false;
                 dispararAnimadorVisual(onFinish);
             });
             seq.play();
@@ -2286,6 +2290,8 @@ public class PantallaPartida {
                 rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
                 // Sincronizamos el inventario del pingüino en la UI (el pez ya fue consumido en verificarColisionesLocal)
                 actualizarTextosInventario(pinguino);
+                // Reseteamos animando por consistencia (mismo patrón que coletazo)
+                animando = false;
                 if (onFinish != null) onFinish.run();
             });
             seq.play();
