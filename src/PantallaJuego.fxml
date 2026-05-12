@@ -119,7 +119,7 @@
                                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
                                     <Text fx:id="peces_t" text="Peces: 0" styleClass="stat" />
                                     <Region HBox.hgrow="ALWAYS" />
-                                    <Button fx:id="peces" text="Usar" onAction="#handlePeces"/>
+                                    <Label text="(auto)" style="-fx-text-fill: #888; -fx-font-size: 11px;" />
                                 </HBox>
 
                                 <HBox alignment="CENTER_LEFT" spacing="10" styleClass="row">
