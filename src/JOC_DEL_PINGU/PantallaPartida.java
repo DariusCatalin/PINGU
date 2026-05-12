@@ -352,15 +352,14 @@ public class PantallaPartida {
                     avanzarTurno();
                     dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
                 } else {
-                    if (tieneObjetosUsables(actual)) {
-                        mostrarPopupObjetos(actual);
-                    } else {
-                        ejecutarTiradaNormal(actual);
-                    }
+                    // Los objetos se usan desde los botones "Usar" del inventario.
+                    // El dado siempre tira directamente sin popup intermedio.
+                    ejecutarTiradaNormal(actual);
                 }
             }
         }
     }
+
  
     // EJECUTA UNA TIRADA NORMAL DE DADO (VALOR 1-6) Y HACE MOVER AL JUGADOR
     private void ejecutarTiradaNormal(Jugador actual) {
