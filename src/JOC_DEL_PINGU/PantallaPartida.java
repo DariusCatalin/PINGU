@@ -45,6 +45,9 @@ public class PantallaPartida {
     @FXML private ImageView P2; // FICHA VISUAL DEL JUGADOR 2
     @FXML private ImageView P3; // FICHA VISUAL DEL JUGADOR 3
     @FXML private ImageView P4; // FICHA VISUAL DEL JUGADOR 4
+    // FICHA VISUAL DE LA FOCA (P5): CREADA DINÁMICAMENTE PORQUE EL FXML SOLO TIENE 4 SLOTS
+    // SE INICIALIZA EN configurarPartida() CUANDO HAY UNA FOCA EN LA PARTIDA
+    private ImageView P5;
  
     // --- VARIABLES INTERNAS DE LA LÓGICA DEL JUEGO ---
     private Partida partida;
@@ -168,18 +171,36 @@ public class PantallaPartida {
             partida.getJugadores().add(j);
         }
  
-        // ARRAY CON LAS 4 FICHAS VISUALES DISPONIBLES EN EL FXML
+        // ARRAY CON LAS 4 FICHAS VISUALES DEL FXML
         ImageView[] fichas = {P1, P2, P3, P4};
  
-        // PRIMERO OCULTAMOS TODAS LAS FICHAS PARA QUE NO SE VEAN LAS QUE NO SE USAN
+        // PRIMERO OCULTAMOS TODAS LAS FICHAS Y ELIMINAMOS LA P5 ANTERIOR SI EXISTÍA
         for (ImageView iv : fichas) {
             if (iv != null) iv.setVisible(false);
         }
+        if (P5 != null && tablero != null) {
+            tablero.getChildren().remove(P5);
+            P5 = null;
+        }
  
         // ASIGNAMOS IMAGEN, POSICIÓN INICIAL Y VISIBILIDAD A CADA JUGADOR
-        for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
+        // LOS PRIMEROS 4 USAN LOS IMAGEVIEW DEL FXML; EL 5.º (FOCA) SE CREA DINÁMICAMENTE
+        for (int i = 0; i < jugadoresConfig.size(); i++) {
             Jugador j = jugadoresConfig.get(i);
-            ImageView ficha = fichas[i];
+            ImageView ficha;
+            if (i < fichas.length) {
+                ficha = fichas[i];
+            } else {
+                // 5.º JUGADOR (FOCA): CREAMOS SU IMAGEVIEW Y LO AÑADIMOS AL TABLERO
+                P5 = new ImageView();
+                P5.setFitWidth(50);
+                P5.setFitHeight(60);
+                P5.setPreserveRatio(true);
+                GridPane.setHalignment(P5, javafx.geometry.HPos.CENTER);
+                GridPane.setValignment(P5, javafx.geometry.VPos.CENTER);
+                if (tablero != null) tablero.getChildren().add(P5);
+                ficha = P5;
+            }
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
@@ -615,15 +636,31 @@ public class PantallaPartida {
             // EJECUTAMOS LA ACCION DE LA CASILLA EN LA QUE CAYÓ EL JUGADOR (OSO, TRINEO, EVENTO...)
             Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
             int posAntesCasilla = j.getPosicion();
+            int objetosAntesFragil = (casillaActual instanceof CasillaFragil) ? j.getInventario().getLista().size() : 0;
 
             casillaActual.realizarAccion(partida, j);
 
-            if (casillaActual instanceof Evento) {
+            if (casillaActual instanceof CasillaFragil) {
+                // ANIMACIÓN DE TERRENO FRÁGIL: DETERMINAMOS EL TEXTO SEGÚN EL INVENTARIO ANTES DEL EVENTO
+                String textoFragil;
+                if (objetosAntesFragil > 5) {
+                    textoFragil = "Has caigut!\nTornes a l'inici.";
+                } else if (objetosAntesFragil > 0) {
+                    textoFragil = "Perds un torn.";
+                } else {
+                    textoFragil = "Has passat sense penalització.";
+                }
+                ultimoEventoVisual.put(j, textoFragil);
+                encolarAnimacionFragil(j);
+                // SI HUBO MOVIMIENTO (>5 OBJECTES → TORNA A L'INICI), ENCOLAMOS EL SALTO
+                if (posAntesCasilla != j.getPosicion()) {
+                    encolarSaltoDirecto(j, j.getPosicion());
+                }
+            } else if (casillaActual instanceof Evento) {
                 String msg = partida.getGestorEventos().getUltimoMensaje();
                 ultimoEventoVisual.put(j, msg);
                 encolarAnimacionEvento(j);
-            }
-            if (casillaActual instanceof Oso) {
+            } else if (casillaActual instanceof Oso) {
                 if (posAntesCasilla == j.getPosicion()) {
                     encolarAnimacionSobornoOso(j);
                 } else {
@@ -778,6 +815,9 @@ public class PantallaPartida {
             } else {
                 // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
                 actualizarTextosTurno();
+                // FIX: REFRESCAMOS EL INVENTARIO CON LOS DATOS DEL JUGADOR QUE ACABA DE EMPEZAR SU TURNO
+                // ANTES FALTABA ESTA LLAMADA, POR LO QUE EL PANEL SEGUÍA MOSTRANDO EL INVENTARIO DEL TURNO ANTERIOR
+                actualizarTextosInventario(actual);
                 setUIInteractuable(true);
             }
         }
@@ -849,7 +889,8 @@ public class PantallaPartida {
  
     private ImageView getFichaVisual(Jugador j) {
         int index = partida.getJugadores().indexOf(j);
-        ImageView[] fichas = {P1, P2, P3, P4};
+        // LOS PRIMEROS 4 SLOTS ESTÁN EN EL FXML; EL 5.º (ÍNDICE 4) ES LA FOCA DINÁMICA (P5)
+        ImageView[] fichas = {P1, P2, P3, P4, P5};
         if (index >= 0 && index < fichas.length) {
             return fichas[index];
         }
@@ -909,6 +950,7 @@ public class PantallaPartida {
             if (P2 != null) P2.toFront();
             if (P3 != null) P3.toFront();
             if (P4 != null) P4.toFront();
+            if (P5 != null) P5.toFront(); // FOCA DINÁMICA
         }
     }
  
@@ -994,6 +1036,15 @@ public class PantallaPartida {
             q.add(new int[]{j.getPosicion(), 7});
         }
     }
+
+    /** Encola la animación de terreno frágil. Tipo 8. */
+    private void encolarAnimacionFragil(Jugador j) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q != null) {
+            q.add(new int[]{j.getPosicion(), 8});
+        }
+    }
+
     // ENCOLA LA ANIMACIÓN DEL AGUJERO (TIPO 4: JUGADOR SE CAE Y APARECE EN LA CASILLA DESTINO)
     private void encolarAnimacionAgujero(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
@@ -1094,6 +1145,8 @@ public class PantallaPartida {
                         mostrarAnimacionGuerra(j, next);
                     } else if (tipo == 7) {
                         mostrarAnimacionSobornoOso(j, next);
+                    } else if (tipo == 8) {
+                        mostrarAnimacionFragil(j, next);
                     } else {
                         animarConSaltito(fic, j, desde, hasta, next);
                     }
@@ -1797,7 +1850,90 @@ public class PantallaPartida {
             if (onFinish != null) onFinish.run();
         }
     }
- 
+
+    // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DE LA CASILLA DE TERRENO FRÁGIL
+    // REUTILIZA EL MISMO PATRÓN QUE AGUJERO Y TRINEO: OVERLAY + IMAGEN CENTRADA + TEXTO
+    private void mostrarAnimacionFragil(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/evento_fragil.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            // EL TEXTO YA FUE DETERMINADO ANTES DE realizarAccion() SEGÚN EL TAMAÑO DEL INVENTARIO
+            String textoEvento = ultimoEventoVisual.getOrDefault(j, "Terreny fràgil!");
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(textoEvento);
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+            lblMensaje.setFill(javafx.scene.paint.Color.web("#87CEEB")); // AZUL HIELO
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2);
+            stImg.setToY(1.2);
+
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
+    }
+
     // OFFSET X EN PIXELES PARA QUE LA FICHA EN CASILLA 49 QUEDE ENCIMA DEL IGLU (~85.5% DEL ANCHO)
     private double computeIglooOffsetX(int colB, double cellW) {
         double iglooSceneX = tablero.getScene().getWidth() * 0.855;
