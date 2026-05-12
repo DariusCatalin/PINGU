@@ -644,11 +644,11 @@ public class PantallaPartida {
                 // ANIMACIÓN DE TERRENO FRÁGIL: DETERMINAMOS EL TEXTO SEGÚN EL INVENTARIO ANTES DEL EVENTO
                 String textoFragil;
                 if (objetosAntesFragil > 5) {
-                    textoFragil = "Has caigut!\nTornes a l'inici.";
+                    textoFragil = "Has caido!\nVuelves al inicio.";
                 } else if (objetosAntesFragil > 0) {
-                    textoFragil = "Perds un torn.";
+                    textoFragil = "Pierdes un turno.";
                 } else {
-                    textoFragil = "Has passat sense penalització.";
+                    textoFragil = "Has pasado sin penalización.";
                 }
                 ultimoEventoVisual.put(j, textoFragil);
                 encolarAnimacionFragil(j);
