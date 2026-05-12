@@ -906,59 +906,59 @@ public class PantallaPartida {
         if (escena == null) {
             // Sin escena disponible: avanzar directamente
             if (onFinish != null) javafx.application.Platform.runLater(onFinish);
-            return;
+        } else {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            // Overlay semitransparente
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            // Texto central
+            javafx.scene.text.Text lblMsg = new javafx.scene.text.Text(
+                "⏭  " + j.getNombre() + "\npierde el turno");
+            lblMsg.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 48));
+            lblMsg.setFill(javafx.scene.paint.Color.web("#FFB347")); // Naranja suave
+            lblMsg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMsg.setWrappingWidth(W);
+            lblMsg.setEffect(new javafx.scene.effect.DropShadow(12, javafx.scene.paint.Color.BLACK));
+            lblMsg.setOpacity(0);
+            lblMsg.setManaged(false);
+            lblMsg.setLayoutX(0);
+            lblMsg.setLayoutY(H / 2.0);
+            rootPane.getChildren().add(lblMsg);
+
+            javafx.animation.FadeTransition ftOverIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(250), overlayPane);
+            ftOverIn.setToValue(0.65);
+            javafx.animation.FadeTransition ftMsgIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(250), lblMsg);
+            ftMsgIn.setToValue(1);
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOverIn, ftMsgIn);
+
+            javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
+                javafx.util.Duration.millis(1500));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftMsgOut = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(300), lblMsg);
+            ftMsgOut.setToValue(0);
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftMsgOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pausa, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, lblMsg);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
         }
-        double W = escena.getWidth();
-        double H = escena.getHeight();
-        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
-
-        // Overlay semitransparente
-        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
-        overlayPane.setStyle("-fx-background-color: black;");
-        overlayPane.setManaged(false);
-        overlayPane.resize(W, H);
-        overlayPane.setOpacity(0);
-        rootPane.getChildren().add(overlayPane);
-
-        // Texto central
-        javafx.scene.text.Text lblMsg = new javafx.scene.text.Text(
-            "⏭  " + j.getNombre() + "\npierde el turno");
-        lblMsg.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 48));
-        lblMsg.setFill(javafx.scene.paint.Color.web("#FFB347")); // Naranja suave
-        lblMsg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        lblMsg.setWrappingWidth(W);
-        lblMsg.setEffect(new javafx.scene.effect.DropShadow(12, javafx.scene.paint.Color.BLACK));
-        lblMsg.setOpacity(0);
-        lblMsg.setManaged(false);
-        lblMsg.setLayoutX(0);
-        lblMsg.setLayoutY(H / 2.0);
-        rootPane.getChildren().add(lblMsg);
-
-        javafx.animation.FadeTransition ftOverIn = new javafx.animation.FadeTransition(
-            javafx.util.Duration.millis(250), overlayPane);
-        ftOverIn.setToValue(0.65);
-        javafx.animation.FadeTransition ftMsgIn = new javafx.animation.FadeTransition(
-            javafx.util.Duration.millis(250), lblMsg);
-        ftMsgIn.setToValue(1);
-        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOverIn, ftMsgIn);
-
-        javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
-            javafx.util.Duration.millis(1500));
-
-        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(
-            javafx.util.Duration.millis(300), overlayPane);
-        ftOverOut.setToValue(0);
-        javafx.animation.FadeTransition ftMsgOut = new javafx.animation.FadeTransition(
-            javafx.util.Duration.millis(300), lblMsg);
-        ftMsgOut.setToValue(0);
-        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftMsgOut);
-
-        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pausa, ptOut);
-        seq.setOnFinished(e -> {
-            rootPane.getChildren().removeAll(overlayPane, lblMsg);
-            if (onFinish != null) onFinish.run();
-        });
-        seq.play();
     }
  
 
@@ -2092,8 +2092,7 @@ public class PantallaPartida {
         java.util.List<int[]> afectados = datosColetazo.remove(foca);
         if (afectados == null || afectados.isEmpty()) {
             if (onFinish != null) onFinish.run();
-            return;
-        }
+        } else {
 
         javafx.scene.Scene escena = tablero.getScene();
         if (escena != null) {
@@ -2217,6 +2216,7 @@ public class PantallaPartida {
             }
             if (onFinish != null) onFinish.run();
         }
+        } // fin else: afectados no vacios
     }
 
     /**
