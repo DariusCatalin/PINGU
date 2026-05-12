@@ -21,7 +21,6 @@ public class Agujero extends Casilla {
             for (int i = posActual - 1; i >= 0; i--) {
                 if (t.getCasilla(i) instanceof Agujero) {
                     posAnterior = i;
-                    // No usem break, usem i = -1 per sortir del bucle
                     i = -1; 
                 }
             }
