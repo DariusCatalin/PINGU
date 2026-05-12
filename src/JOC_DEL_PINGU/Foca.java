@@ -16,7 +16,7 @@ public class Foca extends Jugador {
     public void jugarTurnoCPU(Partida p) {
         GestorEventos ge = p.getGestorEventos();
         
-        // 1. Comprovar si esta penalitzada
+        // 1. Comprobar si está penalizada
         if (this.estaPenalizado()) {
             this.decrementarPenalizacion();
             if (ge != null) {
@@ -31,39 +31,39 @@ public class Foca extends Jugador {
                 ge.registrar("La CPU (" + this.getNombre() + ") tira el dado, saca un " + tirada + " y avanza a la casilla " + this.getPosicion() + ".");
             }
             
-            // 3. Comprovar si ha caigut damunt d'algun pinguino
+            // 3. Comprobar si ha caído encima de algún pingüino
             interactuarConJugadores(p);
         }
     }
     
     public void interactuarConJugadores(Partida p) {
         for (Jugador j : p.getJugadores()) {
-            // Si es un pinguino i estan a la mateixa casella
+            // Si es un pingüino y están en la misma casilla
             if (j instanceof Pinguino && j.getPosicion() == this.getPosicion()) {
                 
-                // Buscar si el pinguino te un peix
+                // Buscar si el pingüino tiene un pez
                 Item pez = null;
-                boolean trobat = false;
+                boolean encontrado = false;
                 java.util.List<Item> items = j.getInventario().getLista();
-                for (int i = 0; i < items.size() && !trobat; i++) {
+                for (int i = 0; i < items.size() && !encontrado; i++) {
                     Item item = items.get(i);
                     if (item.getNombre().equalsIgnoreCase("Pez")) {
                         pez = item;
-                        trobat = true;
+                        encontrado = true;
                     }
                 }
                 
-                // CONDICIO A: TE UN PEIX (Suborn)
+                // CONDICIÓN A: TIENE UN PEZ (Soborno)
                 if (pez != null) {
                     j.getInventario().getLista().remove(pez);
                     this.aplicarPenalizacion();
-                    this.aplicarPenalizacion(); // Bloquejada 2 torns
+                    this.aplicarPenalizacion(); // Bloqueada 2 turnos
                     
                     if (p.getGestorEventos() != null) {
                         p.getGestorEventos().registrar(j.getNombre() + " le lanza un pez a la Foca. ¡La Foca queda bloqueada 2 turnos!");
                     }
                     
-                // CONDICIO B: NO TE PEIX (Castig)
+                // CONDICIÓN B: NO TIENE PEZ (Castigo)
                 } else {
                     if (p.getGestorEventos() != null) {
                         p.getGestorEventos().registrar("¡La Foca " + this.getNombre() + " golpea a " + j.getNombre() + " con la cola por no darle comida!");
