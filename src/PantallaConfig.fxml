@@ -36,13 +36,14 @@
         <VBox spacing="10.0">
             <Label text="¿Cuántos jugadores?" styleClass="config-label" />
             <HBox spacing="10.0" alignment="CENTER_LEFT">
+                <Button fx:id="btn1J" text="1" onAction="#seleccionar1" styleClass="toggle-btn" prefWidth="60" />
                 <Button fx:id="btn2J" text="2" onAction="#seleccionar2" styleClass="toggle-btn, toggle-active" prefWidth="60" />
                 <Button fx:id="btn3J" text="3" onAction="#seleccionar3" styleClass="toggle-btn" prefWidth="60" />
                 <Button fx:id="btn4J" text="4" onAction="#seleccionar4" styleClass="toggle-btn" prefWidth="60" />
             </HBox>
         </VBox>
 
-        <!-- CPU (FOCA) -->
+        <!-- CPU (FOCA) — solo visible en modo 2/3/4 jugadores; en modo 1J es obligatoria -->
         <CheckBox fx:id="chkCPU" text="Añadir CPU (La Foca)" styleClass="config-checkbox" onAction="#toggleCPU" />
 
         <!-- FILA JUGADOR 1 -->
@@ -75,6 +76,10 @@
 
         <!-- INFO CPU -->
         <Label fx:id="lblCPU" text="🦭  La Foca jugará como CPU automaticamente"
+               styleClass="cpu-info" visible="false" managed="false" />
+
+        <!-- INFO MODO 1J: La foca es obligatoria en este modo -->
+        <Label fx:id="lblFocaObligatoria" text="🦭  Modo 1 jugador: La Foca se añade automáticamente como CPU"
                styleClass="cpu-info" visible="false" managed="false" />
 
         <!-- AVISO ERROR -->

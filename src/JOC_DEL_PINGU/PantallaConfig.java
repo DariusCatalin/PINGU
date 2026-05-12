@@ -18,6 +18,7 @@ import javafx.stage.Stage;
 public class PantallaConfig {
 
     // ==================== FXML ====================
+    @FXML private Button btn1J;
     @FXML private Button btn2J;
     @FXML private Button btn3J;
     @FXML private Button btn4J;
@@ -39,6 +40,7 @@ public class PantallaConfig {
     @FXML private ComboBox<String> colorJ4;
 
     @FXML private Label lblCPU;
+    @FXML private Label lblFocaObligatoria;
     @FXML private Label lblError;
 
     // ==================== ESTADO ====================
@@ -117,6 +119,13 @@ public class PantallaConfig {
 
     // ==================== SELECCIÓN Nº JUGADORES ====================
     @FXML
+    private void seleccionar1(ActionEvent event) {
+        numJugadores = 1;
+        actualizarToggleButtons();
+        actualizarFilas();
+    }
+
+    @FXML
     private void seleccionar2(ActionEvent event) {
         numJugadores = 2;
         actualizarToggleButtons();
@@ -138,11 +147,13 @@ public class PantallaConfig {
     }
 
     private void actualizarToggleButtons() {
+        btn1J.getStyleClass().remove("toggle-active");
         btn2J.getStyleClass().remove("toggle-active");
         btn3J.getStyleClass().remove("toggle-active");
         btn4J.getStyleClass().remove("toggle-active");
 
         switch (numJugadores) {
+            case 1: btn1J.getStyleClass().add("toggle-active"); break;
             case 2: btn2J.getStyleClass().add("toggle-active"); break;
             case 3: btn3J.getStyleClass().add("toggle-active"); break;
             case 4: btn4J.getStyleClass().add("toggle-active"); break;
@@ -150,10 +161,30 @@ public class PantallaConfig {
     }
 
     private void actualizarFilas() {
+        // En modo 1 jugador solo aparece la fila del J1; la foca es obligatoria (no checkbox)
         setFilaActiva(filaJ1, true);
-        setFilaActiva(filaJ2, true);
+        setFilaActiva(filaJ2, numJugadores >= 2);
         setFilaActiva(filaJ3, numJugadores >= 3);
         setFilaActiva(filaJ4, numJugadores >= 4);
+
+        // En modo 1J la foca siempre se añade: ocultamos el checkbox para evitar confusión
+        boolean mostrarCPU = (numJugadores > 1);
+        chkCPU.setVisible(mostrarCPU);
+        chkCPU.setManaged(mostrarCPU);
+        if (numJugadores == 1) {
+            // Aseguramos que el checkbox no interfiera (no visible, no seleccionado)
+            chkCPU.setSelected(false);
+            if (lblCPU != null) {
+                lblCPU.setVisible(false);
+                lblCPU.setManaged(false);
+            }
+        }
+        // Mostramos el aviso de foca obligatoria solo en modo 1 jugador
+        boolean modo1J = (numJugadores == 1);
+        if (lblFocaObligatoria != null) {
+            lblFocaObligatoria.setVisible(modo1J);
+            lblFocaObligatoria.setManaged(modo1J);
+        }
     }
 
     private void setFilaActiva(HBox fila, boolean activa) {
@@ -227,8 +258,9 @@ public class PantallaConfig {
                 jugadores.add(new Pinguino(0, nombre, color));
             }
 
-            // Añadir CPU si está marcada
-            if (chkCPU.isSelected()) {
+            // En modo 1 jugador la foca es OBLIGATORIA (no depende del checkbox)
+            // En modo 2-4 jugadores se añade solo si el checkbox está marcado
+            if (numJugadores == 1 || chkCPU.isSelected()) {
                 jugadores.add(new Foca(0, "Foca CPU", "Gris"));
             }
 

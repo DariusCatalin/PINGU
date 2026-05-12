@@ -830,13 +830,27 @@ public class PantallaPartida {
                     }
                 }
             } else {
-                // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
+                // ES EL TURNO DEL JUGADOR HUMANO
                 actualizarTextosTurno();
-                // FIX: REFRESCAMOS EL INVENTARIO CON LOS DATOS DEL JUGADOR QUE ACABA DE EMPEZAR SU TURNO
-                // ANTES FALTABA ESTA LLAMADA, POR LO QUE EL PANEL SEGUÍA MOSTRANDO EL INVENTARIO DEL TURNO ANTERIOR
                 actualizarTextosInventario(actual);
-                setUIInteractuable(true);
+
+                if (actual.estaPenalizado()) {
+                    // El jugador tiene penalización activa: saltamos su turno automáticamente
+                    // sin habilitar ningún botón ni esperar interacción del usuario
+                    actual.decrementarPenalizacion();
+                    gestorUI.registrar("¡" + actual.getNombre() + " pierde su turno por penalización!");
+                    // Mostramos un mensaje visual breve (1.5 s) y luego avanzamos
+                    mostrarMensajePierdeTurno(actual, () -> {
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    });
+                } else {
+                    // FIX: REFRESCAMOS EL INVENTARIO CON LOS DATOS DEL JUGADOR QUE ACABA DE EMPEZAR SU TURNO
+                    // ANTES FALTABA ESTA LLAMADA, POR LO QUE EL PANEL SEGUÍA MOSTRANDO EL INVENTARIO DEL TURNO ANTERIOR
+                    setUIInteractuable(true);
+                }
             }
+
         }
     }
 
@@ -872,6 +886,73 @@ public class PantallaPartida {
         }
     }
  
+    /**
+     * Muestra un overlay breve (1.5 s) indicando que el jugador pierde su turno.
+     * Se invoca automáticamente al inicio del turno cuando el jugador está penalizado,
+     * sin requerir ninguna interacción del usuario.
+     * Al terminar ejecuta onFinish para continuar la cadena de turnos.
+     */
+    private void mostrarMensajePierdeTurno(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            // Sin escena disponible: avanzar directamente
+            if (onFinish != null) javafx.application.Platform.runLater(onFinish);
+            return;
+        }
+        double W = escena.getWidth();
+        double H = escena.getHeight();
+        javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+        // Overlay semitransparente
+        javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+        overlayPane.setStyle("-fx-background-color: black;");
+        overlayPane.setManaged(false);
+        overlayPane.resize(W, H);
+        overlayPane.setOpacity(0);
+        rootPane.getChildren().add(overlayPane);
+
+        // Texto central
+        javafx.scene.text.Text lblMsg = new javafx.scene.text.Text(
+            "⏭  " + j.getNombre() + "\npierde el turno");
+        lblMsg.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 48));
+        lblMsg.setFill(javafx.scene.paint.Color.web("#FFB347")); // Naranja suave
+        lblMsg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblMsg.setWrappingWidth(W);
+        lblMsg.setEffect(new javafx.scene.effect.DropShadow(12, javafx.scene.paint.Color.BLACK));
+        lblMsg.setOpacity(0);
+        lblMsg.setManaged(false);
+        lblMsg.setLayoutX(0);
+        lblMsg.setLayoutY(H / 2.0);
+        rootPane.getChildren().add(lblMsg);
+
+        javafx.animation.FadeTransition ftOverIn = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(250), overlayPane);
+        ftOverIn.setToValue(0.65);
+        javafx.animation.FadeTransition ftMsgIn = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(250), lblMsg);
+        ftMsgIn.setToValue(1);
+        javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOverIn, ftMsgIn);
+
+        javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
+            javafx.util.Duration.millis(1500));
+
+        javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), overlayPane);
+        ftOverOut.setToValue(0);
+        javafx.animation.FadeTransition ftMsgOut = new javafx.animation.FadeTransition(
+            javafx.util.Duration.millis(300), lblMsg);
+        ftMsgOut.setToValue(0);
+        javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftMsgOut);
+
+        javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pausa, ptOut);
+        seq.setOnFinished(e -> {
+            rootPane.getChildren().removeAll(overlayPane, lblMsg);
+            if (onFinish != null) onFinish.run();
+        });
+        seq.play();
+    }
+ 
+
     // REGISTRA EL LISTENER DE TECLADO: ESCAPE ABRE Y CIERRA EL MENÚ DE OPCIONES
     // EL MENÚ SE IMPLEMENTA COMO UN CONTEXTMENU ANCLADO A LA VENTANA
     private void configurarEscapeMenu() {
