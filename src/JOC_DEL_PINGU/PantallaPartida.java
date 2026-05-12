@@ -738,16 +738,26 @@ public class PantallaPartida {
                         // La animación de soborno se encola en la cola del pingüino
                         encolarAnimacionSobornoFoca(pinguino);
                     } else {
-                        // P2/P5: SIN PEZ — LA FOCA DA UN COLETAZO
-                        // Calculamos la casilla destino del pingüino ANTES de mostrarlo
+                        // LA FOCA DA UN COLETAZO: el pingüino retrocede al agujero anterior
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
                         gestorUI.registrar("¡La Foca da un coletazo a " + pinguino.getNombre()
                             + "! Es enviado al agujero anterior (casilla " + posHole + ").");
-                        // Acumulamos los datos del coletazo en la foca (puede haber varios pingüinos)
-                        datosColetazo.computeIfAbsent(foca, k -> new java.util.ArrayList<>())
-                            .add(new int[]{partida.getJugadores().indexOf(pinguino), posHole});
-                        // Nota: pinguino.moverPosicion() se aplica en mostrarAnimacionColetazoFoca,
-                        // después de que la foca llegue visualmente. NO lo movemos aquí.
+
+                        if (actual instanceof Foca) {
+                            // LA FOCA SE MOVIÓ: diferimos el coletazo para que ocurra
+                            // DESPUÉS de que la foca llegue visualmente a la casilla.
+                            // Los datos se acumulan en datosColetazo y se procesan en
+                            // ejecutarLogicaCasilla → encolarAnimacionColetazoFoca (tipo 9).
+                            datosColetazo.computeIfAbsent(foca, k -> new java.util.ArrayList<>())
+                                .add(new int[]{partida.getJugadores().indexOf(pinguino), posHole});
+                        } else {
+                            // EL PINGÜINO SE MOVIÓ hacia la casilla de la foca:
+                            // la foca ya está quieta visualmente → coletazo inmediato.
+                            // NO usamos datosColetazo (evita datos residuales que dispararían
+                            // un coletazo falso en el siguiente turno de la foca).
+                            pinguino.moverPosicion(posHole);
+                            encolarSaltoDirecto(pinguino, posHole);
+                        }
                     }
                 } else if (actual instanceof Pinguino && otro instanceof Pinguino) {
                     // GUERRA DE BOLAS (PvP)
