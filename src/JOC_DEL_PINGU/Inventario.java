@@ -1,5 +1,29 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Inventario
+ * ============================================================
+ * Gestiona la lista de ítems que lleva un jugador.
+ * Cada Jugador tiene un Inventario propio.
+ *
+ * RESPONSABILIDAD:
+ *   - Mantener la lista de Item activos del jugador.
+ *   - Proveer métodos para añadir, eliminar y consultar ítems.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   agregarItem(item)    → Añade un ítem a la lista.
+ *   eliminarItem(item)   → Elimina un ítem concreto de la lista.
+ *   getLista()           → Devuelve la lista completa (usada para
+ *                          iterar, contar y serializar en GestorBBDD).
+ *   tamañoInventario()   → Número de ítems actuales.
+ *
+ * NOTA: Los límites máximos por tipo (MAX_DADOS, MAX_PECES,
+ *   MAX_BOLAS) se comprueban en Jugador.puedeAgregarItem()
+ *   ANTES de llamar a agregarItem(). Inventario no valida límites.
+ * ============================================================
+ */
+
 import java.util.ArrayList;
 
 

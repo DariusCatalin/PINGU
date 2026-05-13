@@ -1,5 +1,57 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: GestorBBDD
+ * ============================================================
+ * Capa de acceso a datos (DAO). Centraliza TODA la lógica de
+ * comunicación con Oracle PL/SQL, el cifrado AES-128/CBC y el
+ * hash SHA-256 de contraseñas.
+ *
+ * RESPONSABILIDAD:
+ *   - Cifrar/descifrar el estado de la partida (AES-128/CBC).
+ *   - Guardar y cargar partidas en Oracle vía CallableStatement.
+ *   - Gestionar el registro y login de usuarios.
+ *   - Consultar estadísticas y ranking desde Oracle.
+ *   - Registrar eventos de auditoría en la tabla HISTORIAL.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   iniciarConexionGUI()          → Abre conexión a Oracle (GUI).
+ *   cerrarConexion()              → Cierra la conexión activa.
+ *   guardarBBDD(partida, id)      → Serializa y cifra la partida,
+ *                                   llama a GuardarPartidaSegura().
+ *   guardarPartidaAuto(partida)   → Como guardarBBDD pero genera
+ *                                   el ID con seq_id_partidas.
+ *   cargarBBDD(id)                → Descifra y reconstruye la
+ *                                   partida completa desde BBDD.
+ *   registrarUsuario(user, pass)  → Hash SHA-256 + llama a
+ *                                   REGISTRAR_USUARIO (Oracle).
+ *   validarLogin(user, pass)      → Hash SHA-256 + llama a
+ *                                   VALIDAR_LOGIN (Oracle).
+ *   eliminarPartida(id)           → Llama a EliminarPartida() +
+ *                                   registra en HISTORIAL.
+ *   finalizarPartida(id, ganador, participantes) → Actualiza
+ *                                   PARTIDA.ganador (dispara
+ *                                   trigger incrementar_wins),
+ *                                   incrementa num_partidas a
+ *                                   todos, registra JUG_IN_PAR
+ *                                   e HISTORIAL.
+ *   obtenerRanking()              → Lista de jugadores ordenada
+ *                                   por partidas jugadas.
+ *   obtenerRecord()               → { ? = call max_wins() }
+ *   obtenerMediaWins()            → { ? = call media_de_wins() }
+ *   obtenerTotalJugadores()       → { ? = call TOTAL_JUGADORES() }
+ *   obtenerVictoriasJugador(id)   → { ? = call PARTIDAS_GANADAS_JUGADOR(?) }
+ *   obtenerPorcentajeMenosWins(n) → { ? = call menos_wins_porcentaje(?) }
+ *   registrarHistorial(...)       → { call REGISTRAR_HISTORIAL(?,?,?,?) }
+ *   registrarJugInPar(...)        → { call REGISTRAR_JUG_IN_PAR(?,?,?) }
+ *
+ * CIFRADO: AES/CBC/PKCS5Padding · Clave 16 bytes · IV aleatorio
+ *          (SecureRandom). Formato BBDD: Base64(IV+ciphertext).
+ * HASH:    SHA-256 determinista en hex (64 caracteres).
+ * ============================================================
+ */
+
 import java.sql.Connection;
 import java.sql.CallableStatement;
 import java.util.Scanner;

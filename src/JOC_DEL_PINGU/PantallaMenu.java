@@ -1,4 +1,31 @@
 package JOC_DEL_PINGU;
+
+/**
+ * ============================================================
+ * CLASE: PantallaMenu  (controlador de PantallaMenu.fxml)
+ * ============================================================
+ * Controlador de la pantalla de Login. Es la primera pantalla
+ * que ve el usuario al arrancar la aplicación.
+ *
+ * RESPONSABILIDAD:
+ *   - Recoger usuario y contraseña del formulario.
+ *   - Validar credenciales contra Oracle vía GestorBBDD.
+ *   - Navegar al menú principal si el login es correcto.
+ *   - Navegar a la pantalla de registro si el usuario pulsa
+ *     "Crear cuenta".
+ *
+ * MÉTODOS @FXML:
+ *   handleLogin(event)    → Llama a GestorBBDD.validarLogin().
+ *                           Si ok → carga PantallaPrincipal.fxml.
+ *                           Si falla → muestra error en lblError.
+ *   handleRegister(event) → Carga PantallaRegistro.fxml.
+ *
+ * FLUJO DE SEGURIDAD:
+ *   La contraseña nunca viaja en claro: GestorBBDD.hashPassword()
+ *   la convierte a SHA-256 antes de enviarla al procedure Oracle
+ *   VALIDAR_LOGIN(user, hash, OUT resultado).
+ * ============================================================
+ */
  
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

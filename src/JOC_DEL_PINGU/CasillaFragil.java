@@ -1,5 +1,30 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: CasillaFragil  (extiende Casilla)
+ * ============================================================
+ * Casilla de hielo frágil. Su efecto depende del número de
+ * objetos que lleva el jugador en el inventario.
+ *
+ * LÓGICA PRINCIPAL (realizarAccion):
+ *   - > 5 objetos  → moverPosicion(0): el hielo se rompe,
+ *                    el jugador vuelve al inicio.
+ *   - 1–5 objetos  → aplicarPenalizacion(): pierde un turno.
+ *   - 0 objetos    → pasa sin penalización.
+ *
+ * EVENTO ADICIONAL ALEATORIO (aplicarEventAdicionalAleatorio):
+ *   - 20% → pierde un turno adicional (total 2 si tenía 1–5 obj).
+ *   - 20% → pierde un objeto aleatorio del inventario.
+ *   - 60% → nada extra.
+ *   Solo se aplica si el jugador NO ha vuelto al inicio.
+ *
+ * ANIMACIONES VINCULADAS (en PantallaPartida):
+ *   encolarAnimacionFragil(j) → muestra imagen y texto del efecto.
+ *   encolarSaltoDirecto(j, 0) → si volvió al inicio.
+ * ============================================================
+ */
+
 import java.util.ArrayList;
 import java.util.Random;
 

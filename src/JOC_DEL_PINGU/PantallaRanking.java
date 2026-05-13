@@ -1,5 +1,36 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: PantallaRanking  (controlador de PantallaRanking.fxml)
+ * ============================================================
+ * Controlador de la pantalla de Ranking y Estadísticas globales.
+ * Accesible desde el menú principal (botón podio 🏆).
+ *
+ * RESPONSABILIDAD:
+ *   - Cargar y mostrar estadísticas globales del juego desde Oracle.
+ *   - Mostrar una tabla ordenada de todos los jugadores por
+ *     partidas jugadas y victorias.
+ *
+ * DATOS QUE MUESTRA:
+ *   · Récord global     → { ? = call max_wins() }
+ *   · Media de victorias → { ? = call media_de_wins() }
+ *   · Total jugadores   → { ? = call TOTAL_JUGADORES() }
+ *   · Ranking completo  → SELECT ORDER BY num_partidas DESC
+ *   · Quién tiene el récord → obtenerJugadoresConRecord(record)
+ *   · Quién está sobre la media → obtenerJugadoresSobreMedia()
+ *
+ * MÉTODOS @FXML:
+ *   initialize()         → Configura columnas + llama cargarEstadisticas().
+ *   handleRefrescar()    → Recarga todos los datos desde Oracle.
+ *   handleVolver()       → Vuelve a PantallaPrincipal.fxml.
+ *
+ * CLASE INTERNA:
+ *   JugadorRanking → JavaBean para filas de la TableView
+ *   (posicion con emoji 🥇🥈🥉, nombre, partidasJugadas, ganadas).
+ * ============================================================
+ */
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

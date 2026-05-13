@@ -1,4 +1,32 @@
 package JOC_DEL_PINGU;
+
+/**
+ * ============================================================
+ * CLASE: Main
+ * ============================================================
+ * Punto de entrada de la aplicación JavaFX.
+ *
+ * RESPONSABILIDAD:
+ *   - Lanza la ventana principal en modo fullscreen.
+ *   - Carga el primer FXML (PantallaMenu.fxml = login).
+ *   - Proporciona el método estático escalar() usado por todas
+ *     las pantallas para adaptar el contenido al tamaño real
+ *     de la pantalla del usuario.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   start(Stage)   → Inicializa la ventana y carga el login.
+ *   escalar(...)   → Aplica ScaleX/ScaleY al AnchorPane
+ *                    "contenedor" para llenar cualquier pantalla
+ *                    sin deformar el diseño base.
+ *   main(String[]) → Llama a launch() para arrancar JavaFX.
+ *
+ * CONSTANTES:
+ *   BASE_WIDTH_MENU / BASE_HEIGHT_MENU      → Tamaño de diseño
+ *     del login (1170x658).
+ *   BASE_WIDTH_PRINCIPAL / BASE_HEIGHT_PRINCIPAL → Tamaño de
+ *     diseño del menú principal (1330x850).
+ * ============================================================
+ */
  
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

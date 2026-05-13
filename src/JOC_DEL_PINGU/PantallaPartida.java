@@ -1,4 +1,62 @@
 package JOC_DEL_PINGU;
+
+/**
+ * ============================================================
+ * CLASE: PantallaPartida  (controlador de PantallaJuego.fxml)
+ * ============================================================
+ * Controlador principal del juego. Es la clase más grande del
+ * proyecto (~2800 líneas) y gestiona toda la lógica de partida,
+ * animaciones, inventario, turnos y navegación durante el juego.
+ *
+ * RESPONSABILIDAD:
+ *   - Inicializar y configurar la partida con los jugadores
+ *     recibidos de PantallaConfig o cargados de BBDD.
+ *   - Gestionar el turno del jugador humano (dado normal y
+ *     objetos especiales) y el turno de la Foca CPU.
+ *   - Ejecutar la lógica de cada casilla y encolar las
+ *     animaciones correspondientes.
+ *   - Gestionar el inventario visual y los botones de ítems.
+ *   - Guardar y cargar partidas desde/hacia Oracle.
+ *   - Detectar el fin de partida y navegar a PantallaVictoria.
+ *
+ * MÉTODOS CLAVE:
+ *   setJugadores(lista)       → Recibe jugadores de PantallaConfig.
+ *   setPartidaCargada(p)      → Restaura una partida cargada de BBDD.
+ *   setIdPartidaCargada(id)   → Asigna el ID Oracle de la partida.
+ *   initialize()              → Crea la Partida, configura fichas y
+ *                               activa el menú de escape (ESC).
+ *   handleDado()              → Turno del jugador: tira dado normal.
+ *   handleRapido/Lento()      → Usa dado especial del inventario.
+ *   handlePeces()             → Info sobre el pez activo.
+ *   handleNieve()             → Lanza bola de nieve (guerra PvP).
+ *   handleSaveGame()          → Guarda partida en Oracle (auto-ID
+ *                               o actualización si ya existe).
+ *   moverJugadorYAccion(j,n)  → Mueve el jugador n casillas,
+ *                               gestiona rebote en meta, efecto de
+ *                               la Foca al pasar encima.
+ *   ejecutarLogicaCasilla(j)  → Aplica el efecto de la casilla actual
+ *                               y encola la animación correspondiente.
+ *   verificarColisionesLocal(j) → Detecta colisiones con la Foca
+ *                               (coletazo/pez) o entre pingüinos
+ *                               (guerra de bolas automática).
+ *   procesarTurnosCPU_Async() → Ejecuta el turno de la Foca CPU
+ *                               de forma asíncrona (Platform.runLater).
+ *   notificarFinPartidaBBDD(j)→ Llama a GestorBBDD.finalizarPartida()
+ *                               para actualizar Oracle al terminar.
+ *   irAPantallaVictoria(j)    → Carga PantallaVictoria.fxml y pasa
+ *                               el nombre/color del ganador.
+ *
+ * SISTEMA DE ANIMACIONES:
+ *   Cada evento del juego encola una animación (encolarXxx).
+ *   Un animador visual las procesa en orden con Timeline y
+ *   Platform.runLater(), garantizando sincronía con el hilo de UI.
+ *
+ * FICHAS VISUALES:
+ *   P1–P4: ImageView definidos en FXML (uno por jugador humano).
+ *   P5: ImageView creado dinámicamente para la Foca si esta
+ *       ocupa el slot 5 (> 4 jugadores en total).
+ * ============================================================
+ */
  
 import java.util.ArrayList;
 import javafx.event.ActionEvent;
