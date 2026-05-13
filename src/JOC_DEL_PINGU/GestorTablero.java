@@ -17,7 +17,7 @@ public class GestorTablero {
     
     public void comprobarFinTurno(Partida partida) {
         if (partida != null) {
-        
+          
             GestorEventos ge = partida.getGestorEventos();
             int meta = 49;
 
