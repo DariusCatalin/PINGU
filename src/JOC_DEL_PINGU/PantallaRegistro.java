@@ -1,5 +1,34 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: PantallaRegistro  (controlador de PantallaRegistro.fxml)
+ * ============================================================
+ * Controlador de la pantalla de creación de cuenta nueva.
+ *
+ * RESPONSABILIDAD:
+ *   - Validar los campos del formulario de registro localmente
+ *     (longitud mínima, contraseñas iguales).
+ *   - Llamar a GestorBBDD.registrarUsuario() para insertar el
+ *     usuario en Oracle via procedure REGISTRAR_USUARIO.
+ *   - Si el registro es exitoso, hacer auto-login y navegar
+ *     directamente al menú principal (sin volver al login).
+ *
+ * MÉTODOS @FXML:
+ *   handleRegistrar(event) → Valida + llama a GestorBBDD.
+ *                            Si ok → PauseTransition 1.2s →
+ *                            irAlMenuPrincipal().
+ *                            Si duplicado → muestra error.
+ *   handleVolver(event)    → Vuelve a PantallaMenu (login).
+ *
+ * VALIDACIONES LOCALES (antes de llamar a Oracle):
+ *   - Ningún campo vacío.
+ *   - username >= 3 caracteres.
+ *   - password >= 4 caracteres.
+ *   - password == confirmación.
+ * ============================================================
+ */
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

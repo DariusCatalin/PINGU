@@ -1,5 +1,39 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: PantallaConfig  (controlador de PantallaConfig.fxml)
+ * ============================================================
+ * Controlador de la pantalla de configuración de partida.
+ * Permite elegir cuántos jugadores participan, qué usuarios
+ * del sistema juegan, qué colores usan y si hay Foca CPU.
+ *
+ * RESPONSABILIDAD:
+ *   - Cargar desde Oracle la lista de usuarios registrados
+ *     para poblar los ComboBox de nombres.
+ *   - Validar que todos los jugadores activos tienen nombre y
+ *     color, y que no se repiten entre ellos.
+ *   - Construir la lista de objetos Jugador y pasarla a
+ *     PantallaPartida antes de lanzar el juego.
+ *
+ * MÉTODOS @FXML:
+ *   initialize()           → Carga colores, carga usuarios BBDD,
+ *                            activa 2 jugadores por defecto.
+ *   seleccionar1/2/3/4()   → Cambia el número de jugadores y
+ *                            muestra/oculta las filas del formulario.
+ *   toggleCPU()            → Muestra/oculta el aviso de Foca CPU.
+ *   handleEmpezar()        → Valida, construye jugadores, lanza juego.
+ *   handleVolver()         → Vuelve a PantallaPrincipal.
+ *
+ * LÓGICA ESPECIAL:
+ *   - En modo 1 jugador, la Foca CPU es OBLIGATORIA (no hay checkbox).
+ *   - cargarUsuariosRegistrados() hace SELECT nombre_usuario FROM
+ *     JUGADOR ORDER BY nombre_usuario y rellena los 4 ComboBox.
+ *   - La validación bloquea si dos jugadores tienen el mismo nombre
+ *     o el mismo color.
+ * ============================================================
+ */
+
 import java.util.ArrayList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

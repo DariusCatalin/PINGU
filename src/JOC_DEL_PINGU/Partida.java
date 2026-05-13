@@ -1,5 +1,41 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Partida
+ * ============================================================
+ * Representa el estado completo de una partida en curso.
+ * Es el objeto central que se serializa/deserializa al guardar
+ * y cargar desde Oracle.
+ *
+ * RESPONSABILIDAD:
+ *   - Mantener la lista de jugadores y el tablero.
+ *   - Controlar el turno actual y el contador de rondas.
+ *   - Gestionar el estado de victoria (finalizada, ganador).
+ *   - Activar/desactivar el modo guerra de bolas de nieve.
+ *
+ * ATRIBUTOS CLAVE:
+ *   tablero          → El tablero de 50 casillas.
+ *   jugadores        → Lista de Jugador (Pinguino + Foca).
+ *   jugadorActual    → Índice del jugador que tiene el turno.
+ *   turnos           → Contador de rondas completas.
+ *   finalizada       → true cuando alguien llega a la meta.
+ *   ganador          → Referencia al jugador que ganó.
+ *   modoGuerraActivado → Activa la guerra PvP automática.
+ *   gestorEventos    → Log de mensajes del juego.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   agregarJugador(j)      → Añade jugador si hay hueco (max 4).
+ *   puedeIniciarPartida()  → True si hay ≥ 2 jugadores.
+ *   pasarTurno()           → Avanza al siguiente jugador, salta
+ *                            penalizados, previene bucle infinito.
+ *   verificarColisiones(j) → Si modoGuerra activo, comprueba
+ *                            si dos jugadores están en la misma
+ *                            casilla y resuelve la guerra.
+ *   verificarFinPartida()  → True si algún jugador está en pos ≥ 49.
+ * ============================================================
+ */
+
 import java.util.ArrayList;
 
 

@@ -1,5 +1,38 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Tablero
+ * ============================================================
+ * Representa el tablero de juego: una lista de 50 casillas
+ * (posiciones 0–49) generadas aleatoriamente al crear la partida.
+ *
+ * RESPONSABILIDAD:
+ *   - Generar las 50 casillas con probabilidades definidas.
+ *   - Garantizar que la casilla 0 (inicio) y la 49 (meta)
+ *     sean siempre CasillaNormal.
+ *   - Evitar rachas de casillas especiales iguales consecutivas.
+ *
+ * PROBABILIDADES DE GENERACIÓN (casillas 1–48):
+ *   Normal      30%  (roll 0-29)
+ *   Oso         11%  (roll 30-40)
+ *   Trineo      11%  (roll 41-51)
+ *   Agujero     12%  (roll 52-63)
+ *   CasillaFragil 12% (roll 64-75)
+ *   Evento      24%  (roll 76-99)
+ *   Anti-clustering: el mismo tipo especial no puede aparecer
+ *   en ninguna de las 3 casillas anteriores. Máx 20 intentos,
+ *   luego fallback a CasillaNormal.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   getCasilla(pos)    → Devuelve la Casilla en esa posición.
+ *   esMeta(pos)        → True si pos >= 49.
+ *   getTotalCasillas() → Número total de casillas (siempre 50).
+ *   setCasillas(lista) → Usado por GestorBBDD.cargarBBDD() para
+ *                        restaurar el tablero guardado en BBDD.
+ * ============================================================
+ */
+
 import java.util.ArrayList;
 import java.util.Random;
 

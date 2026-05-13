@@ -1,5 +1,27 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Oso  (extiende Casilla)
+ * ============================================================
+ * Casilla de tipo Oso. Al caer en ella, el oso ataca al jugador
+ * a menos que este pueda sobornarle con un Pez.
+ *
+ * LÓGICA (realizarAccion):
+ *   - Si el jugador tiene un Pez en el inventario:
+ *       → El pez se consume (eliminarItem).
+ *       → El jugador se queda en su casilla (soborno exitoso).
+ *       → Mensaje: "soborna al oso con un pez".
+ *   - Si el jugador NO tiene Pez:
+ *       → moverPosicion(0): el jugador vuelve al inicio.
+ *       → Mensaje: "atacado por un oso".
+ *
+ * ANIMACIONES VINCULADAS (en PantallaPartida):
+ *   encolarAnimacionSobornoOso(j) → cuando tiene pez.
+ *   encolarAnimacionOso(j)        → cuando vuelve al inicio.
+ * ============================================================
+ */
+
 public class Oso extends Casilla {
     
     // ==================== CONSTRUCTOR ====================

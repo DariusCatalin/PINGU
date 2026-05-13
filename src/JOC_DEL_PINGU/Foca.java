@@ -1,5 +1,40 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Foca  (extiende Jugador)
+ * ============================================================
+ * Representa a la Foca CPU: el adversario controlado por la
+ * máquina que persigue a los pingüinos por el tablero.
+ *
+ * RESPONSABILIDAD:
+ *   - Jugar automáticamente su turno (tirar dado, moverse,
+ *     interactuar con los pingüinos que encuentra).
+ *   - Castigar a los pingüinos sin pez (coletazo → agujero
+ *     anterior) o quedar bloqueada si le dan un pez (soborno).
+ *
+ * ATRIBUTOS PROPIOS:
+ *   soborno         → flag de soborno (legacy, informativo).
+ *   turnosBloqueado → turnos que la Foca está penalizada.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   jugarTurnoCPU(partida)       → Lógica completa del turno CPU:
+ *                                  si está penalizada pierde turno,
+ *                                  si no tira dado y avanza.
+ *   interactuarConJugadores(p)   → Comprueba si la Foca está en
+ *                                  la misma casilla que un pingüino:
+ *                                  - Pingüino tiene pez → soborno,
+ *                                    Foca penalizada 2 turnos.
+ *                                  - Sin pez → enviarAlAgujeroAnterior().
+ *   enviarAlAgujeroAnterior(j,t) → Busca la primera casilla Agujero
+ *                                  hacia atrás y mueve el pingüino
+ *                                  allí (o a posición 0 si no hay).
+ *
+ * NOTA: La Foca se añade automáticamente en modo 1 jugador y
+ *       opcionalmente (checkbox) en modos 2-4 jugadores.
+ * ============================================================
+ */
+
 import java.util.Random;
 
 public class Foca extends Jugador {

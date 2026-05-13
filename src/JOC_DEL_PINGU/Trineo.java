@@ -1,5 +1,26 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Trineo  (extiende Casilla)
+ * ============================================================
+ * Casilla de tipo Trineo. Al caer en ella, el jugador avanza
+ * casillas extra (deslizamiento hacia adelante).
+ *
+ * LÓGICA (realizarAccion):
+ *   El trineo hace avanzar al jugador hacia adelante en el
+ *   tablero. El número de casillas avanzadas depende de la
+ *   implementación concreta (avance fijo o hasta el siguiente
+ *   trineo según la versión).
+ *
+ * USO EN EL JUEGO:
+ *   - El evento "Moto de nieve" (en Evento.java) también busca
+ *     la siguiente casilla Trineo y teletransporta al jugador.
+ *   - PantallaPartida encola encolarAnimacionTrineo() cuando
+ *     detecta que el jugador se movió por esta casilla.
+ * ============================================================
+ */
+
 
 public class Trineo extends Casilla {
     

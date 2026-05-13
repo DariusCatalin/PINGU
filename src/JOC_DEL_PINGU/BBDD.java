@@ -1,5 +1,37 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: BBDD
+ * ============================================================
+ * Utilidad de bajo nivel para conectar y operar con Oracle.
+ * Es usada internamente por GestorBBDD para todas las
+ * operaciones de base de datos.
+ *
+ * RESPONSABILIDAD:
+ *   - Establecer la conexión JDBC con el servidor Oracle
+ *     (oracle.ilerna.com:1521/XEPDB2).
+ *   - Proveer métodos estáticos genéricos para SELECT, INSERT,
+ *     UPDATE y DELETE.
+ *
+ * MÉTODOS PRINCIPALES:
+ *   conectarBaseDatosGUI() → Conexión hardcodeada para la GUI
+ *                            (credenciales fijas del proyecto).
+ *   conectarBaseDatos(Scanner) → Conexión interactiva por consola
+ *                                (modo desarrollo/test).
+ *   select(conn, sql)  → Ejecuta un SELECT y devuelve
+ *                        ArrayList<LinkedHashMap<String,String>>
+ *                        (cada fila es un mapa columna→valor).
+ *   insert/update/delete(conn, sql) → Ejecutan DML y devuelven
+ *                                     el número de filas afectadas.
+ *   cerrar(conn)       → Cierra la conexión de forma segura.
+ *
+ * NOTA: Esta clase NO debe contener lógica de negocio.
+ *       Para llamadas a procedures y functions de Oracle,
+ *       usar GestorBBDD con CallableStatement directamente.
+ * ============================================================
+ */
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

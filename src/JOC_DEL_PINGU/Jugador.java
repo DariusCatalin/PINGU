@@ -1,5 +1,38 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE ABSTRACTA: Jugador
+ * ============================================================
+ * Clase base de todos los participantes del juego.
+ * Subclases concretas: Pinguino (jugador humano) y Foca (CPU).
+ *
+ * RESPONSABILIDAD:
+ *   - Mantener posición, nombre, color, inventario y
+ *     turnos de penalización de cada jugador.
+ *   - Validar los límites del inventario antes de añadir ítems.
+ *   - Gestionar bolas de nieve, peces y objetos aleatorios.
+ *
+ * CONSTANTES DE INVENTARIO:
+ *   MAX_DADOS = 3   · MAX_PECES = 2   · MAX_BOLAS_NIEVE = 6
+ *
+ * MÉTODOS PRINCIPALES:
+ *   moverPosicion(p)       → Mueve al jugador a la posición p
+ *                            (nunca negativa).
+ *   avanzarCasillas(n)     → Suma n a la posición actual.
+ *   aplicarPenalizacion()  → Suma 1 turno perdido.
+ *   estaPenalizado()       → True si turnosPenalizados > 0.
+ *   decrementarPenalizacion() → Resta 1 turno perdido (por turno).
+ *   contarBolas()          → Cuenta bolas de nieve en inventario.
+ *   contarPeces()          → Cuenta peces en inventario.
+ *   vaciarBolas()          → Elimina todas las bolas (post-guerra).
+ *   perderMitadInventario() → Elimina la mitad de ítems al azar
+ *                             (efecto de la Foca al pasar encima).
+ *   perderObjetoAleatorio() → Elimina 1 ítem al azar del inventario.
+ *   puedeAgregarItem(item) → Valida límites antes de añadir.
+ * ============================================================
+ */
+
 import java.util.Random;
 
 

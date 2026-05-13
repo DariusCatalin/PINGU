@@ -1,5 +1,30 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Evento  (extiende Casilla)
+ * ============================================================
+ * Casilla de evento aleatorio. Al caer en ella, se genera
+ * un número del 1 al 100 y se ejecuta uno de 7 efectos posibles.
+ *
+ * EFECTOS Y PROBABILIDADES (método realizarAccion):
+ *   1–35  (35%): Dado Lento al inventario (avanza 1-3).
+ *   36–55 (20%): 1 a 3 Bolas de Nieve al inventario.
+ *   56–75 (20%): Pez al inventario (protección vs Oso/Foca).
+ *   76–85 (10%): Perder un turno (penalización +1).
+ *   86–90  (5%): Perder un objeto aleatorio del inventario.
+ *   91–95  (5%): Moto de nieve → teletransporte a la siguiente
+ *                casilla Trineo del tablero.
+ *   96–100 (5%): Dado Rápido al inventario (avanza 5-10).
+ *
+ * VALIDACIONES:
+ *   - puedeAgregarItem() se comprueba antes de añadir cualquier
+ *     ítem para respetar los límites del inventario.
+ *   - Si el inventario está lleno del tipo dado, muestra mensaje
+ *     informativo pero no penaliza al jugador.
+ * ============================================================
+ */
+
 import java.util.Random;
 
 

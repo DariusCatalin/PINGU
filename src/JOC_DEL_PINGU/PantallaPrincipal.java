@@ -1,4 +1,35 @@
 package JOC_DEL_PINGU;
+
+/**
+ * ============================================================
+ * CLASE: PantallaPrincipal  (controlador de PantallaPrincipal.fxml)
+ * ============================================================
+ * Controlador del menú principal del juego. Punto central de
+ * navegación tras el login.
+ *
+ * RESPONSABILIDAD:
+ *   - Ofrecer acceso a todas las funcionalidades principales:
+ *     nueva partida, cargar partida, ranking y logout.
+ *
+ * MÉTODOS @FXML:
+ *   handleNuevaPartida(event)  → Carga PantallaConfig.fxml.
+ *   handleCargarPartida(event) → Llama a mostrarVentanaPartidas().
+ *   handleRanking(event)       → Carga PantallaRanking.fxml.
+ *   handleVolverLogin(event)   → Vuelve a PantallaMenu (logout).
+ *
+ * FUNCIONALIDAD CLAVE — mostrarVentanaPartidas():
+ *   Abre un Dialog con una TableView que muestra todas las
+ *   partidas en Oracle (ID, fechas, estado, ganador).
+ *   Botones: "Cargar" → llama a GestorBBDD.cargarBBDD() y
+ *            abre PantallaPartida con la partida restaurada.
+ *            "Eliminar" → confirmación + GestorBBDD.eliminarPartida().
+ *            "Refrescar" → recarga la lista desde Oracle.
+ *
+ * CLASE INTERNA:
+ *   PartidaInfo → JavaBean para las filas de la TableView
+ *   (SimpleStringProperty: id, creacion, modificacion, estado, ganador).
+ * ============================================================
+ */
  
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

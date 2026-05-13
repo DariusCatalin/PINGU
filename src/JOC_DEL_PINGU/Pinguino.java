@@ -1,5 +1,30 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: Pinguino  (extiende Jugador)
+ * ============================================================
+ * Representa a un jugador humano en la partida.
+ * No añade lógica propia: hereda todo el comportamiento de
+ * Jugador (posición, inventario, penalizaciones).
+ *
+ * RESPONSABILIDAD:
+ *   - Actuar como marcador de tipo para distinguir a los
+ *     jugadores humanos de la Foca CPU (mediante instanceof
+ *     Pinguino / instanceof Foca en PantallaPartida).
+ *
+ * USO:
+ *   - PantallaConfig crea un new Pinguino(0, nombre, color)
+ *     por cada jugador humano configurado.
+ *   - PantallaPartida comprueba (actual instanceof Pinguino)
+ *     para saber si debe esperar acción del usuario o delegar
+ *     a la CPU.
+ *   - GestorBBDD serializa como tipo "P" y reconstruye con
+ *     new Pinguino() al cargar la partida.
+ * ============================================================
+ */
+
+
 public class Pinguino extends Jugador {
     
     // ==================== CONSTRUCTOR ====================
