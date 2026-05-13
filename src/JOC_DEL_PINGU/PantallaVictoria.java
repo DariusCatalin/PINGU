@@ -1,5 +1,41 @@
 package JOC_DEL_PINGU;
 
+/**
+ * ============================================================
+ * CLASE: PantallaVictoria  (controlador de PantallaVictoria.fxml)
+ * ============================================================
+ * Controlador de la pantalla de victoria. Se muestra cuando
+ * un jugador llega a la casilla 49 (Meta).
+ *
+ * RESPONSABILIDAD:
+ *   - Mostrar la imagen de victoria del jugador ganador.
+ *   - Reproducir el sonido de victoria (MP3).
+ *   - Cargar y mostrar estadísticas globales desde Oracle.
+ *   - Ofrecer botones para nueva partida, volver al menú o salir.
+ *
+ * CÓMO SE INICIALIZA:
+ *   PantallaPartida.irAPantallaVictoria() llama a:
+ *   controlador.setGanador(nombre, color, esFoca)
+ *   → aplicarDatosGanador() pone imagen + etiqueta.
+ *   → reproducirSonidoVictoria() lanza el MP3.
+ *
+ * ESTADÍSTICAS (cargarEstadisticasBBDD):
+ *   Llamadas a Oracle al cerrar el sonido:
+ *   · obtenerRecord()               → { ? = call max_wins() }
+ *   · obtenerMediaWins()            → { ? = call media_de_wins() }
+ *   · obtenerVictoriasJugador(id)   → { ? = call PARTIDAS_GANADAS_JUGADOR(?) }
+ *   · obtenerPorcentajeMenosWins(n) → { ? = call menos_wins_porcentaje(?) }
+ *   Resultado: VBox con 4 etiquetas añadido dinámicamente al
+ *   overlay inferior de la pantalla.
+ *
+ * MÉTODOS @FXML:
+ *   handleNuevaPartida() → PantallaConfig.fxml.
+ *   handleMenu()         → PantallaPrincipal.fxml.
+ *   handleSalir()        → Platform.exit().
+ *   handleGuardar()      → Solo confirmación (ya se guardó automáticamente).
+ * ============================================================
+ */
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

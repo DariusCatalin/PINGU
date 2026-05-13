@@ -1,4 +1,62 @@
 package JOC_DEL_PINGU;
+
+/**
+ * ============================================================
+ * CLASE: PantallaPartida  (controlador de PantallaJuego.fxml)
+ * ============================================================
+ * Controlador principal del juego. Es la clase más grande del
+ * proyecto (~2800 líneas) y gestiona toda la lógica de partida,
+ * animaciones, inventario, turnos y navegación durante el juego.
+ *
+ * RESPONSABILIDAD:
+ *   - Inicializar y configurar la partida con los jugadores
+ *     recibidos de PantallaConfig o cargados de BBDD.
+ *   - Gestionar el turno del jugador humano (dado normal y
+ *     objetos especiales) y el turno de la Foca CPU.
+ *   - Ejecutar la lógica de cada casilla y encolar las
+ *     animaciones correspondientes.
+ *   - Gestionar el inventario visual y los botones de ítems.
+ *   - Guardar y cargar partidas desde/hacia Oracle.
+ *   - Detectar el fin de partida y navegar a PantallaVictoria.
+ *
+ * MÉTODOS CLAVE:
+ *   setJugadores(lista)       → Recibe jugadores de PantallaConfig.
+ *   setPartidaCargada(p)      → Restaura una partida cargada de BBDD.
+ *   setIdPartidaCargada(id)   → Asigna el ID Oracle de la partida.
+ *   initialize()              → Crea la Partida, configura fichas y
+ *                               activa el menú de escape (ESC).
+ *   handleDado()              → Turno del jugador: tira dado normal.
+ *   handleRapido/Lento()      → Usa dado especial del inventario.
+ *   handlePeces()             → Info sobre el pez activo.
+ *   handleNieve()             → Lanza bola de nieve (guerra PvP).
+ *   handleSaveGame()          → Guarda partida en Oracle (auto-ID
+ *                               o actualización si ya existe).
+ *   moverJugadorYAccion(j,n)  → Mueve el jugador n casillas,
+ *                               gestiona rebote en meta, efecto de
+ *                               la Foca al pasar encima.
+ *   ejecutarLogicaCasilla(j)  → Aplica el efecto de la casilla actual
+ *                               y encola la animación correspondiente.
+ *   verificarColisionesLocal(j) → Detecta colisiones con la Foca
+ *                               (coletazo/pez) o entre pingüinos
+ *                               (guerra de bolas automática).
+ *   procesarTurnosCPU_Async() → Ejecuta el turno de la Foca CPU
+ *                               de forma asíncrona (Platform.runLater).
+ *   notificarFinPartidaBBDD(j)→ Llama a GestorBBDD.finalizarPartida()
+ *                               para actualizar Oracle al terminar.
+ *   irAPantallaVictoria(j)    → Carga PantallaVictoria.fxml y pasa
+ *                               el nombre/color del ganador.
+ *
+ * SISTEMA DE ANIMACIONES:
+ *   Cada evento del juego encola una animación (encolarXxx).
+ *   Un animador visual las procesa en orden con Timeline y
+ *   Platform.runLater(), garantizando sincronía con el hilo de UI.
+ *
+ * FICHAS VISUALES:
+ *   P1–P4: ImageView definidos en FXML (uno por jugador humano).
+ *   P5: ImageView creado dinámicamente para la Foca si esta
+ *       ocupa el slot 5 (> 4 jugadores en total).
+ * ============================================================
+ */
  
 import java.util.ArrayList;
 import javafx.event.ActionEvent;
@@ -45,6 +103,9 @@ public class PantallaPartida {
     @FXML private ImageView P2; // FICHA VISUAL DEL JUGADOR 2
     @FXML private ImageView P3; // FICHA VISUAL DEL JUGADOR 3
     @FXML private ImageView P4; // FICHA VISUAL DEL JUGADOR 4
+    // FICHA VISUAL DE LA FOCA (P5): CREADA DINÁMICAMENTE PORQUE EL FXML SOLO TIENE 4 SLOTS
+    // SE INICIALIZA EN configurarPartida() CUANDO HAY UNA FOCA EN LA PARTIDA
+    private ImageView P5;
  
     // --- VARIABLES INTERNAS DE LA LÓGICA DEL JUEGO ---
     private Partida partida;
@@ -168,18 +229,36 @@ public class PantallaPartida {
             partida.getJugadores().add(j);
         }
  
-        // ARRAY CON LAS 4 FICHAS VISUALES DISPONIBLES EN EL FXML
+        // ARRAY CON LAS 4 FICHAS VISUALES DEL FXML
         ImageView[] fichas = {P1, P2, P3, P4};
  
-        // PRIMERO OCULTAMOS TODAS LAS FICHAS PARA QUE NO SE VEAN LAS QUE NO SE USAN
+        // PRIMERO OCULTAMOS TODAS LAS FICHAS Y ELIMINAMOS LA P5 ANTERIOR SI EXISTÍA
         for (ImageView iv : fichas) {
             if (iv != null) iv.setVisible(false);
         }
+        if (P5 != null && tablero != null) {
+            tablero.getChildren().remove(P5);
+            P5 = null;
+        }
  
         // ASIGNAMOS IMAGEN, POSICIÓN INICIAL Y VISIBILIDAD A CADA JUGADOR
-        for (int i = 0; i < jugadoresConfig.size() && i < fichas.length; i++) {
+        // LOS PRIMEROS 4 USAN LOS IMAGEVIEW DEL FXML; EL 5.º (FOCA) SE CREA DINÁMICAMENTE
+        for (int i = 0; i < jugadoresConfig.size(); i++) {
             Jugador j = jugadoresConfig.get(i);
-            ImageView ficha = fichas[i];
+            ImageView ficha;
+            if (i < fichas.length) {
+                ficha = fichas[i];
+            } else {
+                // 5.º JUGADOR (FOCA): CREAMOS SU IMAGEVIEW Y LO AÑADIMOS AL TABLERO
+                P5 = new ImageView();
+                P5.setFitWidth(50);
+                P5.setFitHeight(60);
+                P5.setPreserveRatio(true);
+                GridPane.setHalignment(P5, javafx.geometry.HPos.CENTER);
+                GridPane.setValignment(P5, javafx.geometry.VPos.CENTER);
+                if (tablero != null) tablero.getChildren().add(P5);
+                ficha = P5;
+            }
             if (ficha != null) {
                 asignarImagenAFicha(ficha, obtenerRutaPersonaje(j));
                 ficha.setVisible(true);
@@ -331,15 +410,14 @@ public class PantallaPartida {
                     avanzarTurno();
                     dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
                 } else {
-                    if (tieneObjetosUsables(actual)) {
-                        mostrarPopupObjetos(actual);
-                    } else {
-                        ejecutarTiradaNormal(actual);
-                    }
+                    // Los objetos se usan desde los botones "Usar" del inventario.
+                    // El dado siempre tira directamente sin popup intermedio.
+                    ejecutarTiradaNormal(actual);
                 }
             }
         }
     }
+
  
     // EJECUTA UNA TIRADA NORMAL DE DADO (VALOR 1-6) Y HACE MOVER AL JUGADOR
     private void ejecutarTiradaNormal(Jugador actual) {
@@ -615,15 +693,31 @@ public class PantallaPartida {
             // EJECUTAMOS LA ACCION DE LA CASILLA EN LA QUE CAYÓ EL JUGADOR (OSO, TRINEO, EVENTO...)
             Casilla casillaActual = partida.getTablero().getCasillas().get(j.getPosicion());
             int posAntesCasilla = j.getPosicion();
+            int objetosAntesFragil = (casillaActual instanceof CasillaFragil) ? j.getInventario().getLista().size() : 0;
 
             casillaActual.realizarAccion(partida, j);
 
-            if (casillaActual instanceof Evento) {
+            if (casillaActual instanceof CasillaFragil) {
+                // ANIMACIÓN DE TERRENO FRÁGIL: DETERMINAMOS EL TEXTO SEGÚN EL INVENTARIO ANTES DEL EVENTO
+                String textoFragil;
+                if (objetosAntesFragil > 5) {
+                    textoFragil = "Has caido!\nVuelves al inicio.";
+                } else if (objetosAntesFragil > 0) {
+                    textoFragil = "Pierdes un turno.";
+                } else {
+                    textoFragil = "Has pasado sin penalización.";
+                }
+                ultimoEventoVisual.put(j, textoFragil);
+                encolarAnimacionFragil(j);
+                // SI HUBO MOVIMIENTO (>5 OBJECTES → TORNA A L'INICI), ENCOLAMOS EL SALTO
+                if (posAntesCasilla != j.getPosicion()) {
+                    encolarSaltoDirecto(j, j.getPosicion());
+                }
+            } else if (casillaActual instanceof Evento) {
                 String msg = partida.getGestorEventos().getUltimoMensaje();
                 ultimoEventoVisual.put(j, msg);
                 encolarAnimacionEvento(j);
-            }
-            if (casillaActual instanceof Oso) {
+            } else if (casillaActual instanceof Oso) {
                 if (posAntesCasilla == j.getPosicion()) {
                     encolarAnimacionSobornoOso(j);
                 } else {
@@ -642,6 +736,12 @@ public class PantallaPartida {
             
             // COMPROBAMOS SI ALGÚN JUGADOR ATERRIZÓ EN LA MISMA CASILLA QUE OTRO
             verificarColisionesLocal(j);
+
+            // P2/P5: Si la foca tiene coletazos pendientes, encolar la animación de coletazo
+            // al FINAL de su cola para que se ejecute DESPUÉS de que la foca llegue visualmente
+            if (j instanceof Foca && datosColetazo.containsKey(j) && !datosColetazo.get(j).isEmpty()) {
+                encolarAnimacionColetazoFoca(j);
+            }
         }
     }
  
@@ -685,19 +785,37 @@ public class PantallaPartida {
                 if (actual instanceof Foca || otro instanceof Foca) {
                     Jugador pinguino = (actual instanceof Pinguino) ? actual : otro;
                     Foca foca = (actual instanceof Foca) ? (Foca) actual : (Foca) otro;
- 
+
                     if (consumirObjeto(pinguino, "Pez")) {
-                        // EL PINGÜINO USA UN PEZ: LA FOCA QUEDA BLOQUEADA 2 TURNOS
+                        // P6: EL PINGÜINO USA UN PEZ — LA FOCA QUEDA BLOQUEADA 2 TURNOS
+                        // Guardamos el nombre del pingüino para mostrarlo en la animación
+                        datosSobornoFoca.put(pinguino, pinguino.getNombre());
                         gestorUI.registrar("¡" + pinguino.getNombre() + " le lanza un Pez a la Foca! ¡La Foca queda bloqueada 2 turnos!");
                         foca.aplicarPenalizacion();
-                        foca.aplicarPenalizacion(); // SE LLAMA DOS VECES PORQUE SON 2 TURNOS DE PENALIZACIÓN
+                        foca.aplicarPenalizacion(); // Se llama dos veces porque son 2 turnos de penalización
+                        // La animación de soborno se encola en la cola del pingüino
+                        encolarAnimacionSobornoFoca(pinguino);
                     } else {
-                        // SIN PEZ: LA FOCA DA UN COLETAZO Y EL PINGÜINO RETROCEDE AL AGUJERO ANTERIOR
+                        // LA FOCA DA UN COLETAZO: el pingüino retrocede al agujero anterior
                         int posHole = buscarAgujeroAnterior(pinguino.getPosicion(), partida.getTablero());
-                        pinguino.moverPosicion(posHole);
-                        encolarSaltoDirecto(pinguino, posHole);
                         gestorUI.registrar("¡La Foca da un coletazo a " + pinguino.getNombre()
                             + "! Es enviado al agujero anterior (casilla " + posHole + ").");
+
+                        if (actual instanceof Foca) {
+                            // LA FOCA SE MOVIÓ: diferimos el coletazo para que ocurra
+                            // DESPUÉS de que la foca llegue visualmente a la casilla.
+                            // Los datos se acumulan en datosColetazo y se procesan en
+                            // ejecutarLogicaCasilla → encolarAnimacionColetazoFoca (tipo 9).
+                            datosColetazo.computeIfAbsent(foca, k -> new java.util.ArrayList<>())
+                                .add(new int[]{partida.getJugadores().indexOf(pinguino), posHole});
+                        } else {
+                            // EL PINGÜINO SE MOVIÓ hacia la casilla de la foca:
+                            // la foca ya está quieta visualmente → coletazo inmediato.
+                            // NO usamos datosColetazo (evita datos residuales que dispararían
+                            // un coletazo falso en el siguiente turno de la foca).
+                            pinguino.moverPosicion(posHole);
+                            encolarSaltoDirecto(pinguino, posHole);
+                        }
                     }
                 } else if (actual instanceof Pinguino && otro instanceof Pinguino) {
                     // GUERRA DE BOLAS (PvP)
@@ -746,8 +864,6 @@ public class PantallaPartida {
         if (!partida.isFinalizada()) {
             Jugador actual = partida.getJugadores().get(partida.getIndiceJugadorActual());
             if (actual instanceof Foca) {
-                // REPRODUCIMOS EL SONIDO DE LA FOCA DURANTE 1 SEGUNDO AL INICIO DE SU TURNO
-                reproducirSonidoFoca();
                 // LÓGICA DEL TURNO DE LA FOCA (CPU)
                 if (actual.estaPenalizado()) {
                     actual.decrementarPenalizacion();
@@ -765,21 +881,43 @@ public class PantallaPartida {
                             config[0],
                             javafx.scene.paint.Color.web(config[1]),
                             () -> {
+                                // P1: El sonido de la foca se reproduce justo al terminar
+                                // la animación del dado, antes de que empiece a moverse
+                                reproducirSonidoFoca();
                                 moverJugadorYAccion(actual, tiradaFinal, "tirada CPU");
                                 avanzarTurno();
                                 dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
                             });
                     } else {
+                        // Sin animación de dado: reproducimos el sonido igualmente antes del movimiento
+                        reproducirSonidoFoca();
                         moverJugadorYAccion(actual, tirada, "tirada CPU");
                         avanzarTurno();
                         dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
                     }
                 }
             } else {
-                // ES EL TURNO DEL JUGADOR HUMANO: ACTUALIZAMOS EL INDICADOR Y HABILITAMOS LOS BOTONES
+                // ES EL TURNO DEL JUGADOR HUMANO
                 actualizarTextosTurno();
-                setUIInteractuable(true);
+                actualizarTextosInventario(actual);
+
+                if (actual.estaPenalizado()) {
+                    // El jugador tiene penalización activa: saltamos su turno automáticamente
+                    // sin habilitar ningún botón ni esperar interacción del usuario
+                    actual.decrementarPenalizacion();
+                    gestorUI.registrar("¡" + actual.getNombre() + " pierde su turno por penalización!");
+                    // Mostramos un mensaje visual breve (1.5 s) y luego avanzamos
+                    mostrarMensajePierdeTurno(actual, () -> {
+                        avanzarTurno();
+                        dispararAnimadorVisual(() -> procesarTurnosCPU_Async());
+                    });
+                } else {
+                    // FIX: REFRESCAMOS EL INVENTARIO CON LOS DATOS DEL JUGADOR QUE ACABA DE EMPEZAR SU TURNO
+                    // ANTES FALTABA ESTA LLAMADA, POR LO QUE EL PANEL SEGUÍA MOSTRANDO EL INVENTARIO DEL TURNO ANTERIOR
+                    setUIInteractuable(true);
+                }
             }
+
         }
     }
 
@@ -815,6 +953,73 @@ public class PantallaPartida {
         }
     }
  
+    /**
+     * Muestra un overlay breve (1.5 s) indicando que el jugador pierde su turno.
+     * Se invoca automáticamente al inicio del turno cuando el jugador está penalizado,
+     * sin requerir ninguna interacción del usuario.
+     * Al terminar ejecuta onFinish para continuar la cadena de turnos.
+     */
+    private void mostrarMensajePierdeTurno(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena == null) {
+            // Sin escena disponible: avanzar directamente
+            if (onFinish != null) javafx.application.Platform.runLater(onFinish);
+        } else {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            // Overlay semitransparente
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            // Texto central
+            javafx.scene.text.Text lblMsg = new javafx.scene.text.Text(
+                "⏭  " + j.getNombre() + "\npierde el turno");
+            lblMsg.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 48));
+            lblMsg.setFill(javafx.scene.paint.Color.web("#FFB347")); // Naranja suave
+            lblMsg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMsg.setWrappingWidth(W);
+            lblMsg.setEffect(new javafx.scene.effect.DropShadow(12, javafx.scene.paint.Color.BLACK));
+            lblMsg.setOpacity(0);
+            lblMsg.setManaged(false);
+            lblMsg.setLayoutX(0);
+            lblMsg.setLayoutY(H / 2.0);
+            rootPane.getChildren().add(lblMsg);
+
+            javafx.animation.FadeTransition ftOverIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(250), overlayPane);
+            ftOverIn.setToValue(0.65);
+            javafx.animation.FadeTransition ftMsgIn = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(250), lblMsg);
+            ftMsgIn.setToValue(1);
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOverIn, ftMsgIn);
+
+            javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(
+                javafx.util.Duration.millis(1500));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftMsgOut = new javafx.animation.FadeTransition(
+                javafx.util.Duration.millis(300), lblMsg);
+            ftMsgOut.setToValue(0);
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftMsgOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pausa, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, lblMsg);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        }
+    }
+ 
+
     // REGISTRA EL LISTENER DE TECLADO: ESCAPE ABRE Y CIERRA EL MENÚ DE OPCIONES
     // EL MENÚ SE IMPLEMENTA COMO UN CONTEXTMENU ANCLADO A LA VENTANA
     private void configurarEscapeMenu() {
@@ -849,7 +1054,8 @@ public class PantallaPartida {
  
     private ImageView getFichaVisual(Jugador j) {
         int index = partida.getJugadores().indexOf(j);
-        ImageView[] fichas = {P1, P2, P3, P4};
+        // LOS PRIMEROS 4 SLOTS ESTÁN EN EL FXML; EL 5.º (ÍNDICE 4) ES LA FOCA DINÁMICA (P5)
+        ImageView[] fichas = {P1, P2, P3, P4, P5};
         if (index >= 0 && index < fichas.length) {
             return fichas[index];
         }
@@ -909,6 +1115,7 @@ public class PantallaPartida {
             if (P2 != null) P2.toFront();
             if (P3 != null) P3.toFront();
             if (P4 != null) P4.toFront();
+            if (P5 != null) P5.toFront(); // FOCA DINÁMICA
         }
     }
  
@@ -926,10 +1133,15 @@ public class PantallaPartida {
  
     // COLA DE PASOS DE ANIMACIÓN POR JUGADOR: int[]{destinoPos, tipo}
     // TIPO 0 = SALTITO NORMAL, TIPO 1 = SALTO DIRECTO (OSO, FOCA, BOLAS, ETC.)
+    // TIPO 9 = COLETAZO DE LA FOCA  TIPO 10 = SOBORNO A LA FOCA
     private java.util.Map<Jugador, java.util.Queue<int[]>> colasAnimacion = new java.util.HashMap<>();
     private java.util.Map<Jugador, Integer> posVisual = new java.util.HashMap<>();
     private java.util.Map<Jugador, String> ultimoEventoVisual = new java.util.HashMap<>();
     private java.util.Map<Jugador, String> ultimoGuerraVisual = new java.util.HashMap<>();
+    // DATOS DEL COLETAZO: jugador afectado → casilla destino (agujero anterior)
+    private java.util.Map<Jugador, java.util.List<int[]>> datosColetazo = new java.util.HashMap<>();
+    // DATOS DEL SOBORNO: jugador que sobornó → nombre del jugador
+    private java.util.Map<Jugador, String> datosSobornoFoca = new java.util.HashMap<>();
     private boolean animando = false;
 
     private void inicializarColas() {
@@ -994,6 +1206,40 @@ public class PantallaPartida {
             q.add(new int[]{j.getPosicion(), 7});
         }
     }
+
+    /** Encola la animación de terreno frágil. Tipo 8. */
+    private void encolarAnimacionFragil(Jugador j) {
+        java.util.Queue<int[]> q = colasAnimacion.get(j);
+        if (q != null) {
+            q.add(new int[]{j.getPosicion(), 8});
+        }
+    }
+
+    /**
+     * P5: Encola la animación del coletazo de la foca. Tipo 9.
+     * Se encola en la cola de la FOCA para que se ejecute DESPUÉS de que
+     * la foca llegue visualmente a la casilla donde están los pingüinos.
+     * Los datos (pingüinos afectados y sus casillas destino) se guardan
+     * en datosColetazo antes de llamar a este método.
+     */
+    private void encolarAnimacionColetazoFoca(Jugador foca) {
+        java.util.Queue<int[]> q = colasAnimacion.get(foca);
+        if (q != null) {
+            q.add(new int[]{foca.getPosicion(), 9});
+        }
+    }
+
+    /**
+     * P6: Encola la animación del soborno a la foca. Tipo 10.
+     * Se encola en la cola del pingüino que sobornó.
+     */
+    private void encolarAnimacionSobornoFoca(Jugador pinguino) {
+        java.util.Queue<int[]> q = colasAnimacion.get(pinguino);
+        if (q != null) {
+            q.add(new int[]{pinguino.getPosicion(), 10});
+        }
+    }
+
     // ENCOLA LA ANIMACIÓN DEL AGUJERO (TIPO 4: JUGADOR SE CAE Y APARECE EN LA CASILLA DESTINO)
     private void encolarAnimacionAgujero(Jugador j, int destino) {
         java.util.Queue<int[]> q = colasAnimacion.get(j);
@@ -1094,6 +1340,15 @@ public class PantallaPartida {
                         mostrarAnimacionGuerra(j, next);
                     } else if (tipo == 7) {
                         mostrarAnimacionSobornoOso(j, next);
+                    } else if (tipo == 8) {
+                        mostrarAnimacionFragil(j, next);
+                    } else if (tipo == 9) {
+                        // P2/P5: La foca ya llegó visualmente; ahora mostramos la animación
+                        // de coletazo y DESPUÉS movemos los pingüinos afectados
+                        mostrarAnimacionColetazoFoca(j, next);
+                    } else if (tipo == 10) {
+                        // P6: Animación de soborno a la foca
+                        mostrarAnimacionSobornoFoca(j, next);
                     } else {
                         animarConSaltito(fic, j, desde, hasta, next);
                     }
@@ -1797,7 +2052,323 @@ public class PantallaPartida {
             if (onFinish != null) onFinish.run();
         }
     }
- 
+
+    // MUESTRA LA ANIMACIÓN A PANTALLA COMPLETA DE LA CASILLA DE TERRENO FRÁGIL
+    // REUTILIZA EL MISMO PATRÓN QUE AGUJERO Y TRINEO: OVERLAY + IMAGEN CENTRADA + TEXTO
+    private void mostrarAnimacionFragil(Jugador j, Runnable onFinish) {
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/evento_fragil.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            // EL TEXTO YA FUE DETERMINADO ANTES DE realizarAccion() SEGÚN EL TAMAÑO DEL INVENTARIO
+            String textoEvento = ultimoEventoVisual.getOrDefault(j, "Terreny fràgil!");
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(textoEvento);
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 40));
+            lblMensaje.setFill(javafx.scene.paint.Color.web("#87CEEB")); // AZUL HIELO
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2);
+            stImg.setToY(1.2);
+
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        } else {
+            if (onFinish != null) onFinish.run();
+        }
+    }
+
+    /**
+     * P5: Muestra la animación de evento del coletazo de la foca.
+     * Se invoca DESPUÉS de que la foca llegue visualmente a la casilla destino.
+     * Al terminar la animación, mueve a cada pingüino afectado a su agujero
+     * anterior (aplicando la posición lógica y encolando el salto visual).
+     *
+     * @param foca     jugador Foca que ha dado el coletazo
+     * @param onFinish callback que continúa la cadena de animaciones
+     */
+    private void mostrarAnimacionColetazoFoca(Jugador foca, Runnable onFinish) {
+        // Recuperamos los datos acumulados del coletazo y los limpiamos
+        java.util.List<int[]> afectados = datosColetazo.remove(foca);
+        if (afectados == null || afectados.isEmpty()) {
+            if (onFinish != null) onFinish.run();
+        } else {
+
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/coletazo_foca.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            // Título superior
+            javafx.scene.text.Text lblTitulo = new javafx.scene.text.Text("¡Coletazo de la Foca!");
+            lblTitulo.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 42));
+            lblTitulo.setFill(javafx.scene.paint.Color.web("#FF6600"));
+            lblTitulo.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblTitulo.setWrappingWidth(W);
+            lblTitulo.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblTitulo.setOpacity(0);
+            lblTitulo.setManaged(false);
+            lblTitulo.setLayoutX(0);
+            lblTitulo.setLayoutY(H / 2 - IMG_SIZE / 2 - 20);
+            rootPane.getChildren().add(lblTitulo);
+
+            // Texto descriptivo: uno o varios pingüinos afectados
+            StringBuilder sbTexto = new StringBuilder();
+            for (int[] dato : afectados) {
+                int idx = dato[0];
+                int casillaDest = dato[1];
+                if (idx >= 0 && idx < partida.getJugadores().size()) {
+                    Jugador afectado = partida.getJugadores().get(idx);
+                    sbTexto.append(afectado.getNombre())
+                           .append(" retrocede a la casilla ").append(casillaDest).append("\n");
+                }
+            }
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(sbTexto.toString().trim());
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 36));
+            lblMensaje.setFill(javafx.scene.paint.Color.web("#FFD700"));
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2); stImg.setToY(1.2);
+            javafx.animation.FadeTransition ftTitulo = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+            ftTitulo.setToValue(1);
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftTitulo, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTituloOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblTitulo);
+            ftTituloOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTituloOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblTitulo, lblMensaje);
+                // Ahora que la animación terminó, movemos los pingüinos afectados
+                for (int[] dato : afectados) {
+                    int idx = dato[0];
+                    int casillaDest = dato[1];
+                    if (idx >= 0 && idx < partida.getJugadores().size()) {
+                        Jugador afectado = partida.getJugadores().get(idx);
+                        afectado.moverPosicion(casillaDest);
+                        encolarSaltoDirecto(afectado, casillaDest);
+                    }
+                }
+                // CRÍTICO: reseteamos animando para que dispararAnimadorVisual pueda
+                // iniciar un nuevo ciclo que procese los saltos de los pingüinos afectados.
+                // Sin este reset, el guard "if (!animando)" bloqueaba el dispatcher
+                // silenciosamente y onFinish nunca se llamaba → juego colgado.
+                animando = false;
+                dispararAnimadorVisual(onFinish);
+            });
+            seq.play();
+        } else {
+            // Sin escena: movemos directamente y continuamos
+            for (int[] dato : afectados) {
+                int idx = dato[0];
+                int casillaDest = dato[1];
+                if (idx >= 0 && idx < partida.getJugadores().size()) {
+                    partida.getJugadores().get(idx).moverPosicion(casillaDest);
+                }
+            }
+            if (onFinish != null) onFinish.run();
+        }
+        } // fin else: afectados no vacios
+    }
+
+    /**
+     * P6: Muestra la animación de evento del soborno a la foca.
+     * Se invoca después de que el pingüino coincide con la foca y le lanza un pez.
+     * La penalización a la foca ya se aplicó en verificarColisionesLocal.
+     *
+     * @param pinguino jugador que ha sobornado a la foca
+     * @param onFinish callback que continúa la cadena de animaciones
+     */
+    private void mostrarAnimacionSobornoFoca(Jugador pinguino, Runnable onFinish) {
+        // Limpiamos los datos del soborno
+        datosSobornoFoca.remove(pinguino);
+
+        javafx.scene.Scene escena = tablero.getScene();
+        if (escena != null) {
+            double W = escena.getWidth();
+            double H = escena.getHeight();
+            javafx.scene.layout.Pane rootPane = (javafx.scene.layout.Pane) escena.getRoot();
+
+            javafx.scene.layout.Pane overlayPane = new javafx.scene.layout.Pane();
+            overlayPane.setStyle("-fx-background-color: black;");
+            overlayPane.setManaged(false);
+            overlayPane.resize(W, H);
+            overlayPane.setOpacity(0);
+            rootPane.getChildren().add(overlayPane);
+
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            var recurso = getClass().getResourceAsStream("/resources/soborno_foca.png");
+            if (recurso != null) {
+                imgView.setImage(new Image(recurso));
+            }
+            double IMG_SIZE = 400;
+            imgView.setFitWidth(IMG_SIZE);
+            imgView.setFitHeight(IMG_SIZE);
+            imgView.setPreserveRatio(true);
+            imgView.setOpacity(0);
+            imgView.setScaleX(0.5);
+            imgView.setScaleY(0.5);
+            imgView.setManaged(false);
+            imgView.setLayoutX(W / 2 - IMG_SIZE / 2);
+            imgView.setLayoutY(H / 2 - IMG_SIZE / 2 - 50);
+            rootPane.getChildren().add(imgView);
+
+            javafx.scene.text.Text lblMensaje = new javafx.scene.text.Text(
+                pinguino.getNombre() + " ha sobornado a la foca con un pez.\n¡La foca queda bloqueada 2 turnos!");
+            lblMensaje.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 36));
+            lblMensaje.setFill(javafx.scene.paint.Color.web("#44FF88"));
+            lblMensaje.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            lblMensaje.setWrappingWidth(W);
+            lblMensaje.setEffect(new javafx.scene.effect.DropShadow(10, javafx.scene.paint.Color.BLACK));
+            lblMensaje.setOpacity(0);
+            lblMensaje.setManaged(false);
+            lblMensaje.setLayoutX(0);
+            lblMensaje.setLayoutY(H / 2 + IMG_SIZE / 2 + 20);
+            rootPane.getChildren().add(lblMensaje);
+
+            javafx.animation.FadeTransition ftOver = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOver.setToValue(0.8);
+            javafx.animation.FadeTransition ftImg = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImg.setToValue(1);
+            javafx.animation.ScaleTransition stImg = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(300), imgView);
+            stImg.setToX(1.2); stImg.setToY(1.2);
+            javafx.animation.FadeTransition ftText = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftText.setToValue(1);
+            javafx.animation.ParallelTransition ptIn = new javafx.animation.ParallelTransition(ftOver, ftImg, stImg, ftText);
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(2000));
+
+            javafx.animation.FadeTransition ftOverOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), overlayPane);
+            ftOverOut.setToValue(0);
+            javafx.animation.FadeTransition ftImgOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), imgView);
+            ftImgOut.setToValue(0);
+            javafx.animation.FadeTransition ftTextOut = new javafx.animation.FadeTransition(javafx.util.Duration.millis(300), lblMensaje);
+            ftTextOut.setToValue(0);
+            javafx.animation.ParallelTransition ptOut = new javafx.animation.ParallelTransition(ftOverOut, ftImgOut, ftTextOut);
+
+            javafx.animation.SequentialTransition seq = new javafx.animation.SequentialTransition(ptIn, pause, ptOut);
+            seq.setOnFinished(e -> {
+                rootPane.getChildren().removeAll(overlayPane, imgView, lblMensaje);
+                // Sincronizamos el inventario del pingüino en la UI (el pez ya fue consumido en verificarColisionesLocal)
+                actualizarTextosInventario(pinguino);
+                // Reseteamos animando por consistencia (mismo patrón que coletazo)
+                animando = false;
+                if (onFinish != null) onFinish.run();
+            });
+            seq.play();
+        } else {
+            actualizarTextosInventario(pinguino);
+            if (onFinish != null) onFinish.run();
+        }
+    }
+
+
     // OFFSET X EN PIXELES PARA QUE LA FICHA EN CASILLA 49 QUEDE ENCIMA DEL IGLU (~85.5% DEL ANCHO)
     private double computeIglooOffsetX(int colB, double cellW) {
         double iglooSceneX = tablero.getScene().getWidth() * 0.855;
